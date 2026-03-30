@@ -1,0 +1,16 @@
+{
+  "name": "sagrapp-test-platform",
+  "version": "1.0.0",
+  "description": "SagrApp — Piattaforma di test hardware per sagra",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "proxy": "node print-proxy/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18",
+    "socket.io": "^4.7",
+    "cors": "^2.8"
+  }
+}

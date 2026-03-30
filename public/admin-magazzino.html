@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Magazzino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      background: #060a12;
+      color: #e2e8f0;
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100%;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
+        #060a12;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(6, 10, 18, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #1e293b;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+      background: rgba(255, 255, 255, 0.03);
+      color: #6c7a89;
+      text-decoration: none;
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: all 150ms ease;
+    }
+
+    .back-link:hover {
+      border-color: #4ecca3;
+      color: #4ecca3;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: clamp(16px, 3.5vw, 20px);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-title span {
+      color: #6c7a89;
+      font-weight: 400;
+    }
+
+    /* Indicatore connessione nel header */
+    .conn-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .conn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: all 300ms ease;
+    }
+
+    .conn-dot.online {
+      background: #4ecca3;
+      box-shadow: 0 0 6px rgba(78, 204, 163, 0.5);
+    }
+
+    .conn-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6c7a89;
+    }
+
+    /* ===== ACTION BAR ===== */
+    .action-bar {
+      padding: 14px 20px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-reset {
+      height: 44px;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      background: rgba(233, 69, 96, 0.08);
+      color: #e94560;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn-reset:hover {
+      background: rgba(233, 69, 96, 0.15);
+      border-color: rgba(233, 69, 96, 0.5);
+    }
+
+    .btn-reset:active {
+      transform: scale(0.97);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .filter-btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
+      background: transparent;
+      color: #6c7a89;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+      border-color: rgba(226, 232, 240, 0.2);
+      color: #e2e8f0;
+    }
+
+    .filter-btn.active {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.3);
+      color: #4ecca3;
+    }
+
+    /* ===== INVENTORY LIST ===== */
+    .inventory-list {
+      padding: 0 12px 120px;
+    }
+
+    /* Singola riga inventario */
+    .inv-row {
+      border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+      padding: 16px 8px;
+      transition: background 200ms ease;
+    }
+
+    .inv-row.hidden {
+      display: none;
+    }
+
+    /* Flash verde quando cambia lo stock */
+    .inv-row.flash {
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    /* Flash giallo per soglia */
+    .inv-row.flash-warn {
+      background: rgba(255, 217, 61, 0.06);
+    }
+
+    /* Flash rosso per esaurito */
+    .inv-row.flash-danger {
+      background: rgba(233, 69, 96, 0.08);
+    }
+
+    /* -- Riga superiore: nome + badge + stock -- */
+    .inv-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .inv-name {
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+
+    .inv-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .inv-badge.available {
+      background: rgba(78, 204, 163, 0.12);
+      color: #4ecca3;
+    }
+
+    .inv-badge.low {
+      background: rgba(255, 217, 61, 0.12);
+      color: #ffd93d;
+    }
+
+    .inv-badge.exhausted {
+      background: rgba(233, 69, 96, 0.12);
+      color: #e94560;
+    }
+
+    .inv-stock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .inv-stock .current {
+      color: #e2e8f0;
+    }
+
+    .inv-stock .separator {
+      color: #6c7a89;
+      margin: 0 2px;
+    }
+
+    .inv-stock .initial {
+      color: #6c7a89;
+    }
+
+    /* -- Barra di progresso -- */
+    .progress-wrapper {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 300ms ease, background 300ms ease;
+      min-width: 0;
+    }
+
+    .progress-fill.green { background: #4ecca3; }
+    .progress-fill.yellow { background: #ffd93d; }
+    .progress-fill.red { background: #e94560; }
+
+    .progress-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6c7a89;
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* -- Riga inferiore: soglia + pulsanti azione -- */
+    .inv-bottom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .threshold-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .threshold-label {
+      font-size: 11px;
+      color: #6c7a89;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .threshold-input {
+      width: 52px;
+      height: 30px;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+      background: rgba(0, 0, 0, 0.3);
+      color: #ffd93d;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      transition: border-color 200ms ease;
+    }
+
+    .threshold-input:focus {
+      border-color: #ffd93d;
+    }
+
+    /* Pulsanti azione */
+    .actions {
+      display: flex;
+      gap: 5px;
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .act-btn {
+      min-width: 44px;
+      height: 38px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
+      background: rgba(255, 255, 255, 0.03);
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .act-btn:active {
+      transform: scale(0.93);
+    }
+
+    /* Pulsanti di decremento (rossi) */
+    .act-btn.minus {
+      border-color: rgba(233, 69, 96, 0.2);
+      color: #e94560;
+    }
+
+    .act-btn.minus:hover {
+      background: rgba(233, 69, 96, 0.1);
+    }
+
+    /* Pulsanti di incremento (verdi) */
+    .act-btn.plus {
+      border-color: rgba(78, 204, 163, 0.2);
+      color: #4ecca3;
+    }
+
+    .act-btn.plus:hover {
+      background: rgba(78, 204, 163, 0.1);
+    }
+
+    /* Pulsanti medi (+10, +50) */
+    .act-btn.medium {
+      min-width: 50px;
+      font-size: 13px;
+    }
+
+    /* Pulsante Imposta (ciano) */
+    .act-btn.set {
+      border-color: rgba(34, 211, 238, 0.2);
+      color: #22d3ee;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .act-btn.set:hover {
+      background: rgba(34, 211, 238, 0.1);
+    }
+
+    /* Pulsante Riattiva (giallo, solo su esauriti) */
+    .act-btn.reactivate {
+      border-color: rgba(255, 217, 61, 0.3);
+      background: rgba(255, 217, 61, 0.08);
+      color: #ffd93d;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      min-width: 80px;
+    }
+
+    .act-btn.reactivate:hover {
+      background: rgba(255, 217, 61, 0.15);
+    }
+
+    /* ===== LEGENDA ===== */
+    .legend {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: rgba(6, 10, 18, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid #1e293b;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c7a89;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.green { background: #4ecca3; }
+    .legend-dot.yellow { background: #ffd93d; }
+    .legend-dot.red { background: #e94560; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6c7a89;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* ===== OVERLAY CONNESSIONE PERSA ===== */
+    .lost-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(233, 69, 96, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+
+    .lost-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lost-text {
+      font-weight: 700;
+      font-size: clamp(24px, 5vw, 48px);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .lost-sub {
+      font-size: clamp(13px, 2vw, 18px);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 8px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .inv-name { font-size: 15px; }
+      .inv-stock { font-size: 14px; }
+      .actions { gap: 4px; }
+      .act-btn { min-width: 40px; height: 36px; font-size: 13px; padding: 0 8px; }
+      .act-btn.medium { min-width: 46px; font-size: 12px; }
+      .act-btn.set, .act-btn.reactivate { font-size: 11px; }
+      .filter-btn { height: 36px; padding: 0 10px; font-size: 12px; }
+      .action-bar { padding: 10px 12px; gap: 8px; }
+      .inventory-list { padding: 0 6px 100px; }
+    }
+
+    /* Tablet / desktop: layout piu' spaziato */
+    @media (min-width: 768px) {
+      .inventory-list { max-width: 900px; margin: 0 auto; }
+      .action-bar { max-width: 900px; margin: 0 auto; padding: 16px 0; border-bottom: none; }
+      .header { padding: 16px 32px; }
+      .inv-row { padding: 18px 12px; }
+      .inv-name { font-size: 17px; }
+      .act-btn { min-width: 48px; height: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <a href="/admin" class="back-link" aria-label="Torna alla dashboard admin">&larr;</a>
+      <div class="header-title">Magazzino <span>— Gestione Scorte</span></div>
+    </div>
+    <div class="conn-indicator">
+      <div class="conn-dot" id="connDot"></div>
+      <span class="conn-label" id="connLabel">Offline</span>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn-reset" id="btnReset">Reset scorte inizio serata</button>
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all">Tutti</button>
+      <button class="filter-btn" data-filter="low">In esaurimento</button>
+      <button class="filter-btn" data-filter="exhausted">Esauriti</button>
+    </div>
+  </div>
+
+  <!-- Inventory List -->
+  <div class="inventory-list" id="inventoryList">
+    <!-- Generato da JS -->
+  </div>
+
+  <!-- Legenda -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot green"></div> Disponibile</div>
+    <div class="legend-item"><div class="legend-dot yellow"></div> In esaurimento</div>
+    <div class="legend-item"><div class="legend-dot red"></div> Esaurito</div>
+  </div>
+
+  <!-- Overlay connessione persa -->
+  <div class="lost-overlay" id="lostOverlay">
+    <div class="lost-text">Connessione Persa</div>
+    <div class="lost-sub">Riconnessione in corso&hellip;</div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // =============================================
+    //  AUTH — Verifica token admin
+    // =============================================
+    const TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) {
+      window.location.href = '/admin/login';
+    }
+
+    // Verifica validita' token lato server
+    (async function verifyAuth() {
+      try {
+        const res = await fetch(`/api/admin/verify?token=${encodeURIComponent(TOKEN)}`);
+        const data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+        }
+      } catch {
+        // Se il server non risponde, non blocchiamo — riproviamo al prossimo API call
+      }
+    })();
+
+    // Header comune per tutte le richieste API
+    function apiHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'X-Admin-Token': TOKEN,
+      };
+    }
+
+    // =============================================
+    //  STATO LOCALE
+    // =============================================
+    let inventory = [];         // Array di oggetti inventario
+    let activeFilter = 'all';   // Filtro attivo: 'all' | 'low' | 'exhausted'
+
+    // =============================================
+    //  RENDERING
+    // =============================================
+
+    const listEl = document.getElementById('inventoryList');
+
+    // Calcola la percentuale di stock rimanente
+    function stockPercent(item) {
+      if (!item.initial_stock || item.initial_stock <= 0) return 0;
+      return Math.max(0, Math.min(100, Math.round((item.stock / item.initial_stock) * 100)));
+    }
+
+    // Determina il colore della barra in base a stock e soglia
+    function barColor(item) {
+      if (item.stock <= 0) return 'red';
+      if (item.stock <= item.alert_threshold) return 'yellow';
+      return 'green';
+    }
+
+    // Etichetta e classe del badge di stato
+    function badgeInfo(item) {
+      if (item.status === 'exhausted' || item.stock <= 0) {
+        return { label: 'Esaurito', cls: 'exhausted', emoji: '' };
+      }
+      if (item.status === 'low' || item.stock <= item.alert_threshold) {
+        return { label: 'In esaurimento', cls: 'low', emoji: '' };
+      }
+      return { label: 'Disponibile', cls: 'available', emoji: '' };
+    }
+
+    // Genera l'HTML di una singola riga inventario
+    function renderRow(item) {
+      const pct = stockPercent(item);
+      const color = barColor(item);
+      const badge = badgeInfo(item);
+      const isExhausted = item.status === 'exhausted' || item.stock <= 0;
+
+      return `
+        <div class="inv-row" id="row-${item.id}" data-status="${badge.cls}">
+          <!-- Riga superiore: nome + badge + conteggio stock -->
+          <div class="inv-top">
+            <span class="inv-name">${item.name}</span>
+            <span class="inv-badge ${badge.cls}">${badge.label}</span>
+            <span class="inv-stock">
+              <span class="current">${item.stock}</span>
+              <span class="separator">/</span>
+              <span class="initial">${item.initial_stock}</span>
+            </span>
+          </div>
+
+          <!-- Barra di progresso -->
+          <div class="progress-wrapper">
+            <div class="progress-track">
+              <div class="progress-fill ${color}" style="width: ${pct}%"></div>
+            </div>
+            <span class="progress-pct">${pct}%</span>
+          </div>
+
+          <!-- Riga inferiore: soglia + pulsanti -->
+          <div class="inv-bottom">
+            <div class="threshold-group">
+              <span class="threshold-label">Soglia</span>
+              <input
+                type="number"
+                class="threshold-input"
+                value="${item.alert_threshold}"
+                min="0"
+                data-id="${item.id}"
+                onchange="updateThreshold('${item.id}', this.value)"
+              >
+            </div>
+
+            <div class="actions">
+              ${isExhausted ? `
+                <button class="act-btn reactivate" onclick="reactivateItem('${item.id}')">Riattiva</button>
+              ` : `
+                <button class="act-btn minus" onclick="adjustStock('${item.id}', -1)">-1</button>
+                <button class="act-btn plus" onclick="adjustStock('${item.id}', 1)">+1</button>
+                <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 10)">+10</button>
+                <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 50)">+50</button>
+                <button class="act-btn set" onclick="setExactStock('${item.id}')">Imposta</button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Renderizza tutta la lista
+    function renderAll() {
+      if (inventory.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">&#x1f4e6;</div>
+            <div class="empty-state-text">Nessun articolo in magazzino</div>
+          </div>
+        `;
+        return;
+      }
+      listEl.innerHTML = inventory.map(renderRow).join('');
+      applyFilter();
+    }
+
+    // Aggiorna una singola riga senza ri-renderizzare tutto
+    function updateRow(item) {
+      const rowEl = document.getElementById(`row-${item.id}`);
+      if (!rowEl) {
+        // Se la riga non esiste, ri-renderizza tutto
+        renderAll();
+        return;
+      }
+
+      const pct = stockPercent(item);
+      const color = barColor(item);
+      const badge = badgeInfo(item);
+      const isExhausted = item.status === 'exhausted' || item.stock <= 0;
+
+      rowEl.setAttribute('data-status', badge.cls);
+
+      // Aggiorna nome + badge + stock
+      rowEl.querySelector('.inv-name').textContent = item.name;
+      const badgeEl = rowEl.querySelector('.inv-badge');
+      badgeEl.textContent = badge.label;
+      badgeEl.className = `inv-badge ${badge.cls}`;
+
+      rowEl.querySelector('.inv-stock .current').textContent = item.stock;
+      rowEl.querySelector('.inv-stock .initial').textContent = item.initial_stock;
+
+      // Aggiorna barra di progresso
+      const fill = rowEl.querySelector('.progress-fill');
+      fill.style.width = `${pct}%`;
+      fill.className = `progress-fill ${color}`;
+      rowEl.querySelector('.progress-pct').textContent = `${pct}%`;
+
+      // Aggiorna soglia input
+      const thInput = rowEl.querySelector('.threshold-input');
+      if (document.activeElement !== thInput) {
+        thInput.value = item.alert_threshold;
+      }
+
+      // Aggiorna pulsanti azione
+      const actionsEl = rowEl.querySelector('.actions');
+      if (isExhausted) {
+        actionsEl.innerHTML = `
+          <button class="act-btn reactivate" onclick="reactivateItem('${item.id}')">Riattiva</button>
+        `;
+      } else {
+        actionsEl.innerHTML = `
+          <button class="act-btn minus" onclick="adjustStock('${item.id}', -1)">-1</button>
+          <button class="act-btn plus" onclick="adjustStock('${item.id}', 1)">+1</button>
+          <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 10)">+10</button>
+          <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 50)">+50</button>
+          <button class="act-btn set" onclick="setExactStock('${item.id}')">Imposta</button>
+        `;
+      }
+
+      // Applica il filtro alla riga aggiornata
+      applyFilterToRow(rowEl);
+    }
+
+    // Flash animazione sulla riga quando cambia lo stock
+    function flashRow(itemId, type) {
+      const row = document.getElementById(`row-${itemId}`);
+      if (!row) return;
+
+      const cls = type === 'danger' ? 'flash-danger' : type === 'warn' ? 'flash-warn' : 'flash';
+      row.classList.add(cls);
+      setTimeout(() => row.classList.remove(cls), 200);
+    }
+
+    // =============================================
+    //  FILTRI
+    // =============================================
+
+    function applyFilter() {
+      const rows = listEl.querySelectorAll('.inv-row');
+      rows.forEach(row => applyFilterToRow(row));
+    }
+
+    function applyFilterToRow(row) {
+      const status = row.getAttribute('data-status');
+      if (activeFilter === 'all') {
+        row.classList.remove('hidden');
+      } else if (activeFilter === 'low') {
+        row.classList.toggle('hidden', status !== 'low');
+      } else if (activeFilter === 'exhausted') {
+        row.classList.toggle('hidden', status !== 'exhausted');
+      }
+    }
+
+    // Gestione click sui filtri
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        applyFilter();
+      });
+    });
+
+    // =============================================
+    //  API CALLS
+    // =============================================
+
+    // Carica inventario dal server
+    async function loadInventory() {
+      try {
+        const res = await fetch('/api/inventory', { headers: apiHeaders() });
+        const data = await res.json();
+        inventory = data;
+        renderAll();
+      } catch (err) {
+        console.error('Errore caricamento inventario:', err);
+      }
+    }
+
+    // Trova un item nello stato locale per id
+    function findItem(id) {
+      return inventory.find(i => i.id === id);
+    }
+
+    // Aggiustamento rapido: +/- quantita'
+    async function adjustStock(id, delta) {
+      const item = findItem(id);
+      if (!item) return;
+
+      // Aggiornamento ottimistico: aggiorna subito la UI
+      item.stock = Math.max(0, item.stock + delta);
+      // Ricalcola lo status in base ai nuovi valori
+      if (item.stock <= 0) item.status = 'exhausted';
+      else if (item.stock <= item.alert_threshold) item.status = 'low';
+      else item.status = 'available';
+
+      updateRow(item);
+      flashRow(id, item.stock <= 0 ? 'danger' : item.stock <= item.alert_threshold ? 'warn' : 'ok');
+
+      try {
+        const res = await fetch(`/api/inventory/${id}/adjust`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ delta }),
+        });
+        const updated = await res.json();
+        // Sincronizza con la risposta del server
+        if (updated && updated.id) {
+          Object.assign(item, updated);
+          updateRow(item);
+        }
+      } catch (err) {
+        console.error('Errore adjust stock:', err);
+        // In caso di errore, ricarica dal server
+        loadInventory();
+      }
+    }
+
+    // Imposta un valore esatto di stock
+    async function setExactStock(id) {
+      const item = findItem(id);
+      if (!item) return;
+
+      const input = prompt(`Imposta scorta per "${item.name}":`, item.stock);
+      if (input === null) return;
+
+      const value = parseInt(input, 10);
+      if (isNaN(value) || value < 0) return;
+
+      // Aggiornamento ottimistico
+      item.stock = value;
+      if (item.stock <= 0) item.status = 'exhausted';
+      else if (item.stock <= item.alert_threshold) item.status = 'low';
+      else item.status = 'available';
+
+      updateRow(item);
+      flashRow(id, 'ok');
+
+      try {
+        await fetch(`/api/inventory/${id}`, {
+          method: 'PUT',
+          headers: apiHeaders(),
+          body: JSON.stringify({ stock: value }),
+        });
+      } catch (err) {
+        console.error('Errore set stock:', err);
+        loadInventory();
+      }
+    }
+
+    // Aggiorna la soglia di allarme
+    async function updateThreshold(id, newValue) {
+      const item = findItem(id);
+      if (!item) return;
+
+      const value = parseInt(newValue, 10);
+      if (isNaN(value) || value < 0) return;
+
+      item.alert_threshold = value;
+      // Ricalcola lo status
+      if (item.stock <= 0) item.status = 'exhausted';
+      else if (item.stock <= item.alert_threshold) item.status = 'low';
+      else item.status = 'available';
+
+      updateRow(item);
+
+      try {
+        await fetch(`/api/inventory/${id}`, {
+          method: 'PUT',
+          headers: apiHeaders(),
+          body: JSON.stringify({ alert_threshold: value }),
+        });
+      } catch (err) {
+        console.error('Errore update threshold:', err);
+        loadInventory();
+      }
+    }
+
+    // Riattiva un articolo esaurito
+    async function reactivateItem(id) {
+      const item = findItem(id);
+      if (!item) return;
+
+      const input = prompt(`Quanti "${item.name}" vuoi aggiungere?`, item.initial_stock);
+      if (input === null) return;
+
+      const value = parseInt(input, 10);
+      if (isNaN(value) || value <= 0) return;
+
+      if (!confirm(`Riattivare "${item.name}" con ${value} unita'?`)) return;
+
+      // Aggiornamento ottimistico
+      item.stock = value;
+      item.status = 'available';
+
+      updateRow(item);
+      flashRow(id, 'ok');
+
+      try {
+        await fetch(`/api/inventory/${id}`, {
+          method: 'PUT',
+          headers: apiHeaders(),
+          body: JSON.stringify({ stock: value, status: 'available' }),
+        });
+      } catch (err) {
+        console.error('Errore reactivate:', err);
+        loadInventory();
+      }
+    }
+
+    // Reset scorte a inizio serata
+    document.getElementById('btnReset').addEventListener('click', async () => {
+      if (!confirm('Vuoi resettare tutte le scorte ai valori iniziali? Questa azione non e\' reversibile.')) return;
+
+      try {
+        const res = await fetch('/api/inventory/reset', {
+          method: 'POST',
+          headers: apiHeaders(),
+        });
+        const data = await res.json();
+        if (data.success && data.inventory) {
+          inventory = data.inventory;
+          renderAll();
+        }
+      } catch (err) {
+        console.error('Errore reset:', err);
+        alert('Errore durante il reset delle scorte.');
+      }
+    });
+
+    // =============================================
+    //  SOCKET.IO — Aggiornamenti real-time
+    // =============================================
+
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const connDot = document.getElementById('connDot');
+    const connLabel = document.getElementById('connLabel');
+    const lostOverlay = document.getElementById('lostOverlay');
+
+    socket.on('connect', () => {
+      // Registra come admin per ricevere eventi specifici
+      socket.emit('register', { role: 'admin' });
+      connDot.classList.add('online');
+      connLabel.textContent = 'Online';
+      lostOverlay.classList.remove('visible');
+    });
+
+    socket.on('disconnect', () => {
+      connDot.classList.remove('online');
+      connLabel.textContent = 'Offline';
+      lostOverlay.classList.add('visible');
+    });
+
+    // Aggiornamento singolo item
+    socket.on('inventory_updated', (data) => {
+      if (!data || !data.item_id) return;
+
+      const item = findItem(data.item_id);
+      if (item) {
+        if (data.stock !== undefined) item.stock = data.stock;
+        if (data.status !== undefined) item.status = data.status;
+        // Ricalcola status se necessario
+        if (item.stock <= 0) item.status = 'exhausted';
+        else if (item.stock <= item.alert_threshold) item.status = 'low';
+        else item.status = item.status === 'exhausted' ? 'available' : item.status;
+
+        updateRow(item);
+        flashRow(data.item_id, item.stock <= 0 ? 'danger' : item.stock <= item.alert_threshold ? 'warn' : 'ok');
+      } else {
+        // Item sconosciuto: ricarica tutto
+        loadInventory();
+      }
+    });
+
+    // Reset completo dell'inventario
+    socket.on('inventory_reset', (newInventory) => {
+      if (Array.isArray(newInventory)) {
+        inventory = newInventory;
+        renderAll();
+      } else {
+        loadInventory();
+      }
+    });
+
+    // =============================================
+    //  INIT — Caricamento iniziale
+    // =============================================
+    loadInventory();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Report Serata</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060a12;
+      --card: #111827;
+      --border: #1e293b;
+      --green: #4ecca3;
+      --red: #e94560;
+      --yellow: #ffd93d;
+      --gray: #6c7a89;
+      --text: #e2e8f0;
+      --cyan: #22d3ee;
+      --text-dim: rgba(226, 232, 240, 0.45);
+      --text-mid: rgba(226, 232, 240, 0.65);
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
+        var(--bg);
+      padding: 0;
+    }
+
+    /* ===== LAYOUT CONTENITORE ===== */
+    .report-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ===== HEADER ===== */
+    .report-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--green);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+
+    .header-title span {
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    .header-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.03em;
+    }
+
+    .header-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .nav-link:hover {
+      border-color: rgba(78, 204, 163, 0.3);
+      color: var(--green);
+    }
+
+    /* ===== SEZIONE ===== */
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    /* ===== KPI ROW ===== */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .kpi-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 32px;
+      line-height: 1;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.cyan { color: var(--cyan); }
+
+    .kpi-unit {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      font-size: 16px;
+      color: var(--text-mid);
+      margin-left: 2px;
+    }
+
+    /* ===== GRID 2 COLONNE ===== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      margin-bottom: 14px;
+    }
+
+    /* ===== TABELLE INCASSI ===== */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .summary-table tr {
+      border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+    }
+
+    .summary-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .summary-table td {
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .summary-table td:first-child {
+      color: var(--text-mid);
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .summary-table td:last-child {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    /* ===== CLASSIFICA VENDITE ===== */
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ranking-item {
+      display: grid;
+      grid-template-columns: 36px 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.01);
+      transition: background 150ms ease;
+    }
+
+    .ranking-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .ranking-rank {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    /* Podio: oro, argento, bronzo */
+    .ranking-item.rank-1 {
+      background: rgba(255, 217, 61, 0.04);
+      border: 1px solid rgba(255, 217, 61, 0.12);
+    }
+    .ranking-item.rank-1 .ranking-rank { color: #ffd93d; }
+
+    .ranking-item.rank-2 {
+      background: rgba(192, 192, 210, 0.03);
+      border: 1px solid rgba(192, 192, 210, 0.1);
+    }
+    .ranking-item.rank-2 .ranking-rank { color: #c0c0d2; }
+
+    .ranking-item.rank-3 {
+      background: rgba(205, 127, 50, 0.03);
+      border: 1px solid rgba(205, 127, 50, 0.1);
+    }
+    .ranking-item.rank-3 .ranking-rank { color: #cd7f32; }
+
+    .ranking-name {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .ranking-qty {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--cyan);
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .ranking-revenue {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-dim);
+      min-width: 70px;
+      text-align: right;
+    }
+
+    /* ===== GRAFICO ORARIO (CSS bars) ===== */
+    .chart-container {
+      padding: 8px 0;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 180px;
+      padding: 0 4px;
+    }
+
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--cyan);
+    }
+
+    .bar {
+      width: 100%;
+      max-width: 48px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, var(--cyan) 0%, rgba(34, 211, 238, 0.5) 100%);
+      min-height: 2px;
+      transition: height 400ms ease;
+    }
+
+    .bar-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .chart-axis {
+      border-top: 1px solid var(--border);
+      margin-top: 0;
+    }
+
+    /* ===== TABELLA MAGAZZINO ===== */
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .inv-table thead th {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 0 0 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .inv-table thead th:not(:first-child) {
+      text-align: right;
+    }
+
+    .inv-table tbody tr {
+      border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+    }
+
+    .inv-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .inv-table tbody tr.exhausted-row {
+      background: rgba(233, 69, 96, 0.06);
+    }
+
+    .inv-table td {
+      padding: 10px 0;
+      font-size: 14px;
+    }
+
+    .inv-table td:not(:first-child) {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-mid);
+    }
+
+    .inv-table td:first-child {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .status-dot.available { background: var(--green); box-shadow: 0 0 6px rgba(78, 204, 163, 0.4); }
+    .status-dot.low { background: var(--yellow); box-shadow: 0 0 6px rgba(255, 217, 61, 0.4); }
+    .status-dot.exhausted { background: var(--red); box-shadow: 0 0 6px rgba(233, 69, 96, 0.4); }
+
+    .status-text {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .status-text.available { color: var(--green); }
+    .status-text.low { color: var(--yellow); }
+    .status-text.exhausted { color: var(--red); }
+
+    /* ===== ANOMALIE ===== */
+    .anomaly-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 28px;
+      color: var(--green);
+    }
+
+    .anomaly-count.has-issues {
+      color: var(--red);
+    }
+
+    .anomaly-label {
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-top: 2px;
+      margin-bottom: 14px;
+    }
+
+    .anomaly-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .anomaly-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: rgba(233, 69, 96, 0.06);
+      border: 1px solid rgba(233, 69, 96, 0.12);
+      font-size: 13px;
+    }
+
+    .anomaly-item .order-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--red);
+    }
+
+    .anomaly-item .order-info {
+      color: var(--text-mid);
+    }
+
+    .anomaly-item .order-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ===== PULSANTE EXPORT ===== */
+    .export-row {
+      display: flex;
+      justify-content: center;
+      padding-top: 8px;
+    }
+
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      background: transparent;
+      border: 1px solid var(--green);
+      border-radius: 8px;
+      color: var(--green);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-export:hover {
+      background: rgba(78, 204, 163, 0.1);
+      box-shadow: 0 0 20px rgba(78, 204, 163, 0.1);
+    }
+
+    .btn-export:active {
+      transform: scale(0.97);
+    }
+
+    .btn-export svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* ===== LOADING / ERROR ===== */
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 60vh;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 800ms linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .error-state .error-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .error-state .error-msg {
+      font-size: 14px;
+      color: var(--red);
+      margin-bottom: 16px;
+    }
+
+    .error-state .retry-btn {
+      padding: 8px 20px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .empty-msg {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-style: italic;
+      padding: 12px 0;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .report-wrap { padding: 16px 12px 48px; }
+      .kpi-row { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .kpi-value { font-size: 28px; }
+      .report-header { flex-direction: column; align-items: flex-start; }
+      .ranking-item { grid-template-columns: 30px 1fr auto; }
+      .ranking-revenue { display: none; }
+      .bar-chart { height: 140px; }
+      .inv-table { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Stato di caricamento iniziale -->
+  <div class="report-wrap" id="loadingWrap">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text">Caricamento report...</div>
+    </div>
+  </div>
+
+  <!-- Contenuto report (nascosto finche' i dati non arrivano) -->
+  <div class="report-wrap" id="reportWrap" style="display: none;">
+
+    <!-- HEADER -->
+    <header class="report-header">
+      <div>
+        <div class="header-left">
+          <div class="logo-mark">S</div>
+          <div class="header-title">SagrApp <span>— Report Serata</span></div>
+        </div>
+        <div class="header-date" id="reportDate"></div>
+      </div>
+      <nav class="header-nav">
+        <a href="/admin" class="nav-link">Admin LIVE</a>
+        <a href="/" class="nav-link">Test Hardware</a>
+      </nav>
+    </header>
+
+    <!-- 1. KPI -->
+    <section class="section">
+      <div class="section-label">Indicatori chiave</div>
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Totale ordini</div>
+          <div class="kpi-value" id="kpiOrders">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Incasso totale</div>
+          <div class="kpi-value green" id="kpiRevenue">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Tempo medio evasione</div>
+          <div class="kpi-value cyan" id="kpiAvgTime">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. RIEPILOGO INCASSI -->
+    <section class="section">
+      <div class="section-label">Riepilogo incassi</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Per cassa</div>
+          <table class="summary-table" id="tableCassa"><tbody></tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-title">Per pagamento</div>
+          <table class="summary-table" id="tablePayment"><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CLASSIFICA VENDITE -->
+    <section class="section">
+      <div class="section-label">Classifica vendite</div>
+      <div class="card">
+        <div class="ranking-list" id="rankingList"></div>
+      </div>
+    </section>
+
+    <!-- 4. DISTRIBUZIONE ORARIA -->
+    <section class="section">
+      <div class="section-label">Distribuzione oraria</div>
+      <div class="card">
+        <div class="chart-container">
+          <div class="bar-chart" id="barChart"></div>
+          <div class="chart-axis"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. MAGAZZINO -->
+    <section class="section">
+      <div class="section-label">Magazzino</div>
+      <div class="card">
+        <table class="inv-table" id="invTable">
+          <thead>
+            <tr>
+              <th>Piatto</th>
+              <th>Scorta iniziale</th>
+              <th>Venduto</th>
+              <th>Rimanente</th>
+              <th>Stato</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. ANOMALIE -->
+    <section class="section">
+      <div class="section-label">Anomalie</div>
+      <div class="card" id="anomalyCard">
+        <!-- Popolato via JS -->
+      </div>
+    </section>
+
+    <!-- 7. EXPORT -->
+    <section class="section">
+      <div class="export-row">
+        <button class="btn-export" id="btnExport" title="Scarica il report completo in formato CSV">
+          <!-- Icona download SVG inline -->
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Esporta CSV
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // ===================================================
+    // AUTH: verifica token admin salvato in sessionStorage
+    // ===================================================
+    const TOKEN = sessionStorage.getItem('admin_token');
+
+    (async function checkAuth() {
+      if (!TOKEN) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      try {
+        const res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        const data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+          return;
+        }
+        // Token valido, carica i dati
+        loadRecap();
+      } catch {
+        // Se il server non risponde, prova comunque
+        loadRecap();
+      }
+    })();
+
+    // ===================================================
+    // HELPERS: formattazione valuta e tempo
+    // ===================================================
+
+    // Formatta un numero come valuta italiana con separatore migliaia
+    function formatCurrency(amount) {
+      return amount.toLocaleString('it-IT', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+
+    // Converte i secondi in stringa "Xm XXs"
+    function formatTime(seconds) {
+      if (!seconds || seconds <= 0) return '—';
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      if (m === 0) return s + 's';
+      return m + 'm ' + String(s).padStart(2, '0') + 's';
+    }
+
+    // Data corrente formattata in italiano
+    function formatDate() {
+      const now = new Date();
+      return now.toLocaleDateString('it-IT', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+
+    // Mappa lo stato del magazzino nella label italiana
+    function statusLabel(status) {
+      const map = { available: 'Disponibile', low: 'In esaurimento', exhausted: 'Esaurito' };
+      return map[status] || status;
+    }
+
+    // ===================================================
+    // CARICAMENTO DATI
+    // ===================================================
+    let recapData = null; // Salva i dati per l'export CSV
+
+    async function loadRecap() {
+      try {
+        const res = await fetch('/api/admin/stats/recap', {
+          headers: { 'X-Admin-Token': TOKEN },
+        });
+
+        if (!res.ok) throw new Error('Errore ' + res.status);
+
+        recapData = await res.json();
+        renderReport(recapData);
+      } catch (err) {
+        document.getElementById('loadingWrap').innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">!</div>
+            <div class="error-msg">Impossibile caricare il report: ${err.message}</div>
+            <button class="retry-btn" onclick="location.reload()">Riprova</button>
+          </div>
+        `;
+      }
+    }
+
+    // ===================================================
+    // RENDERING COMPLETO
+    // ===================================================
+    function renderReport(data) {
+      // Mostra il report, nasconde il loading
+      document.getElementById('loadingWrap').style.display = 'none';
+      document.getElementById('reportWrap').style.display = 'block';
+
+      // Data nell'header
+      document.getElementById('reportDate').textContent = formatDate();
+
+      // --- KPI ---
+      document.getElementById('kpiOrders').textContent = data.totalOrders.toLocaleString('it-IT');
+      document.getElementById('kpiRevenue').innerHTML =
+        '<span class="kpi-unit">&euro;</span>' + formatCurrency(data.totalRevenue);
+      document.getElementById('kpiAvgTime').textContent = formatTime(data.avgCompletionTime);
+
+      // --- Incassi per cassa ---
+      renderSummaryTable('tableCassa', data.revenueByCassa);
+
+      // --- Incassi per pagamento ---
+      renderSummaryTable('tablePayment', data.revenueByPayment);
+
+      // --- Classifica vendite ---
+      renderRanking(data.salesRanking);
+
+      // --- Distribuzione oraria ---
+      renderBarChart(data.ordersByHour);
+
+      // --- Magazzino ---
+      renderInventory(data.inventoryReport);
+
+      // --- Anomalie ---
+      renderAnomalies(data.incompleteOrders, data.incompleteDetails);
+
+      // --- Export ---
+      document.getElementById('btnExport').addEventListener('click', function () {
+        exportCSV(data);
+      });
+    }
+
+    // ===================================================
+    // RENDER: tabella riepilogativa (cassa / pagamento)
+    // ===================================================
+    function renderSummaryTable(tableId, obj) {
+      const tbody = document.querySelector('#' + tableId + ' tbody');
+      // Se l'oggetto e' vuoto, mostra messaggio
+      const entries = Object.entries(obj || {});
+      if (entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" class="empty-msg">Nessun dato</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = entries.map(function (entry) {
+        return '<tr><td>' + entry[0] + '</td><td>&euro; ' + formatCurrency(entry[1]) + '</td></tr>';
+      }).join('');
+    }
+
+    // ===================================================
+    // RENDER: classifica vendite
+    // ===================================================
+    function renderRanking(salesRanking) {
+      const list = document.getElementById('rankingList');
+
+      if (!salesRanking || salesRanking.length === 0) {
+        list.innerHTML = '<div class="empty-msg">Nessuna vendita registrata</div>';
+        return;
+      }
+
+      list.innerHTML = salesRanking.map(function (item, i) {
+        var rank = i + 1;
+        // Classe speciale per il podio (top 3)
+        var rankClass = rank <= 3 ? ' rank-' + rank : '';
+        return '<div class="ranking-item' + rankClass + '">' +
+          '<div class="ranking-rank">' + rank + '</div>' +
+          '<div class="ranking-name">' + item.name + '</div>' +
+          '<div class="ranking-qty">' + item.qty + ' pz</div>' +
+          '<div class="ranking-revenue">&euro; ' + formatCurrency(item.revenue) + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    // ===================================================
+    // RENDER: grafico a barre orario (CSS puro)
+    // ===================================================
+    function renderBarChart(ordersByHour) {
+      var chart = document.getElementById('barChart');
+
+      if (!ordersByHour || Object.keys(ordersByHour).length === 0) {
+        chart.innerHTML = '<div class="empty-msg" style="margin: auto;">Nessun dato orario</div>';
+        return;
+      }
+
+      // Determina l'intervallo di ore da mostrare (tipicamente 18-24)
+      var allHours = Object.keys(ordersByHour).map(Number);
+      var minH = Math.min.apply(null, allHours);
+      var maxH = Math.max.apply(null, allHours);
+
+      // Crea array continuo dall'ora minima alla massima
+      var hours = [];
+      for (var h = minH; h <= maxH; h++) {
+        hours.push(h);
+      }
+
+      // Trova il valore massimo per la proporzione
+      var maxCount = 0;
+      hours.forEach(function (h) {
+        var count = ordersByHour[h] || 0;
+        if (count > maxCount) maxCount = count;
+      });
+      if (maxCount === 0) maxCount = 1; // Previene divisione per zero
+
+      chart.innerHTML = hours.map(function (h) {
+        var count = ordersByHour[h] || 0;
+        // Altezza proporzionale (minimo 2px per le barre a zero)
+        var heightPercent = (count / maxCount) * 100;
+        var heightPx = Math.max(2, Math.round(heightPercent * 1.6));
+        var hourLabel = String(h).padStart(2, '0') + ':00';
+
+        return '<div class="bar-col">' +
+          '<div class="bar-count">' + (count > 0 ? count : '') + '</div>' +
+          '<div class="bar" style="height: ' + heightPx + 'px;"></div>' +
+          '<div class="bar-label">' + hourLabel + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    // ===================================================
+    // RENDER: tabella magazzino
+    // ===================================================
+    function renderInventory(inventoryReport) {
+      var tbody = document.querySelector('#invTable tbody');
+
+      if (!inventoryReport || inventoryReport.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Nessun dato magazzino</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = inventoryReport.map(function (item) {
+        var rowClass = item.status === 'exhausted' ? ' class="exhausted-row"' : '';
+        return '<tr' + rowClass + '>' +
+          '<td>' + item.name + '</td>' +
+          '<td>' + item.initial_stock + '</td>' +
+          '<td>' + item.sold + '</td>' +
+          '<td>' + item.remaining + '</td>' +
+          '<td>' +
+            '<span class="status-dot ' + item.status + '"></span>' +
+            '<span class="status-text ' + item.status + '">' + statusLabel(item.status) + '</span>' +
+          '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    // ===================================================
+    // RENDER: anomalie (ordini incompleti)
+    // ===================================================
+    function renderAnomalies(count, details) {
+      var card = document.getElementById('anomalyCard');
+
+      var hasIssues = count > 0;
+      var html = '<div class="anomaly-count ' + (hasIssues ? 'has-issues' : '') + '">' + count + '</div>' +
+        '<div class="anomaly-label">Ordini incompleti</div>';
+
+      if (hasIssues && details && details.length > 0) {
+        html += '<div class="anomaly-list">';
+        details.forEach(function (order) {
+          var itemNames = (order.items || []).map(function (i) { return i.name; }).join(', ');
+          html += '<div class="anomaly-item">' +
+            '<span class="order-id">#' + order.id + '</span>' +
+            '<span class="order-info">Tav.' + order.table + ' — ' + itemNames + '</span>' +
+            '<span class="order-total">&euro; ' + formatCurrency(order.total) + '</span>' +
+            '</div>';
+        });
+        html += '</div>';
+      } else if (!hasIssues) {
+        html += '<div class="empty-msg">Nessuna anomalia rilevata. Tutti gli ordini sono stati completati.</div>';
+      }
+
+      card.innerHTML = html;
+    }
+
+    // ===================================================
+    // EXPORT CSV
+    // ===================================================
+    function exportCSV(data) {
+      var lines = [];
+      var today = new Date().toISOString().slice(0, 10);
+
+      // Sezione 1: Riepilogo generale
+      lines.push('=== RIEPILOGO GENERALE ===');
+      lines.push('Totale Ordini,' + data.totalOrders);
+      lines.push('Incasso Totale,"' + formatCurrency(data.totalRevenue) + '"');
+      lines.push('Tempo Medio Evasione (s),' + data.avgCompletionTime);
+      lines.push('Ordini Incompleti,' + data.incompleteOrders);
+      lines.push('');
+
+      // Sezione 2: Incassi per cassa
+      lines.push('=== INCASSI PER CASSA ===');
+      lines.push('Cassa,Importo');
+      Object.entries(data.revenueByCassa || {}).forEach(function (entry) {
+        lines.push(entry[0] + ',"' + formatCurrency(entry[1]) + '"');
+      });
+      lines.push('');
+
+      // Sezione 3: Incassi per pagamento
+      lines.push('=== INCASSI PER PAGAMENTO ===');
+      lines.push('Metodo,Importo');
+      Object.entries(data.revenueByPayment || {}).forEach(function (entry) {
+        lines.push(entry[0] + ',"' + formatCurrency(entry[1]) + '"');
+      });
+      lines.push('');
+
+      // Sezione 4: Classifica vendite
+      lines.push('=== CLASSIFICA VENDITE ===');
+      lines.push('Posizione,Piatto,Quantita,Incasso');
+      (data.salesRanking || []).forEach(function (item, i) {
+        lines.push((i + 1) + ',' + item.name + ',' + item.qty + ',"' + formatCurrency(item.revenue) + '"');
+      });
+      lines.push('');
+
+      // Sezione 5: Distribuzione oraria
+      lines.push('=== DISTRIBUZIONE ORARIA ===');
+      lines.push('Ora,Ordini');
+      Object.entries(data.ordersByHour || {}).sort(function (a, b) {
+        return Number(a[0]) - Number(b[0]);
+      }).forEach(function (entry) {
+        lines.push(entry[0] + ':00,' + entry[1]);
+      });
+      lines.push('');
+
+      // Sezione 6: Report magazzino
+      lines.push('=== REPORT MAGAZZINO ===');
+      lines.push('Piatto,Scorta Iniziale,Venduto,Rimanente,Stato');
+      (data.inventoryReport || []).forEach(function (item) {
+        lines.push(item.name + ',' + item.initial_stock + ',' + item.sold + ',' + item.remaining + ',' + statusLabel(item.status));
+      });
+
+      // Genera e scarica il file
+      var csvContent = lines.join('\n');
+      var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM UTF-8 per Excel
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'sagrapp_report_' + today + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

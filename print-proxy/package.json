@@ -1,0 +1,14 @@
+{
+  "name": "sagrapp-print-proxy",
+  "version": "1.0.0",
+  "description": "Print proxy locale — inoltra comandi stampa alle stampanti LAN/USB",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js cloud",
+    "cloud": "node index.js cloud",
+    "local": "node index.js local"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7"
+  }
+}

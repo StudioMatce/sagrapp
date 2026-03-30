@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Test Hardware</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep: #060a12;
+      --bg-base: #0a0e17;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2332;
+      --border: #1e293b;
+      --border-active: #334155;
+      --green: #4ecca3;
+      --green-dim: rgba(78, 204, 163, 0.15);
+      --red: #e94560;
+      --red-dim: rgba(233, 69, 96, 0.15);
+      --yellow: #ffd93d;
+      --yellow-dim: rgba(255, 217, 61, 0.15);
+      --gray: #6c7a89;
+      --gray-dim: rgba(108, 122, 137, 0.15);
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --cyan: #22d3ee;
+    }
+
+    html { font-size: 15px; }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      /* Griglia sottile da control room */
+      background-image:
+        linear-gradient(rgba(78, 204, 163, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(78, 204, 163, 0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* ===== TOP BAR ===== */
+    .topbar {
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .topbar-logo {
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .topbar-logo .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--green);
+      color: var(--bg-deep);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .topbar-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .connection-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: all 200ms ease;
+    }
+
+    .connection-badge.online {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(78, 204, 163, 0.2);
+    }
+
+    .connection-badge.offline {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(233, 69, 96, 0.2);
+    }
+
+    /* ===== LED INDICATOR ===== */
+    .led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: all 200ms ease;
+    }
+
+    .led.green {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green), 0 0 12px rgba(78, 204, 163, 0.3);
+    }
+
+    .led.red {
+      background: var(--red);
+      box-shadow: 0 0 6px var(--red), 0 0 12px rgba(233, 69, 96, 0.3);
+    }
+
+    .led.yellow {
+      background: var(--yellow);
+      box-shadow: 0 0 6px var(--yellow);
+    }
+
+    .led.gray {
+      background: var(--gray);
+      box-shadow: none;
+    }
+
+    .led.pulse {
+      animation: led-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes led-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 200ms ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-active);
+    }
+
+    .card-header {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .card-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title .tag {
+      font-size: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    /* ===== STATUS ROW (per rete, stampanti) ===== */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .status-row:last-child { border-bottom: none; }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .status-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .status-detail {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    .status-label.online { color: var(--green); }
+    .status-label.offline { color: var(--red); }
+    .status-label.unknown { color: var(--gray); }
+    .status-label.testing { color: var(--yellow); }
+
+    .status-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-base);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 200ms ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-active);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn.btn-test {
+      background: rgba(78, 204, 163, 0.08);
+      border-color: rgba(78, 204, 163, 0.25);
+      color: var(--green);
+    }
+
+    .btn.btn-test:hover {
+      background: rgba(78, 204, 163, 0.15);
+      border-color: var(--green);
+    }
+
+    .btn.btn-test.firing {
+      background: var(--green);
+      color: var(--bg-deep);
+      border-color: var(--green);
+    }
+
+    .btn.btn-test.error {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+
+    .btn.btn-link {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--cyan);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn.btn-link:hover {
+      background: rgba(34, 211, 238, 0.06);
+      border-color: rgba(34, 211, 238, 0.3);
+    }
+
+    .btn-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    /* ===== FULL TEST BUTTON ===== */
+    .full-test-wrap {
+      padding: 0.25rem;
+    }
+
+    .btn-full-test {
+      width: 100%;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+      padding: 1rem 1.5rem;
+      border-radius: 6px;
+      border: 2px solid var(--green);
+      background: rgba(78, 204, 163, 0.06);
+      color: var(--green);
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-full-test:hover {
+      background: rgba(78, 204, 163, 0.12);
+      box-shadow: 0 0 30px rgba(78, 204, 163, 0.1);
+    }
+
+    .btn-full-test:active {
+      transform: scale(0.99);
+    }
+
+    .btn-full-test.running {
+      border-color: var(--yellow);
+      color: var(--yellow);
+      background: rgba(255, 217, 61, 0.06);
+      cursor: wait;
+    }
+
+    .btn-full-test .play-icon {
+      font-size: 1.1rem;
+    }
+
+    /* ===== TEST REPORT ===== */
+    .test-report {
+      display: none;
+    }
+
+    .test-report.visible {
+      display: block;
+    }
+
+    .report-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.85rem;
+    }
+
+    .report-item:last-child { border-bottom: none; }
+
+    .report-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .report-icon.pass {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(78, 204, 163, 0.3);
+    }
+
+    .report-icon.fail {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(233, 69, 96, 0.3);
+    }
+
+    .report-icon.skip {
+      background: var(--gray-dim);
+      color: var(--gray);
+      border: 1px solid rgba(108, 122, 137, 0.3);
+    }
+
+    .report-icon.wait {
+      background: var(--yellow-dim);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 217, 61, 0.3);
+    }
+
+    .report-label {
+      flex: 1;
+    }
+
+    .report-detail {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .report-summary {
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .report-summary.all-pass {
+      background: var(--green-dim);
+      border: 1px solid rgba(78, 204, 163, 0.2);
+      color: var(--green);
+    }
+
+    .report-summary.has-fail {
+      background: var(--red-dim);
+      border: 1px solid rgba(233, 69, 96, 0.2);
+      color: var(--red);
+    }
+
+    /* ===== PRINTER ROW ===== */
+    .printer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      gap: 0.75rem;
+    }
+
+    .printer-row:last-child { border-bottom: none; }
+
+    .printer-info {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .printer-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .printer-meta {
+      min-width: 0;
+    }
+
+    .printer-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .printer-conn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+    }
+
+    .printer-status {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== INFO BOX ===== */
+    .info-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      margin-top: 0.65rem;
+    }
+
+    .info-box .highlight {
+      color: var(--cyan);
+      font-weight: 500;
+    }
+
+    /* ===== FLASH animation per aggiornamenti ===== */
+    .flash {
+      animation: status-flash 500ms ease;
+    }
+
+    @keyframes status-flash {
+      0% { background: rgba(78, 204, 163, 0.15); }
+      100% { background: transparent; }
+    }
+
+    .flash-red {
+      animation: status-flash-red 500ms ease;
+    }
+
+    @keyframes status-flash-red {
+      0% { background: rgba(233, 69, 96, 0.15); }
+      100% { background: transparent; }
+    }
+
+    /* ===== TWO-COL GRID ===== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 700px) {
+      .main { padding: 1rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .printer-row { flex-wrap: wrap; }
+      .topbar { padding: 0.5rem 1rem; }
+      .topbar-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <span class="icon">S</span>
+        SagrApp
+      </div>
+      <div class="topbar-divider"></div>
+      <span class="topbar-label">Test Hardware</span>
+    </div>
+    <div id="connBadge" class="connection-badge offline">
+      <span class="led red" id="connLed"></span>
+      <span id="connText">Connessione...</span>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- RETE -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">RETE <span class="tag" style="background:var(--cyan);color:var(--bg-deep);">CONNETTIVIT&Agrave;</span></span>
+      </div>
+      <div class="card-body">
+        <div class="status-row">
+          <div class="status-left">
+            <span class="led gray" id="ledServer"></span>
+            <div>
+              <div class="status-name">Server cloud</div>
+              <div class="status-detail" id="serverPing">—</div>
+            </div>
+          </div>
+          <div class="status-right">
+            <span class="status-label unknown" id="serverStatus">In attesa</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <div class="status-left">
+            <span class="led gray" id="ledProxy"></span>
+            <div>
+              <div class="status-name">Print proxy</div>
+              <div class="status-detail">Client locale (PC cassa)</div>
+            </div>
+          </div>
+          <div class="status-right">
+            <span class="status-label unknown" id="proxyStatus">In attesa</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAMPANTI -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">STAMPANTI <span class="tag" style="background:var(--yellow);color:var(--bg-deep);">HARDWARE</span></span>
+        <span class="status-time" id="printerLastCheck">Nessun check</span>
+      </div>
+      <div class="card-body" id="printerList">
+        <!-- Generato da JS -->
+      </div>
+    </section>
+
+    <!-- MONITOR + PASSA-PIATTI (griglia 2 colonne) -->
+    <div class="grid-2">
+
+      <!-- MONITOR CUOCHI -->
+      <section class="card">
+        <div class="card-header">
+          <span class="card-title">MONITOR CUOCHI</span>
+          <span class="led gray" id="ledMonitor"></span>
+        </div>
+        <div class="card-body">
+          <div class="status-row">
+            <div class="status-left">
+              <div>
+                <div class="status-name">TV Griglia</div>
+                <div class="status-detail" id="monitorDetail">Non connesso</div>
+              </div>
+            </div>
+            <span class="status-label unknown" id="monitorStatus">Offline</span>
+          </div>
+          <div class="btn-actions" style="margin-top:0.75rem;">
+            <a href="/monitor" target="_blank" class="btn btn-link">Apri monitor &nearr;</a>
+            <button class="btn btn-test" id="btnTestMonitor">Invia dato test</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PASSA-PIATTI -->
+      <section class="card">
+        <div class="card-header">
+          <span class="card-title">TABLET PASSA-PIATTI</span>
+          <span class="led gray" id="ledPassapiatti"></span>
+        </div>
+        <div class="card-body">
+          <div class="status-row">
+            <div class="status-left">
+              <div>
+                <div class="status-name">Scalda vivande</div>
+                <div class="status-detail" id="passapiattiDetail">Non connesso</div>
+              </div>
+            </div>
+            <span class="status-label unknown" id="passapiattiStatus">Offline</span>
+          </div>
+          <div class="btn-actions" style="margin-top:0.75rem;">
+            <a href="/passapiatti" target="_blank" class="btn btn-link">Apri passa-piatti &nearr;</a>
+          </div>
+          <div class="info-box" id="lastTapInfo" style="display:none;">
+            Ultimo tap: <span class="highlight" id="lastTapText">—</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- LETTORE BARCODE -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">LETTORE BARCODE <span class="tag" style="background:var(--green);color:var(--bg-deep);">BLUETOOTH</span></span>
+        <span class="led gray" id="ledBarcode"></span>
+      </div>
+      <div class="card-body">
+        <div class="status-row">
+          <div class="status-left">
+            <div>
+              <div class="status-name">Scanner BT &rarr; tastiera</div>
+              <div class="status-detail">Scansiona un codice per testare</div>
+            </div>
+          </div>
+          <div class="status-right">
+            <span class="status-label unknown" id="barcodeStatus">In attesa</span>
+          </div>
+        </div>
+        <div class="btn-actions" style="margin-top:0.75rem;">
+          <button class="btn btn-test" id="btnBarcodeTest">Stampa barcode test</button>
+        </div>
+        <div class="info-box" id="lastBarcodeInfo" style="display:none;">
+          Ultimo barcode: <span class="highlight" id="lastBarcodeText">—</span>
+          <span id="lastBarcodeTime" style="margin-left:0.5rem;">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEST COMPLETO -->
+    <section class="full-test-wrap">
+      <button class="btn-full-test" id="btnFullTest">
+        <span class="play-icon">&#9654;</span>
+        ESEGUI TEST COMPLETO
+      </button>
+    </section>
+
+    <!-- REPORT TEST -->
+    <section class="card test-report" id="testReport">
+      <div class="card-header">
+        <span class="card-title">REPORT TEST</span>
+        <span class="status-time" id="reportTime">—</span>
+      </div>
+      <div class="card-body" id="reportBody">
+        <!-- Generato da JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // =============================================
+    // STATO GLOBALE
+    // =============================================
+    const state = {
+      connected: false,
+      pingMs: null,
+      proxyOnline: false,
+      monitorOnline: false,
+      passapiattiOnline: false,
+      printers: [
+        { id: 1, name: 'Custom (Ricevuta cassa)', type: 'usb', conn: 'USB', online: false, lastCheck: null },
+        { id: 2, name: 'vretti (Comanda cibo)', type: 'lan', conn: '192.168.1.202:9100', online: false, lastCheck: null },
+        { id: 3, name: 'Fuhuihe (Comanda bev.)', type: 'lan', conn: '192.168.1.204:9100', online: false, lastCheck: null },
+      ],
+      lastBarcode: null,
+      lastBarcodeTime: null,
+      lastTap: null,
+      lastTapTime: null,
+      printJobs: {},       // job_id -> { resolve, reject, timeout }
+      fullTestRunning: false,
+    };
+
+    // =============================================
+    // SOCKET.IO
+    // =============================================
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    socket.on('connect', () => {
+      state.connected = true;
+      socket.emit('register', { role: 'dashboard' });
+      updateConnectionUI();
+      measurePing();
+    });
+
+    socket.on('disconnect', () => {
+      state.connected = false;
+      state.pingMs = null;
+      updateConnectionUI();
+    });
+
+    // Stato dispositivi connessi
+    socket.on('device_status', ({ devices }) => {
+      state.proxyOnline = (devices.proxy || 0) > 0;
+      state.monitorOnline = (devices.monitor || 0) > 0;
+      state.passapiattiOnline = (devices.passapiatti || 0) > 0;
+      updateNetworkUI();
+      updateDevicesUI();
+    });
+
+    // Stato stampanti (dal proxy)
+    socket.on('printers_status_update', (statuses) => {
+      statuses.forEach(({ id, online }) => {
+        const p = state.printers.find(pr => pr.id === id);
+        if (p) {
+          p.online = online;
+          p.lastCheck = Date.now();
+        }
+      });
+      updatePrintersUI();
+    });
+
+    // Risultato stampa
+    socket.on('print_result', ({ job_id, success, error }) => {
+      const job = state.printJobs[job_id];
+      if (job) {
+        clearTimeout(job.timeout);
+        if (success) job.resolve();
+        else job.reject(new Error(error || 'Errore stampa'));
+        delete state.printJobs[job_id];
+      }
+    });
+
+    // Barcode ricevuto
+    socket.on('barcode_received', ({ code, timestamp }) => {
+      state.lastBarcode = code;
+      state.lastBarcodeTime = timestamp;
+      updateBarcodeUI();
+    });
+
+    // Contatori aggiornati (dal passa-piatti)
+    socket.on('counters_changed', ({ counters }) => {
+      // Trova quale contatore è cambiato (per il "ultimo tap")
+      if (state._prevCounters) {
+        for (const [key, val] of Object.entries(counters)) {
+          const prev = state._prevCounters[key] || 0;
+          if (val !== prev) {
+            const delta = val - prev;
+            state.lastTap = `${key} ${delta > 0 ? '+' : ''}${delta}`;
+            state.lastTapTime = Date.now();
+            updateLastTapUI();
+          }
+        }
+      }
+      state._prevCounters = { ...counters };
+    });
+
+    // =============================================
+    // PING
+    // =============================================
+    function measurePing() {
+      const start = Date.now();
+      fetch('/api/health')
+        .then(r => r.json())
+        .then(() => {
+          state.pingMs = Date.now() - start;
+          updateConnectionUI();
+          updateNetworkUI();
+        })
+        .catch(() => {
+          state.pingMs = null;
+        });
+    }
+
+    // Ping + check stampanti ogni 5 secondi
+    setInterval(() => {
+      if (state.connected) {
+        measurePing();
+        socket.emit('request_printer_check');
+      }
+    }, 5000);
+
+    // =============================================
+    // BARCODE KEYBOARD BUFFER
+    // =============================================
+    let barcodeBuffer = '';
+    let barcodeTimeout = null;
+
+    document.addEventListener('keypress', (e) => {
+      // Ignora se l'utente sta scrivendo in un input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Enter') {
+        if (barcodeBuffer.length > 0) {
+          // Invia il codice scansionato al server
+          socket.emit('barcode_scanned', { code: barcodeBuffer });
+          state.lastBarcode = barcodeBuffer;
+          state.lastBarcodeTime = Date.now();
+          updateBarcodeUI();
+          barcodeBuffer = '';
+        }
+      } else {
+        barcodeBuffer += e.key;
+        clearTimeout(barcodeTimeout);
+        barcodeTimeout = setTimeout(() => { barcodeBuffer = ''; }, 100);
+      }
+    });
+
+    // =============================================
+    // UI UPDATES
+    // =============================================
+
+    function updateConnectionUI() {
+      const badge = document.getElementById('connBadge');
+      const led = document.getElementById('connLed');
+      const text = document.getElementById('connText');
+
+      if (state.connected) {
+        badge.className = 'connection-badge online';
+        led.className = 'led green pulse';
+        text.textContent = state.pingMs !== null
+          ? `Connesso (${state.pingMs}ms)`
+          : 'Connesso';
+      } else {
+        badge.className = 'connection-badge offline';
+        led.className = 'led red';
+        text.textContent = 'Disconnesso';
+      }
+    }
+
+    function updateNetworkUI() {
+      // Server
+      const ledServer = document.getElementById('ledServer');
+      const serverStatus = document.getElementById('serverStatus');
+      const serverPing = document.getElementById('serverPing');
+
+      if (state.connected) {
+        ledServer.className = 'led green pulse';
+        serverStatus.className = 'status-label online';
+        serverStatus.textContent = 'Online';
+        serverPing.textContent = state.pingMs !== null ? `Ping: ${state.pingMs}ms` : 'Ping: ...';
+      } else {
+        ledServer.className = 'led red';
+        serverStatus.className = 'status-label offline';
+        serverStatus.textContent = 'Offline';
+        serverPing.textContent = '—';
+      }
+
+      // Proxy
+      const ledProxy = document.getElementById('ledProxy');
+      const proxyStatus = document.getElementById('proxyStatus');
+
+      if (state.proxyOnline) {
+        ledProxy.className = 'led green pulse';
+        proxyStatus.className = 'status-label online';
+        proxyStatus.textContent = 'Connesso';
+      } else {
+        ledProxy.className = 'led gray';
+        proxyStatus.className = 'status-label unknown';
+        proxyStatus.textContent = 'Non connesso';
+      }
+    }
+
+    function updateDevicesUI() {
+      // Monitor
+      const ledMonitor = document.getElementById('ledMonitor');
+      const monitorStatus = document.getElementById('monitorStatus');
+      const monitorDetail = document.getElementById('monitorDetail');
+
+      if (state.monitorOnline) {
+        ledMonitor.className = 'led green pulse';
+        monitorStatus.className = 'status-label online';
+        monitorStatus.textContent = 'Online';
+        monitorDetail.textContent = 'Connesso al server';
+      } else {
+        ledMonitor.className = 'led gray';
+        monitorStatus.className = 'status-label unknown';
+        monitorStatus.textContent = 'Offline';
+        monitorDetail.textContent = 'Non connesso';
+      }
+
+      // Passa-piatti
+      const ledPP = document.getElementById('ledPassapiatti');
+      const ppStatus = document.getElementById('passapiattiStatus');
+      const ppDetail = document.getElementById('passapiattiDetail');
+
+      if (state.passapiattiOnline) {
+        ledPP.className = 'led green pulse';
+        ppStatus.className = 'status-label online';
+        ppStatus.textContent = 'Online';
+        ppDetail.textContent = 'Connesso al server';
+      } else {
+        ledPP.className = 'led gray';
+        ppStatus.className = 'status-label unknown';
+        ppStatus.textContent = 'Offline';
+        ppDetail.textContent = 'Non connesso';
+      }
+    }
+
+    function updatePrintersUI() {
+      const container = document.getElementById('printerList');
+      const lastCheck = document.getElementById('printerLastCheck');
+
+      // Aggiorna timestamp ultimo check
+      const checks = state.printers.filter(p => p.lastCheck).map(p => p.lastCheck);
+      if (checks.length > 0) {
+        lastCheck.textContent = 'Check: ' + relativeTime(Math.max(...checks));
+      }
+
+      container.innerHTML = state.printers.map(p => {
+        const ledClass = p.lastCheck === null ? 'gray' : (p.online ? 'green' : 'red');
+        const statusClass = p.lastCheck === null ? 'unknown' : (p.online ? 'online' : 'offline');
+        const statusText = p.lastCheck === null ? 'Non testata' : (p.online ? 'Online' : 'Offline');
+
+        return `
+          <div class="printer-row" id="printer-row-${p.id}">
+            <div class="printer-info">
+              <span class="printer-id">#${p.id}</span>
+              <span class="led ${ledClass}" id="led-printer-${p.id}"></span>
+              <div class="printer-meta">
+                <div class="printer-name">${p.name}</div>
+                <div class="printer-conn">${p.conn} &middot; ${p.type.toUpperCase()}</div>
+              </div>
+            </div>
+            <div class="printer-status">
+              <span class="status-label ${statusClass}">${statusText}</span>
+              <button class="btn btn-test" id="btn-print-${p.id}" onclick="testPrint(${p.id})">Stampa Test</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateBarcodeUI() {
+      const led = document.getElementById('ledBarcode');
+      const status = document.getElementById('barcodeStatus');
+      const info = document.getElementById('lastBarcodeInfo');
+      const text = document.getElementById('lastBarcodeText');
+      const time = document.getElementById('lastBarcodeTime');
+
+      if (state.lastBarcode) {
+        led.className = 'led green';
+        status.className = 'status-label online';
+        status.textContent = 'Funzionante';
+        info.style.display = 'block';
+        text.textContent = state.lastBarcode;
+        time.textContent = relativeTime(state.lastBarcodeTime);
+      }
+    }
+
+    function updateLastTapUI() {
+      const info = document.getElementById('lastTapInfo');
+      const text = document.getElementById('lastTapText');
+
+      if (state.lastTap) {
+        info.style.display = 'block';
+        text.textContent = `${state.lastTap} (${relativeTime(state.lastTapTime)})`;
+      }
+    }
+
+    // Aggiorna tempi relativi ogni secondo
+    setInterval(() => {
+      if (state.lastBarcodeTime) {
+        const time = document.getElementById('lastBarcodeTime');
+        if (time) time.textContent = relativeTime(state.lastBarcodeTime);
+      }
+      if (state.lastTapTime) {
+        updateLastTapUI();
+      }
+    }, 1000);
+
+    // =============================================
+    // AZIONI
+    // =============================================
+
+    // Stampa test su una stampante
+    function testPrint(printerId) {
+      const btn = document.getElementById(`btn-print-${printerId}`);
+      if (!btn) return;
+
+      btn.classList.add('firing');
+      btn.textContent = 'Invio...';
+
+      fetch(`/api/printers/${printerId}/test`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            // Aspetta il risultato dal proxy (con timeout)
+            return waitForPrintResult(data.job_id, 8000);
+          }
+          throw new Error(data.error || 'Errore');
+        })
+        .then(() => {
+          btn.classList.remove('firing');
+          btn.classList.add('firing');  // flash verde
+          btn.textContent = 'OK!';
+          setTimeout(() => {
+            btn.classList.remove('firing');
+            btn.textContent = 'Stampa Test';
+          }, 1500);
+        })
+        .catch(err => {
+          btn.classList.remove('firing');
+          btn.classList.add('error');
+          btn.textContent = 'Errore';
+          setTimeout(() => {
+            btn.classList.remove('error');
+            btn.textContent = 'Stampa Test';
+          }, 2000);
+        });
+    }
+
+    // Aspetta il risultato di un job di stampa
+    function waitForPrintResult(jobId, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          delete state.printJobs[jobId];
+          reject(new Error('Timeout stampa'));
+        }, timeoutMs);
+
+        state.printJobs[jobId] = { resolve, reject, timeout };
+      });
+    }
+
+    // Stampa barcode test
+    document.getElementById('btnBarcodeTest').addEventListener('click', () => {
+      const btn = document.getElementById('btnBarcodeTest');
+      btn.classList.add('firing');
+      btn.textContent = 'Invio...';
+
+      fetch('/api/barcode/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+        .then(r => r.json())
+        .then(data => {
+          btn.textContent = `Inviato: ${data.code}`;
+          setTimeout(() => {
+            btn.classList.remove('firing');
+            btn.textContent = 'Stampa barcode test';
+          }, 2000);
+        })
+        .catch(() => {
+          btn.classList.remove('firing');
+          btn.classList.add('error');
+          btn.textContent = 'Errore';
+          setTimeout(() => {
+            btn.classList.remove('error');
+            btn.textContent = 'Stampa barcode test';
+          }, 2000);
+        });
+    });
+
+    // Invia dato test al monitor
+    document.getElementById('btnTestMonitor').addEventListener('click', () => {
+      const btn = document.getElementById('btnTestMonitor');
+      // Simula un counter_update per ogni piatto (resetta a valori test)
+      const testValues = { bistecca: 12, costine: 8, salsiccia: 15, spiedini: 6 };
+      Object.entries(testValues).forEach(([item, val]) => {
+        socket.emit('counter_update', { item, delta: val });
+      });
+      btn.classList.add('firing');
+      btn.textContent = 'Inviato!';
+      setTimeout(() => {
+        btn.classList.remove('firing');
+        btn.textContent = 'Invia dato test';
+      }, 1000);
+    });
+
+    // =============================================
+    // TEST COMPLETO
+    // =============================================
+    document.getElementById('btnFullTest').addEventListener('click', runFullTest);
+
+    async function runFullTest() {
+      if (state.fullTestRunning) return;
+      state.fullTestRunning = true;
+
+      const btn = document.getElementById('btnFullTest');
+      btn.classList.add('running');
+      btn.innerHTML = '<span class="play-icon">&#9632;</span> TEST IN CORSO...';
+
+      const report = document.getElementById('testReport');
+      const body = document.getElementById('reportBody');
+      const timeEl = document.getElementById('reportTime');
+
+      report.classList.add('visible');
+      body.innerHTML = '';
+      timeEl.textContent = new Date().toLocaleTimeString('it-IT');
+
+      const results = [];
+
+      // 1. Server health
+      results.push(await runTestStep(body, 'Server cloud raggiungibile', async () => {
+        const r = await fetch('/api/health');
+        const data = await r.json();
+        return { ok: data.status === 'ok', detail: `Uptime: ${Math.round(data.uptime)}s` };
+      }));
+
+      // 2. Socket.IO connesso
+      results.push(await runTestStep(body, 'Connessione Socket.IO', async () => {
+        return { ok: state.connected, detail: state.pingMs ? `Ping: ${state.pingMs}ms` : 'N/A' };
+      }));
+
+      // 3. Print proxy connesso
+      results.push(await runTestStep(body, 'Print proxy connesso', async () => {
+        return { ok: state.proxyOnline, detail: state.proxyOnline ? 'Attivo' : 'Non rilevato' };
+      }));
+
+      // 4-6. Stampanti raggiungibili
+      for (const p of state.printers) {
+        results.push(await runTestStep(body, `Stampante #${p.id} ${p.name}`, async () => {
+          if (!state.proxyOnline) return { ok: false, detail: 'Proxy non connesso' };
+          // Richiedi check e aspetta un momento
+          socket.emit('request_printer_check');
+          await sleep(3000);
+          const current = state.printers.find(pr => pr.id === p.id);
+          return { ok: current.online, detail: current.online ? 'Raggiungibile' : 'Non raggiungibile' };
+        }));
+      }
+
+      // 7. Monitor connesso
+      results.push(await runTestStep(body, 'Monitor cuochi connesso', async () => {
+        return { ok: state.monitorOnline, detail: state.monitorOnline ? 'Attivo' : 'Non connesso' };
+      }));
+
+      // 8. Passa-piatti connesso
+      results.push(await runTestStep(body, 'Tablet passa-piatti connesso', async () => {
+        return { ok: state.passapiattiOnline, detail: state.passapiattiOnline ? 'Attivo' : 'Non connesso' };
+      }));
+
+      // Summary
+      const passed = results.filter(r => r).length;
+      const total = results.length;
+      const allPass = passed === total;
+
+      const summary = document.createElement('div');
+      summary.className = `report-summary ${allPass ? 'all-pass' : 'has-fail'}`;
+      summary.innerHTML = allPass
+        ? `&#10003; Tutti i test superati (${passed}/${total})`
+        : `&#10007; ${passed}/${total} test superati — verifica i problemi sopra`;
+      body.appendChild(summary);
+
+      btn.classList.remove('running');
+      btn.innerHTML = '<span class="play-icon">&#9654;</span> ESEGUI TEST COMPLETO';
+      state.fullTestRunning = false;
+    }
+
+    async function runTestStep(container, label, testFn) {
+      // Aggiungi riga in attesa
+      const row = document.createElement('div');
+      row.className = 'report-item';
+      row.innerHTML = `
+        <span class="report-icon wait">&#8943;</span>
+        <span class="report-label">${label}</span>
+        <span class="report-detail">In corso...</span>
+      `;
+      container.appendChild(row);
+
+      try {
+        const { ok, detail } = await testFn();
+        const icon = row.querySelector('.report-icon');
+        const detailEl = row.querySelector('.report-detail');
+
+        if (ok) {
+          icon.className = 'report-icon pass';
+          icon.innerHTML = '&#10003;';
+        } else {
+          icon.className = 'report-icon fail';
+          icon.innerHTML = '&#10007;';
+        }
+        detailEl.textContent = detail || '';
+        return ok;
+      } catch (err) {
+        const icon = row.querySelector('.report-icon');
+        const detailEl = row.querySelector('.report-detail');
+        icon.className = 'report-icon fail';
+        icon.innerHTML = '&#10007;';
+        detailEl.textContent = err.message;
+        return false;
+      }
+    }
+
+    // =============================================
+    // UTILITY
+    // =============================================
+
+    function relativeTime(timestamp) {
+      if (!timestamp) return '—';
+      const diff = Math.floor((Date.now() - timestamp) / 1000);
+      if (diff < 5) return 'ora';
+      if (diff < 60) return `${diff} sec fa`;
+      if (diff < 3600) return `${Math.floor(diff / 60)} min fa`;
+      return `${Math.floor(diff / 3600)} ore fa`;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // =============================================
+    // INIT
+    // =============================================
+    updateConnectionUI();
+    updateNetworkUI();
+    updateDevicesUI();
+    updatePrintersUI();
+  </script>
+</body>
+</html>

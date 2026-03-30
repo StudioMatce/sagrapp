@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Passa-piatti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      /* Previene il pull-to-refresh su mobile */
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #060a12;
+      color: #f0f4f8;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      /* Disabilita touch callout e highlight */
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.5);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6c7a89;
+    }
+
+    .header-status.online { color: #4ecca3; }
+    .header-status.offline { color: #e94560; }
+
+    .status-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: all 200ms ease;
+    }
+
+    .status-led.on {
+      background: #4ecca3;
+      box-shadow: 0 0 6px #4ecca3;
+    }
+
+    .status-led.off {
+      background: #e94560;
+      box-shadow: 0 0 6px #e94560;
+    }
+
+    /* ===== LISTA PIATTI ===== */
+    .dish-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 12px 16px;
+      gap: 10px;
+    }
+
+    /* ===== RIGA PIATTO ===== */
+    .dish-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      transition: opacity 200ms ease;
+    }
+
+    .dish-row.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .dish-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: clamp(16px, 4vw, 22px);
+      color: rgba(240, 244, 248, 0.8);
+      letter-spacing: -0.01em;
+    }
+
+    .dish-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ===== PULSANTI +/− ===== */
+    .btn-counter {
+      width: clamp(64px, 14vw, 100px);
+      height: clamp(64px, 14vw, 100px);
+      border-radius: 10px;
+      border: 2px solid transparent;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(28px, 6vw, 40px);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 120ms ease;
+      /* Tocco senza ritardo su mobile */
+      touch-action: manipulation;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .btn-counter:active {
+      transform: scale(0.93);
+    }
+
+    .btn-minus {
+      background: rgba(233, 69, 96, 0.1);
+      border-color: rgba(233, 69, 96, 0.25);
+      color: #e94560;
+    }
+
+    .btn-minus:active,
+    .btn-minus.tapped {
+      background: rgba(233, 69, 96, 0.35);
+      border-color: #e94560;
+    }
+
+    .btn-plus {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.25);
+      color: #4ecca3;
+    }
+
+    .btn-plus:active,
+    .btn-plus.tapped {
+      background: rgba(78, 204, 163, 0.35);
+      border-color: #4ecca3;
+    }
+
+    /* ===== CONTATORE NUMERO ===== */
+    .dish-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(32px, 8vw, 52px);
+      min-width: clamp(56px, 12vw, 80px);
+      text-align: center;
+      color: #ffffff;
+      line-height: 1;
+      transition: color 200ms ease;
+    }
+
+    .dish-count.flash-up {
+      color: #4ecca3;
+    }
+
+    .dish-count.flash-down {
+      color: #e94560;
+    }
+
+    /* ===== BANNER DISCONNESSIONE ===== */
+    .offline-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 14px 20px;
+      background: #e94560;
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 100;
+      transform: translateY(-100%);
+      transition: transform 300ms ease;
+    }
+
+    .offline-banner.visible {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Banner disconnessione -->
+  <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA &mdash; pulsanti disabilitati</div>
+
+  <!-- Header -->
+  <header class="header">
+    <span class="header-title">Scalda Vivande</span>
+    <span class="header-status" id="headerStatus">
+      <span class="status-led" id="statusLed"></span>
+      <span id="statusText">...</span>
+    </span>
+  </header>
+
+  <!-- Lista piatti -->
+  <div class="dish-list" id="dishList">
+    <!-- Generato da JS -->
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const ITEMS = [
+      { id: 'bistecca',    label: 'Bistecca' },
+      { id: 'costine',     label: 'Costine' },
+      { id: 'salsiccia',   label: 'Salsiccia' },
+      { id: 'spiedini',    label: 'Spiedini' },
+      { id: 'pasta_ragu',  label: 'Pasta Ragù' },
+      { id: 'birra_media', label: 'Birra Media' },
+    ];
+
+    const counters = {};
+    ITEMS.forEach(i => { counters[i.id] = 0; });
+
+    // Debounce per evitare doppio tap
+    const lastTap = {};
+
+    let connected = false;
+
+    // Genera la lista
+    const dishList = document.getElementById('dishList');
+    dishList.innerHTML = ITEMS.map(item => `
+      <div class="dish-row" id="row-${item.id}">
+        <span class="dish-name">${item.label}</span>
+        <div class="dish-controls">
+          <button class="btn-counter btn-minus" id="minus-${item.id}"
+                  ontouchstart=""
+                  onclick="handleTap('${item.id}', -1, this)">&minus;</button>
+          <span class="dish-count" id="count-${item.id}">0</span>
+          <button class="btn-counter btn-plus" id="plus-${item.id}"
+                  ontouchstart=""
+                  onclick="handleTap('${item.id}', +1, this)">+</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Socket.IO
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const offlineBanner = document.getElementById('offlineBanner');
+    const statusLed = document.getElementById('statusLed');
+    const statusText = document.getElementById('statusText');
+    const headerStatus = document.getElementById('headerStatus');
+
+    socket.on('connect', () => {
+      connected = true;
+      socket.emit('register', { role: 'passapiatti' });
+      offlineBanner.classList.remove('visible');
+      statusLed.classList.add('on');
+      statusLed.classList.remove('off');
+      headerStatus.classList.add('online');
+      headerStatus.classList.remove('offline');
+      statusText.textContent = 'Connesso';
+      setRowsEnabled(true);
+    });
+
+    socket.on('disconnect', () => {
+      connected = false;
+      offlineBanner.classList.add('visible');
+      statusLed.classList.remove('on');
+      statusLed.classList.add('off');
+      headerStatus.classList.remove('online');
+      headerStatus.classList.add('offline');
+      statusText.textContent = 'Offline';
+      setRowsEnabled(false);
+    });
+
+    // Sincronizza contatori dal server
+    socket.on('counters_changed', ({ counters: newCounters }) => {
+      ITEMS.forEach(item => {
+        const newVal = newCounters[item.id] !== undefined ? newCounters[item.id] : counters[item.id];
+        counters[item.id] = newVal;
+        document.getElementById(`count-${item.id}`).textContent = newVal;
+      });
+    });
+
+    // Gestione tap con debounce
+    function handleTap(itemId, delta, btnEl) {
+      if (!connected) return;
+
+      const now = Date.now();
+      const key = `${itemId}_${delta}`;
+      if (lastTap[key] && now - lastTap[key] < 200) return;
+      lastTap[key] = now;
+
+      // Aggiornamento ottimistico
+      counters[itemId] = Math.max(0, counters[itemId] + delta);
+      const countEl = document.getElementById(`count-${itemId}`);
+      countEl.textContent = counters[itemId];
+
+      // Flash sul numero
+      const flashClass = delta > 0 ? 'flash-up' : 'flash-down';
+      countEl.classList.add(flashClass);
+      setTimeout(() => countEl.classList.remove(flashClass), 200);
+
+      // Feedback visivo sul pulsante
+      btnEl.classList.add('tapped');
+      setTimeout(() => btnEl.classList.remove('tapped'), 200);
+
+      // Invia al server
+      socket.emit('counter_update', { item: itemId, delta });
+    }
+
+    function setRowsEnabled(enabled) {
+      ITEMS.forEach(item => {
+        const row = document.getElementById(`row-${item.id}`);
+        if (enabled) row.classList.remove('disabled');
+        else row.classList.add('disabled');
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Accesso Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #060a12;
+      color: #e2e8f0;
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Sottile texture metallica */
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(78, 204, 163, 0.03) 0%, transparent 60%),
+        #060a12;
+    }
+
+    .terminal {
+      width: 100%;
+      max-width: 340px;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    /* ===== LOGO ===== */
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: #4ecca3;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #060a12;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(226, 232, 240, 0.35);
+    }
+
+    /* ===== PIN DISPLAY ===== */
+    .pin-area {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 14px;
+      padding: 16px 24px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      /* Effetto incassato */
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    .pin-dots.shake {
+      animation: shake 400ms ease;
+    }
+
+    .pin-dots.success {
+      border-color: rgba(78, 204, 163, 0.4);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 20px rgba(78, 204, 163, 0.15);
+    }
+
+    .pin-dots.error {
+      border-color: rgba(233, 69, 96, 0.4);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 20px rgba(233, 69, 96, 0.15);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(7px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(2px); }
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 150ms ease;
+    }
+
+    .dot.filled {
+      background: #e2e8f0;
+      border-color: #e2e8f0;
+      box-shadow: 0 0 8px rgba(226, 232, 240, 0.3);
+    }
+
+    .dot.filled.success-dot {
+      background: #4ecca3;
+      border-color: #4ecca3;
+      box-shadow: 0 0 8px rgba(78, 204, 163, 0.4);
+    }
+
+    .dot.filled.error-dot {
+      background: #e94560;
+      border-color: #e94560;
+      box-shadow: 0 0 8px rgba(233, 69, 96, 0.4);
+    }
+
+    /* Messaggio errore */
+    .pin-message {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      height: 16px;
+      transition: all 200ms ease;
+      color: transparent;
+    }
+
+    .pin-message.error { color: #e94560; }
+    .pin-message.success { color: #4ecca3; }
+
+    /* ===== TASTIERINO ===== */
+    .keypad {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .key {
+      height: 62px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 120ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      /* Effetto tasto rialzato */
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+      top: 0;
+    }
+
+    .key:active, .key.pressed {
+      top: 2px;
+      box-shadow:
+        0 0 0 rgba(255, 255, 255, 0.04),
+        0 1px 3px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    }
+
+    .key-action {
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .key-cancel {
+      color: #e94560;
+      border-color: rgba(233, 69, 96, 0.15);
+    }
+
+    .key-cancel:active, .key-cancel.pressed {
+      background: rgba(233, 69, 96, 0.1);
+    }
+
+    .key-enter {
+      color: #4ecca3;
+      border-color: rgba(78, 204, 163, 0.15);
+    }
+
+    .key-enter:active, .key-enter.pressed {
+      background: rgba(78, 204, 163, 0.1);
+    }
+
+    .key.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal">
+    <!-- Logo -->
+    <div class="logo">
+      <div class="logo-mark">S</div>
+      <div class="logo-text">Admin</div>
+    </div>
+
+    <!-- PIN Display -->
+    <div class="pin-area">
+      <div class="pin-dots" id="pinDots">
+        <div class="dot" id="dot-0"></div>
+        <div class="dot" id="dot-1"></div>
+        <div class="dot" id="dot-2"></div>
+        <div class="dot" id="dot-3"></div>
+        <div class="dot" id="dot-4"></div>
+        <div class="dot" id="dot-5"></div>
+      </div>
+      <div class="pin-message" id="pinMsg">&nbsp;</div>
+    </div>
+
+    <!-- Tastierino numerico -->
+    <div class="keypad" id="keypad">
+      <button class="key" onclick="pressKey('1')">1</button>
+      <button class="key" onclick="pressKey('2')">2</button>
+      <button class="key" onclick="pressKey('3')">3</button>
+      <button class="key" onclick="pressKey('4')">4</button>
+      <button class="key" onclick="pressKey('5')">5</button>
+      <button class="key" onclick="pressKey('6')">6</button>
+      <button class="key" onclick="pressKey('7')">7</button>
+      <button class="key" onclick="pressKey('8')">8</button>
+      <button class="key" onclick="pressKey('9')">9</button>
+      <button class="key key-action key-cancel" onclick="pressCancel()">Canc</button>
+      <button class="key" onclick="pressKey('0')">0</button>
+      <button class="key key-action key-enter" id="btnEnter" onclick="pressEnter()">Entra</button>
+    </div>
+  </div>
+
+  <script>
+    let pin = '';
+    let locked = false;
+    const MAX_DIGITS = 6;
+
+    const pinDots = document.getElementById('pinDots');
+    const pinMsg = document.getElementById('pinMsg');
+
+    function updateDots() {
+      for (let i = 0; i < MAX_DIGITS; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        dot.classList.toggle('filled', i < pin.length);
+        dot.classList.remove('success-dot', 'error-dot');
+      }
+    }
+
+    function pressKey(digit) {
+      if (locked || pin.length >= MAX_DIGITS) return;
+      pin += digit;
+      updateDots();
+      clearMessage();
+    }
+
+    function pressCancel() {
+      if (locked) return;
+      pin = pin.slice(0, -1);
+      updateDots();
+      clearMessage();
+    }
+
+    function clearMessage() {
+      pinMsg.className = 'pin-message';
+      pinMsg.innerHTML = '&nbsp;';
+      pinDots.classList.remove('shake', 'error', 'success');
+    }
+
+    async function pressEnter() {
+      if (locked || pin.length === 0) return;
+      locked = true;
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin }),
+        });
+        const data = await res.json();
+
+        if (data.success && data.token) {
+          // Successo — flash verde e redirect
+          sessionStorage.setItem('admin_token', data.token);
+          pinDots.classList.add('success');
+          for (let i = 0; i < pin.length; i++) {
+            document.getElementById(`dot-${i}`).classList.add('success-dot');
+          }
+          pinMsg.className = 'pin-message success';
+          pinMsg.textContent = 'Accesso autorizzato';
+
+          setTimeout(() => {
+            window.location.href = '/admin';
+          }, 600);
+        } else {
+          showError();
+        }
+      } catch {
+        showError();
+      }
+    }
+
+    function showError() {
+      // Shake + flash rosso
+      pinDots.classList.add('shake', 'error');
+      for (let i = 0; i < pin.length; i++) {
+        document.getElementById(`dot-${i}`).classList.add('error-dot');
+      }
+      pinMsg.className = 'pin-message error';
+      pinMsg.textContent = 'PIN errato';
+
+      setTimeout(() => {
+        pin = '';
+        updateDots();
+        clearMessage();
+        locked = false;
+      }, 1200);
+    }
+
+    // Supporto tastiera fisica
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '0' && e.key <= '9') {
+        pressKey(e.key);
+        flashButton(e.key);
+      } else if (e.key === 'Backspace') {
+        pressCancel();
+      } else if (e.key === 'Enter') {
+        pressEnter();
+      }
+    });
+
+    // Flash visivo sul pulsante corrispondente
+    function flashButton(digit) {
+      const buttons = document.querySelectorAll('.key');
+      buttons.forEach(btn => {
+        if (btn.textContent.trim() === digit) {
+          btn.classList.add('pressed');
+          setTimeout(() => btn.classList.remove('pressed'), 150);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

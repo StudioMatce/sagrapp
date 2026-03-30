@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Monitor Cuochi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #060a12;
+      color: #f0f4f8;
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      cursor: default;
+    }
+
+    /* La griglia prende tutto lo schermo */
+    .board {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2vh 4vw;
+      gap: 0;
+    }
+
+    /* Ogni riga è un piatto */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex: 1;
+      max-height: 14vh;
+      padding: 0 2vw;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 200ms ease;
+    }
+
+    .row:last-child { border-bottom: none; }
+
+    .row.flash {
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    /* Nome piatto — grande, bold, a sinistra */
+    .dish-name {
+      font-weight: 700;
+      font-size: clamp(28px, 4vw, 56px);
+      letter-spacing: -0.01em;
+      color: rgba(240, 244, 248, 0.7);
+      text-transform: uppercase;
+    }
+
+    /* Numero — enorme, monospace, a destra */
+    .dish-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(72px, 10vw, 140px);
+      line-height: 1;
+      color: #ffffff;
+      min-width: 3ch;
+      text-align: right;
+      transition: color 200ms ease;
+      /* Leggera ombra per dare profondità al numero */
+      text-shadow: 0 0 40px rgba(78, 204, 163, 0.12);
+    }
+
+    .dish-count.changed {
+      color: #4ecca3;
+      text-shadow: 0 0 50px rgba(78, 204, 163, 0.3);
+    }
+
+    /* Indicatore connessione — angolo in basso a destra, minimo */
+    .conn-dot {
+      position: fixed;
+      bottom: 1.5vh;
+      right: 2vw;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: background 300ms ease, box-shadow 300ms ease;
+      z-index: 100;
+    }
+
+    .conn-dot.online {
+      background: #4ecca3;
+      box-shadow: 0 0 8px #4ecca3;
+      animation: dot-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Overlay connessione persa — a tutto schermo, impossibile da ignorare */
+    .lost-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(233, 69, 96, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+
+    .lost-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lost-text {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: clamp(36px, 7vw, 80px);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .lost-sub {
+      font-size: clamp(14px, 2vw, 24px);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      margin-top: 1vh;
+      opacity: 0.8;
+    }
+
+    /* Fullscreen hint (appare solo se ?mode=fullscreen) */
+    .fs-hint {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 10, 18, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      cursor: pointer;
+    }
+
+    .fs-hint-text {
+      font-size: clamp(20px, 3vw, 36px);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .fs-hint.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay fullscreen (se ?mode=fullscreen) -->
+  <div class="fs-hint hidden" id="fsHint">
+    <div class="fs-hint-text">Tocca per<br>schermo intero</div>
+  </div>
+
+  <!-- Overlay connessione persa -->
+  <div class="lost-overlay" id="lostOverlay">
+    <div>
+      <div class="lost-text">CONNESSIONE PERSA</div>
+      <div class="lost-text lost-sub">Riconnessione in corso&hellip;</div>
+    </div>
+  </div>
+
+  <!-- Indicatore connessione -->
+  <div class="conn-dot" id="connDot"></div>
+
+  <!-- Tabellone -->
+  <div class="board" id="board">
+    <!-- Generato da JS -->
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Piatti da mostrare (con etichette leggibili)
+    const ITEMS = [
+      { id: 'bistecca',   label: 'Bistecca' },
+      { id: 'costine',    label: 'Costine' },
+      { id: 'salsiccia',  label: 'Salsiccia' },
+      { id: 'spiedini',   label: 'Spiedini' },
+      { id: 'pasta_ragu', label: 'Pasta Ragù' },
+      { id: 'birra_media',label: 'Birra Media' },
+    ];
+
+    // Stato contatori
+    const counters = {};
+    ITEMS.forEach(i => { counters[i.id] = 0; });
+
+    // Genera il tabellone
+    const board = document.getElementById('board');
+    board.innerHTML = ITEMS.map(item => `
+      <div class="row" id="row-${item.id}">
+        <span class="dish-name">${item.label}</span>
+        <span class="dish-count" id="count-${item.id}">0</span>
+      </div>
+    `).join('');
+
+    // Socket.IO
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const connDot = document.getElementById('connDot');
+    const lostOverlay = document.getElementById('lostOverlay');
+
+    socket.on('connect', () => {
+      socket.emit('register', { role: 'monitor' });
+      connDot.classList.add('online');
+      lostOverlay.classList.remove('visible');
+    });
+
+    socket.on('disconnect', () => {
+      connDot.classList.remove('online');
+      lostOverlay.classList.add('visible');
+    });
+
+    // Aggiornamento contatori
+    socket.on('counters_changed', ({ counters: newCounters }) => {
+      ITEMS.forEach(item => {
+        const oldVal = counters[item.id];
+        const newVal = newCounters[item.id] !== undefined ? newCounters[item.id] : oldVal;
+
+        if (newVal !== oldVal) {
+          counters[item.id] = newVal;
+          const el = document.getElementById(`count-${item.id}`);
+          const row = document.getElementById(`row-${item.id}`);
+
+          el.textContent = newVal;
+
+          // Flash sul numero
+          el.classList.add('changed');
+          row.classList.add('flash');
+          setTimeout(() => {
+            el.classList.remove('changed');
+            row.classList.remove('flash');
+          }, 400);
+        }
+      });
+    });
+
+    // Fullscreen mode (?mode=fullscreen)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'fullscreen') {
+      const hint = document.getElementById('fsHint');
+      hint.classList.remove('hidden');
+
+      hint.addEventListener('click', () => {
+        hint.classList.add('hidden');
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Admin LIVE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #060a12;
+      color: #e2e8f0;
+      min-height: 100%;
+      -webkit-font-smoothing: antialiased;
+      /* Sottile riflesso control-room in alto */
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
+        #060a12;
+    }
+
+    /* ===== SCROLLBAR PERSONALIZZATA ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* ===== TOP BAR ===== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid #1e293b;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      /* Sfocatura industriale */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .topbar-brand {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(226, 232, 240, 0.5);
+    }
+
+    .topbar-brand span {
+      color: #4ecca3;
+      font-weight: 800;
+    }
+
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+
+    .conn-badge.online {
+      color: #4ecca3;
+      border-color: rgba(78, 204, 163, 0.3);
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    .conn-badge.offline {
+      color: #e94560;
+      border-color: rgba(233, 69, 96, 0.3);
+      background: rgba(233, 69, 96, 0.08);
+    }
+
+    .conn-led {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: all 200ms ease;
+    }
+
+    .conn-led.on {
+      background: #4ecca3;
+      box-shadow: 0 0 6px #4ecca3;
+      animation: led-pulse 2.5s ease-in-out infinite;
+    }
+
+    .conn-led.off {
+      background: #e94560;
+      box-shadow: 0 0 6px #e94560;
+    }
+
+    @keyframes led-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-link {
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: rgba(226, 232, 240, 0.45);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 150ms ease;
+    }
+
+    .topbar-link:hover {
+      color: #e2e8f0;
+      border-color: #1e293b;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .btn-test {
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #22d3ee;
+      background: rgba(34, 211, 238, 0.08);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-test:hover {
+      background: rgba(34, 211, 238, 0.15);
+      border-color: rgba(34, 211, 238, 0.5);
+    }
+
+    .btn-test:active {
+      transform: scale(0.96);
+    }
+
+    /* ===== CONTENUTO PRINCIPALE ===== */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ===== CARD BASE ===== */
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 14px 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #6c7a89;
+    }
+
+    .card-body {
+      padding: 0 20px 18px;
+    }
+
+    /* ===== KPI ROW ===== */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .kpi-card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #6c7a89;
+    }
+
+    .kpi-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 42px;
+      line-height: 1.1;
+      color: #ffffff;
+      transition: color 200ms ease;
+    }
+
+    .kpi-value.flash {
+      color: #4ecca3;
+      text-shadow: 0 0 30px rgba(78, 204, 163, 0.25);
+    }
+
+    .kpi-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(78, 204, 163, 0.7);
+      margin-top: 2px;
+    }
+
+    /* Stile specifico per KPI incompleti > 0 */
+    .kpi-card.warning {
+      border-color: rgba(255, 217, 61, 0.3);
+      background: linear-gradient(180deg, rgba(255, 217, 61, 0.04) 0%, #111827 100%);
+    }
+
+    .kpi-card.warning .kpi-value {
+      color: #ffd93d;
+    }
+
+    .kpi-card.warning .kpi-sub {
+      color: rgba(255, 217, 61, 0.6);
+    }
+
+    /* ===== DUE COLONNE AFFIANCATE ===== */
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .breakdown-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(226, 232, 240, 0.75);
+      text-transform: capitalize;
+    }
+
+    .breakdown-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 15px;
+      color: #ffffff;
+    }
+
+    /* ===== SCORTE IN ESAURIMENTO ===== */
+    .stock-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stock-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .stock-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stock-dot.low {
+      background: #ffd93d;
+      box-shadow: 0 0 6px rgba(255, 217, 61, 0.4);
+    }
+
+    .stock-dot.exhausted {
+      background: #e94560;
+      box-shadow: 0 0 6px rgba(233, 69, 96, 0.4);
+    }
+
+    .stock-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+      color: rgba(226, 232, 240, 0.85);
+    }
+
+    .stock-remaining {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: #6c7a89;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .stock-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-stock {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+    }
+
+    .btn-stock:active {
+      transform: scale(0.94);
+    }
+
+    .btn-stock.add {
+      color: #4ecca3;
+      background: rgba(78, 204, 163, 0.08);
+      border-color: rgba(78, 204, 163, 0.25);
+    }
+
+    .btn-stock.add:hover {
+      background: rgba(78, 204, 163, 0.18);
+      border-color: rgba(78, 204, 163, 0.5);
+    }
+
+    .btn-stock.reactivate {
+      color: #22d3ee;
+      background: rgba(34, 211, 238, 0.08);
+      border-color: rgba(34, 211, 238, 0.25);
+    }
+
+    .btn-stock.reactivate:hover {
+      background: rgba(34, 211, 238, 0.18);
+      border-color: rgba(34, 211, 238, 0.5);
+    }
+
+    .stock-empty {
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #6c7a89;
+      font-weight: 500;
+    }
+
+    /* ===== TABELLA ORDINI ===== */
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .orders-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6c7a89;
+      padding: 8px 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .orders-table th:last-child {
+      text-align: right;
+    }
+
+    .orders-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+      vertical-align: middle;
+    }
+
+    .orders-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .orders-table .col-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(226, 232, 240, 0.5);
+    }
+
+    .orders-table .col-table {
+      font-weight: 600;
+      color: rgba(226, 232, 240, 0.75);
+    }
+
+    .orders-table .col-amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: #ffffff;
+    }
+
+    .orders-table .col-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c7a89;
+      text-align: right;
+    }
+
+    /* Status badge inline */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .status-dot.completed {
+      background: #4ecca3;
+      box-shadow: 0 0 5px rgba(78, 204, 163, 0.4);
+    }
+
+    .status-dot.in_progress {
+      background: #ffd93d;
+      box-shadow: 0 0 5px rgba(255, 217, 61, 0.4);
+    }
+
+    .status-text.completed { color: #4ecca3; }
+    .status-text.in_progress { color: #ffd93d; }
+
+    /* ===== GRIGLIA SPRECHI ===== */
+    .waste-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .waste-item {
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .waste-item-name {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6c7a89;
+    }
+
+    .waste-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .waste-stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .waste-stat-label { color: rgba(226, 232, 240, 0.5); }
+    .waste-stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: rgba(226, 232, 240, 0.85);
+    }
+
+    .waste-delta {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 14px;
+      text-align: center;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .waste-delta.ok {
+      color: #4ecca3;
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    .waste-delta.warn {
+      color: #ffd93d;
+      background: rgba(255, 217, 61, 0.08);
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+      border-top: 1px solid #1e293b;
+      margin-top: 8px;
+    }
+
+    .footer-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c7a89;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: all 150ms ease;
+    }
+
+    .footer-link:hover {
+      color: #e2e8f0;
+      border-color: #1e293b;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* ===== ANIMAZIONE FLASH ===== */
+    @keyframes val-flash {
+      0% { color: #4ecca3; text-shadow: 0 0 20px rgba(78, 204, 163, 0.3); }
+      100% { color: #ffffff; text-shadow: none; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .topbar-right {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .topbar-link { font-size: 11px; padding: 4px 8px; }
+
+      .main { padding: 16px; gap: 14px; }
+
+      .kpi-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .kpi-value { font-size: 36px; }
+
+      .two-cols {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .orders-table { font-size: 12px; }
+      .orders-table th, .orders-table td { padding: 8px 8px; }
+
+      .waste-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stock-row {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .stock-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .waste-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">SagrApp Admin — <span>LIVE</span></span>
+      <div class="conn-badge offline" id="connBadge">
+        <span class="conn-led" id="connLed"></span>
+        <span id="connText">Offline</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-test" id="btnTest">Genera ordine test</button>
+      <a class="topbar-link" href="/admin/magazzino">Magazzino</a>
+      <a class="topbar-link" href="/admin/recap">Recap</a>
+      <a class="topbar-link" href="/">Test Hardware</a>
+    </div>
+  </header>
+
+  <!-- ===== CONTENUTO PRINCIPALE ===== -->
+  <main class="main">
+
+    <!-- KPI Row -->
+    <section class="kpi-row">
+      <div class="kpi-card" id="kpiOrders">
+        <span class="kpi-label">Ordini</span>
+        <span class="kpi-value" id="valOrders">0</span>
+        <span class="kpi-sub" id="subOrders">+0 ultima mezz'ora</span>
+      </div>
+      <div class="kpi-card" id="kpiRevenue">
+        <span class="kpi-label">Incasso</span>
+        <span class="kpi-value" id="valRevenue">&euro;0</span>
+        <span class="kpi-sub" id="subRevenue">+&euro;0 ult. mezz'ora</span>
+      </div>
+      <div class="kpi-card" id="kpiIncomplete">
+        <span class="kpi-label">Incompleti</span>
+        <span class="kpi-value" id="valIncomplete">0</span>
+        <span class="kpi-sub" id="subIncomplete">tutti evasi</span>
+      </div>
+    </section>
+
+    <!-- Due colonne: incasso per cassa / per pagamento -->
+    <section class="two-cols">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-label">Incasso per Cassa</span>
+        </div>
+        <div class="card-body">
+          <div class="breakdown-list" id="listCassa">
+            <div class="stock-empty">Nessun dato</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-label">Incasso per Pagamento</span>
+        </div>
+        <div class="card-body">
+          <div class="breakdown-list" id="listPayment">
+            <div class="stock-empty">Nessun dato</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scorte in esaurimento -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-label">Scorte in Esaurimento</span>
+      </div>
+      <div class="card-body">
+        <div class="stock-list" id="stockList">
+          <div class="stock-empty">Tutte le scorte sono sufficienti</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ultimi ordini -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-label">Ultimi Ordini</span>
+      </div>
+      <div class="card-body">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>#ID</th>
+              <th>Tavolo</th>
+              <th>Importo</th>
+              <th>Stato</th>
+              <th style="text-align:right">Ora</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody">
+            <tr><td colspan="5" class="stock-empty">Nessun ordine</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Griglia sprechi -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-label">Griglia Sprechi</span>
+      </div>
+      <div class="card-body">
+        <div class="waste-grid" id="wasteGrid">
+          <div class="stock-empty">Nessun dato griglia</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <a class="footer-link" href="/admin/recap">Dashboard RECAP</a>
+    <a class="footer-link" href="/admin/magazzino">Magazzino</a>
+    <a class="footer-link" href="/">Test Hardware</a>
+  </footer>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // =============================================
+    // AUTH — Controlla il token admin in sessionStorage
+    // Se non valido, rimanda alla pagina di login
+    // =============================================
+    const TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) {
+      window.location.href = '/admin/login';
+    }
+
+    (async function verifyToken() {
+      try {
+        const res = await fetch(`/api/admin/verify?token=${TOKEN}`);
+        const data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+        }
+      } catch {
+        // Se il server non risponde, proviamo comunque
+        // (il fetch periodico gestira' il redirect se necessario)
+      }
+    })();
+
+    // =============================================
+    // VARIABILI DI STATO
+    // Salviamo i valori precedenti per rilevare cambiamenti
+    // e attivare l'animazione flash
+    // =============================================
+    let prevValues = {
+      totalOrders: null,
+      totalRevenue: null,
+      incompleteOrders: null,
+    };
+
+    // =============================================
+    // FORMATTAZIONE
+    // =============================================
+
+    // Formatta un numero come valuta italiana: €1.234
+    function formatCurrency(val) {
+      return '\u20AC' + Math.round(val).toLocaleString('it-IT');
+    }
+
+    // Formatta un timestamp in formato ora italiana: 21:34
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // =============================================
+    // FLASH — animazione rapida quando un valore cambia
+    // =============================================
+    function flashElement(el) {
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 200);
+    }
+
+    // =============================================
+    // RENDER — aggiorna il DOM con i dati ricevuti
+    // =============================================
+    function render(data) {
+      // --- KPI: Ordini ---
+      const valOrders = document.getElementById('valOrders');
+      if (prevValues.totalOrders !== null && prevValues.totalOrders !== data.totalOrders) {
+        flashElement(valOrders);
+      }
+      valOrders.textContent = data.totalOrders;
+      document.getElementById('subOrders').textContent = `+${data.recentCount} ultima mezz'ora`;
+      prevValues.totalOrders = data.totalOrders;
+
+      // --- KPI: Incasso ---
+      const valRevenue = document.getElementById('valRevenue');
+      if (prevValues.totalRevenue !== null && prevValues.totalRevenue !== data.totalRevenue) {
+        flashElement(valRevenue);
+      }
+      valRevenue.textContent = formatCurrency(data.totalRevenue);
+      document.getElementById('subRevenue').textContent = `+${formatCurrency(data.recentRevenue)} ult. mezz'ora`;
+      prevValues.totalRevenue = data.totalRevenue;
+
+      // --- KPI: Incompleti ---
+      const valIncomplete = document.getElementById('valIncomplete');
+      const kpiIncomplete = document.getElementById('kpiIncomplete');
+      if (prevValues.incompleteOrders !== null && prevValues.incompleteOrders !== data.incompleteOrders) {
+        flashElement(valIncomplete);
+      }
+      valIncomplete.textContent = data.incompleteOrders;
+      // Se ci sono ordini incompleti, evidenzia la card con bordo giallo
+      if (data.incompleteOrders > 0) {
+        kpiIncomplete.classList.add('warning');
+        document.getElementById('subIncomplete').textContent = `${data.incompleteOrders} in lavorazione`;
+      } else {
+        kpiIncomplete.classList.remove('warning');
+        document.getElementById('subIncomplete').textContent = 'tutti evasi';
+      }
+      prevValues.incompleteOrders = data.incompleteOrders;
+
+      // --- Incasso per Cassa ---
+      renderBreakdown('listCassa', data.revenueByCassa);
+
+      // --- Incasso per Pagamento ---
+      renderBreakdown('listPayment', data.revenueByPayment);
+
+      // --- Scorte in esaurimento ---
+      renderStock(data.lowStockItems);
+
+      // --- Ultimi ordini ---
+      renderOrders(data.lastOrders);
+
+      // --- Griglia sprechi ---
+      renderWaste(data.grilla);
+    }
+
+    // Genera la lista di breakdown (cassa o pagamento)
+    function renderBreakdown(containerId, obj) {
+      const container = document.getElementById(containerId);
+      const keys = Object.keys(obj || {});
+      if (keys.length === 0) {
+        container.innerHTML = '<div class="stock-empty">Nessun dato</div>';
+        return;
+      }
+      container.innerHTML = keys.map(key => `
+        <div class="breakdown-row">
+          <span class="breakdown-name">${key}</span>
+          <span class="breakdown-value">${formatCurrency(obj[key])}</span>
+        </div>
+      `).join('');
+    }
+
+    // Genera la lista delle scorte basse / esaurite
+    function renderStock(items) {
+      const container = document.getElementById('stockList');
+      if (!items || items.length === 0) {
+        container.innerHTML = '<div class="stock-empty">Tutte le scorte sono sufficienti</div>';
+        return;
+      }
+      container.innerHTML = items.map(item => {
+        const isExhausted = item.status === 'exhausted';
+        const dotClass = isExhausted ? 'exhausted' : 'low';
+        // Se esaurito mostra il pulsante Riattiva, altrimenti +10 e +50
+        const actions = isExhausted
+          ? `<button class="btn-stock reactivate" onclick="reactivateItem('${item.id}')">Riattiva</button>`
+          : `<button class="btn-stock add" onclick="adjustStock('${item.id}', 10)">+10</button>
+             <button class="btn-stock add" onclick="adjustStock('${item.id}', 50)">+50</button>`;
+
+        return `
+          <div class="stock-row">
+            <span class="stock-dot ${dotClass}"></span>
+            <span class="stock-name">${item.name}</span>
+            <span class="stock-remaining">${item.stock}</span>
+            <div class="stock-actions">${actions}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Genera la tabella degli ultimi ordini
+    function renderOrders(orders) {
+      const tbody = document.getElementById('ordersBody');
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="stock-empty">Nessun ordine</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map(o => {
+        const statusLabel = o.status === 'completed' ? 'Completato' : 'In corso';
+        return `
+          <tr>
+            <td class="col-id">#${o.id}</td>
+            <td class="col-table">Tav. ${o.table}</td>
+            <td class="col-amount">${formatCurrency(o.total)}</td>
+            <td>
+              <span class="status-badge">
+                <span class="status-dot ${o.status}"></span>
+                <span class="status-text ${o.status}">${statusLabel}</span>
+              </span>
+            </td>
+            <td class="col-time">${formatTime(o.created_at)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Genera la griglia sprechi (ordinato vs prodotto vs delta)
+    function renderWaste(grilla) {
+      const container = document.getElementById('wasteGrid');
+      if (!grilla || !grilla.ordered) {
+        container.innerHTML = '<div class="stock-empty">Nessun dato griglia</div>';
+        return;
+      }
+      const ids = Object.keys(grilla.ordered);
+      if (ids.length === 0) {
+        container.innerHTML = '<div class="stock-empty">Nessun dato griglia</div>';
+        return;
+      }
+      container.innerHTML = ids.map(id => {
+        const ord = grilla.ordered[id] || 0;
+        const prod = grilla.produced[id] || 0;
+        const delta = prod - ord;
+        const deltaClass = delta > 0 ? 'warn' : 'ok';
+        const deltaSign = delta > 0 ? '+' : '';
+        // Converte l'id in un nome leggibile (es. "bistecca" -> "Bistecca")
+        const name = id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return `
+          <div class="waste-item">
+            <span class="waste-item-name">${name}</span>
+            <div class="waste-stats">
+              <div class="waste-stat">
+                <span class="waste-stat-label">Ordinato</span>
+                <span class="waste-stat-val">${ord}</span>
+              </div>
+              <div class="waste-stat">
+                <span class="waste-stat-label">Prodotto</span>
+                <span class="waste-stat-val">${prod}</span>
+              </div>
+            </div>
+            <div class="waste-delta ${deltaClass}">&Delta; ${deltaSign}${delta}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =============================================
+    // API — Chiamate al server
+    // =============================================
+
+    // Recupera le statistiche live dal server
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/admin/stats/live', {
+          headers: { 'X-Admin-Token': TOKEN },
+        });
+        if (res.status === 401) {
+          // Token scaduto o non valido
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+          return;
+        }
+        const data = await res.json();
+        render(data);
+      } catch (err) {
+        // Errore di rete, lo ignoriamo — il polling riproverà
+      }
+    }
+
+    // Aggiusta la scorta di un piatto (+delta)
+    async function adjustStock(itemId, delta) {
+      try {
+        await fetch(`/api/inventory/${itemId}/adjust`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': TOKEN,
+          },
+          body: JSON.stringify({ delta }),
+        });
+        // Ricarica i dati per aggiornare la vista
+        fetchStats();
+      } catch (err) {
+        // Errore silenzioso, il prossimo poll aggiornera' la vista
+      }
+    }
+
+    // Riattiva un piatto esaurito chiedendo la nuova quantita'
+    async function reactivateItem(itemId) {
+      const input = prompt('Quante unità aggiungere?');
+      if (input === null) return; // L'utente ha annullato
+      const stock = parseInt(input);
+      if (isNaN(stock) || stock <= 0) return;
+
+      try {
+        await fetch(`/api/inventory/${itemId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': TOKEN,
+          },
+          body: JSON.stringify({ stock, status: 'available' }),
+        });
+        fetchStats();
+      } catch (err) {
+        // Errore silenzioso
+      }
+    }
+
+    // Genera un ordine di test
+    async function generateTestOrder() {
+      try {
+        await fetch('/api/orders/test', { method: 'POST' });
+      } catch (err) {
+        // Errore silenzioso
+      }
+    }
+
+    // =============================================
+    // PULSANTE TEST
+    // =============================================
+    document.getElementById('btnTest').addEventListener('click', generateTestOrder);
+
+    // =============================================
+    // POLLING — recupera i dati ogni 5 secondi
+    // =============================================
+    fetchStats();
+    setInterval(fetchStats, 5000);
+
+    // =============================================
+    // SOCKET.IO — aggiornamenti in tempo reale
+    // =============================================
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const connBadge = document.getElementById('connBadge');
+    const connLed = document.getElementById('connLed');
+    const connText = document.getElementById('connText');
+
+    socket.on('connect', () => {
+      // Si registra come admin per ricevere gli eventi dedicati
+      socket.emit('register', { role: 'admin' });
+      connBadge.classList.add('online');
+      connBadge.classList.remove('offline');
+      connLed.classList.add('on');
+      connLed.classList.remove('off');
+      connText.textContent = 'Connesso';
+    });
+
+    socket.on('disconnect', () => {
+      connBadge.classList.remove('online');
+      connBadge.classList.add('offline');
+      connLed.classList.remove('on');
+      connLed.classList.add('off');
+      connText.textContent = 'Offline';
+    });
+
+    // Quando arriva un aggiornamento stats, ricarica tutto
+    socket.on('stats_update', () => fetchStats());
+    // Quando cambia l'inventario, ricarica
+    socket.on('inventory_updated', () => fetchStats());
+    // Allarme scorte: ricarica immediatamente
+    socket.on('inventory_alert', () => fetchStats());
+    socket.on('inventory_exhausted', () => fetchStats());
+    // Nuovo ordine: ricarica per aggiornare KPI e tabella
+    socket.on('order_created', () => fetchStats());
+  </script>
+</body>
+</html>
