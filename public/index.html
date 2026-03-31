@@ -701,30 +701,60 @@
       </section>
     </div>
 
-    <!-- ZONA CONTROLLO -->
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">TABLET ZONA CONTROLLO</span>
-        <span class="led gray" id="ledControllo"></span>
-      </div>
-      <div class="card-body">
-        <div class="status-row">
-          <div class="status-left">
-            <div>
-              <div class="status-name">Zona controllo</div>
-              <div class="status-detail" id="controlloDetail">Non connesso</div>
+    <!-- ZONA CONTROLLO + CASSA -->
+    <div class="grid-2">
+
+      <!-- ZONA CONTROLLO -->
+      <section class="card">
+        <div class="card-header">
+          <span class="card-title">TABLET ZONA CONTROLLO</span>
+          <span class="led gray" id="ledControllo"></span>
+        </div>
+        <div class="card-body">
+          <div class="status-row">
+            <div class="status-left">
+              <div>
+                <div class="status-name">Zona controllo</div>
+                <div class="status-detail" id="controlloDetail">Non connesso</div>
+              </div>
+            </div>
+            <div class="status-right">
+              <span class="status-label unknown" id="controlloStatus">In attesa</span>
             </div>
           </div>
-          <div class="status-right">
-            <span class="status-label unknown" id="controlloStatus">In attesa</span>
+          <div class="info-box">Tastierino numerico per evasione ordini</div>
+          <div class="btn-actions" style="margin-top:0.75rem;">
+            <a href="/controllo" target="_blank" class="btn btn-link">Apri zona controllo &nearr;</a>
           </div>
         </div>
-        <div class="info-box">Tastierino numerico per evasione ordini</div>
-        <div class="btn-actions" style="margin-top:0.75rem;">
-          <a href="/controllo" target="_blank" class="btn btn-link">Apri zona controllo &nearr;</a>
+      </section>
+
+      <!-- CASSA TEST -->
+      <section class="card">
+        <div class="card-header">
+          <span class="card-title">CASSA TEST</span>
+          <span class="led gray" id="ledCassa"></span>
         </div>
-      </div>
-    </section>
+        <div class="card-body">
+          <div class="status-row">
+            <div class="status-left">
+              <div>
+                <div class="status-name">Cassa principale</div>
+                <div class="status-detail" id="cassaDetail">Non connesso</div>
+              </div>
+            </div>
+            <div class="status-right">
+              <span class="status-label unknown" id="cassaStatus">In attesa</span>
+            </div>
+          </div>
+          <div class="info-box">Ordini &rarr; stampa ricevuta + comanda cibo/bevande + aggiorna vendute</div>
+          <div class="btn-actions" style="margin-top:0.75rem;">
+            <a href="/cassa" target="_blank" class="btn btn-link">Apri cassa &nearr;</a>
+          </div>
+        </div>
+      </section>
+
+    </div>
 
     <!-- TEST COMPLETO -->
     <section class="full-test-wrap">
@@ -759,6 +789,7 @@
       monitorOnline: false,
       scaldavivandeOnline: false,
       controlloOnline: false,
+      cassaOnline: false,
       printers: [
         { id: 1, name: 'vretti (Ricevuta cassa)', conn: '192.168.1.203:9100', online: false, lastCheck: null },
         { id: 2, name: 'Fuhuihe (Comanda bev.)', conn: '192.168.1.204:9100', online: false, lastCheck: null },
@@ -799,6 +830,7 @@
       state.monitorOnline = (devices.monitor || 0) > 0;
       state.scaldavivandeOnline = (devices.scaldavivande || 0) > 0;
       state.controlloOnline = (devices.controllo || 0) > 0;
+      state.cassaOnline = (devices.cassa || 0) > 0;
       updateNetworkUI();
       updateDevicesUI();
     });
@@ -911,6 +943,8 @@
       updateDeviceLed('ledScaldavivande', 'scaldavivandeStatus', 'scaldavivandeDetail', state.scaldavivandeOnline);
       // Zona controllo
       updateDeviceLed('ledControllo', 'controlloStatus', 'controlloDetail', state.controlloOnline);
+      // Cassa
+      updateDeviceLed('ledCassa', 'cassaStatus', 'cassaDetail', state.cassaOnline);
     }
 
     function updateDeviceLed(ledId, statusId, detailId, isOnline) {

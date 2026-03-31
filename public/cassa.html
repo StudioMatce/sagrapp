@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Cassa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #060a12;
+      color: #f0f4f8;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.5);
+    }
+
+    .header-last-order {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(78, 204, 163, 0.6);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+
+    .header-last-order.visible { opacity: 1; }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6c7a89;
+    }
+
+    .header-status.online { color: #4ecca3; }
+    .header-status.offline { color: #e94560; }
+
+    .status-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: all 200ms ease;
+    }
+
+    .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
+    .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
+
+    /* ===== GRIGLIA PIATTI ===== */
+    .menu {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 12px 12px 90px;
+      align-content: start;
+    }
+
+    @media (min-width: 600px) {
+      .menu {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        padding: 16px 16px 96px;
+      }
+    }
+
+    /* ===== CARD PIATTO ===== */
+    .item-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1.5px solid rgba(255, 255, 255, 0.05);
+      border-left: 3px solid var(--sc);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .item-card.active {
+      border-color: rgba(78, 204, 163, 0.45);
+      border-left-color: rgba(78, 204, 163, 0.45);
+      background: rgba(78, 204, 163, 0.04);
+      box-shadow: 0 0 20px rgba(78, 204, 163, 0.06);
+    }
+
+    .item-station {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--sc);
+      opacity: 0.7;
+    }
+
+    .item-info {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .item-name {
+      font-weight: 600;
+      font-size: clamp(15px, 3.5vw, 20px);
+      color: rgba(240, 244, 248, 0.85);
+    }
+
+    .item-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: clamp(14px, 3vw, 18px);
+      color: #4ecca3;
+      white-space: nowrap;
+    }
+
+    /* ===== STEPPER ===== */
+    .item-stepper {
+      display: flex;
+      align-items: center;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin-top: 4px;
+    }
+
+    .step-btn {
+      width: clamp(44px, 10vw, 56px);
+      height: clamp(40px, 9vw, 48px);
+      background: rgba(255, 255, 255, 0.03);
+      border: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(20px, 4.5vw, 28px);
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background 100ms ease;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .step-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .step-minus {
+      color: #e94560;
+      border-right: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .step-plus {
+      color: #4ecca3;
+      border-left: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .step-count {
+      flex: 1;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(18px, 4vw, 24px);
+      color: rgba(255, 255, 255, 0.9);
+      height: clamp(40px, 9vw, 48px);
+      line-height: clamp(40px, 9vw, 48px);
+      background: rgba(255, 255, 255, 0.015);
+      transition: color 150ms ease;
+    }
+
+    .step-count.zero {
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ===== ORDER BAR ===== */
+    .order-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(10, 14, 22, 0.96);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 50;
+    }
+
+    .table-field {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 6px 8px;
+      flex-shrink: 0;
+      transition: border-color 200ms ease;
+    }
+
+    .table-field.error {
+      border-color: #e94560;
+      animation: shake 300ms ease;
+    }
+
+    @keyframes shake {
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-2px); }
+    }
+
+    .table-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table-field input {
+      width: 40px;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 800;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .table-field input::placeholder {
+      color: rgba(255, 255, 255, 0.15);
+    }
+
+    .table-field input::-webkit-outer-spin-button,
+    .table-field input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .order-summary {
+      flex: 1;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+    }
+
+    .order-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(20px, 5vw, 28px);
+      color: #4ecca3;
+      line-height: 1;
+      transition: color 150ms ease;
+    }
+
+    .order-total.empty { color: rgba(78, 204, 163, 0.25); }
+
+    .order-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(240, 244, 248, 0.35);
+      line-height: 1;
+      min-height: 13px;
+    }
+
+    .btn-order {
+      padding: 14px 20px;
+      background: rgba(78, 204, 163, 0.12);
+      border: 2px solid rgba(78, 204, 163, 0.3);
+      border-radius: 10px;
+      color: #4ecca3;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: clamp(14px, 3.5vw, 18px);
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 120ms ease;
+      flex-shrink: 0;
+    }
+
+    .btn-order:active:not(.disabled) {
+      transform: scale(0.95);
+      background: rgba(78, 204, 163, 0.3);
+      border-color: #4ecca3;
+    }
+
+    .btn-order.disabled {
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    /* ===== OVERLAYS ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+
+    .overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay-success { background: rgba(78, 204, 163, 0.93); }
+    .overlay-error { background: rgba(233, 69, 96, 0.93); }
+
+    .overlay-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(64px, 20vw, 130px);
+      line-height: 1;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .overlay-text {
+      font-weight: 700;
+      font-size: clamp(18px, 4.5vw, 30px);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #fff;
+    }
+
+    .overlay-sub {
+      font-size: clamp(14px, 3vw, 20px);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 6px;
+    }
+
+    .overlay-prints {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .print-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      letter-spacing: 0.03em;
+    }
+
+    /* ===== BANNER DISCONNESSIONE ===== */
+    .offline-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 14px 20px;
+      background: #e94560;
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 200;
+      transform: translateY(-100%);
+      transition: transform 300ms ease;
+    }
+
+    .offline-banner.visible { transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- Banner disconnessione -->
+  <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA</div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="header-title">Cassa</span>
+      <span class="header-last-order" id="lastOrder"></span>
+    </div>
+    <span class="header-status" id="headerStatus">
+      <span class="status-led" id="statusLed"></span>
+      <span id="statusText">...</span>
+    </span>
+  </header>
+
+  <!-- Griglia piatti -->
+  <div class="menu" id="menu">
+    <!-- Generato da JS -->
+  </div>
+
+  <!-- Barra ordine -->
+  <div class="order-bar">
+    <div class="table-field" id="tableField">
+      <span class="table-label">Tav</span>
+      <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+    </div>
+    <div class="order-summary">
+      <span class="order-count" id="orderCount"></span>
+      <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
+    </div>
+    <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+  </div>
+
+  <!-- Overlay successo -->
+  <div class="overlay overlay-success" id="overlay-success">
+    <div class="overlay-number" id="successNumber"></div>
+    <div class="overlay-text">Ordine creato</div>
+    <div class="overlay-sub" id="successSub"></div>
+    <div class="overlay-prints" id="successPrints"></div>
+  </div>
+
+  <!-- Overlay errore -->
+  <div class="overlay overlay-error" id="overlay-error">
+    <div class="overlay-number">!</div>
+    <div class="overlay-text" id="errorText">Errore</div>
+    <div class="overlay-sub" id="errorSub"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Piatti — stessa lista del server/config.js
+    const ITEMS = [
+      { id: 'bistecca',    name: 'Bistecca',       station: 'griglia', price: 12.00, category: 'cibo' },
+      { id: 'costine',     name: 'Costine',        station: 'griglia', price: 10.00, category: 'cibo' },
+      { id: 'salsiccia',   name: 'Salsiccia',      station: 'griglia', price:  8.00, category: 'cibo' },
+      { id: 'spiedini',    name: 'Spiedini',       station: 'griglia', price:  9.00, category: 'cibo' },
+      { id: 'pasta_ragu',  name: 'Pasta al ragu',  station: 'primi',   price:  7.00, category: 'cibo' },
+      { id: 'birra_media', name: 'Birra media',    station: 'bar',     price:  4.00, category: 'bevanda' },
+    ];
+
+    // Colori per stazione (bordo sinistro delle card)
+    const STATION_COLORS = {
+      griglia: '#e8983a',
+      primi:   '#d4a843',
+      bar:     '#4eb8d4',
+    };
+
+    const quantities = {};
+    ITEMS.forEach(i => { quantities[i.id] = 0; });
+
+    let connected = false;
+    let submitting = false;
+
+    // --- Genera la griglia piatti ---
+    const menu = document.getElementById('menu');
+    menu.innerHTML = ITEMS.map(item => `
+      <div class="item-card" id="card-${item.id}" style="--sc: ${STATION_COLORS[item.station] || '#666'}">
+        <div class="item-station">${item.station}</div>
+        <div class="item-info">
+          <span class="item-name">${item.name}</span>
+          <span class="item-price">&euro; ${item.price.toFixed(2)}</span>
+        </div>
+        <div class="item-stepper">
+          <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">&minus;</button>
+          <span class="step-count zero" id="qty-${item.id}">0</span>
+          <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
+        </div>
+      </div>
+    `).join('');
+
+    // --- Logica quantita ---
+    function changeQty(id, delta) {
+      if (!connected || submitting) return;
+      quantities[id] = Math.max(0, quantities[id] + delta);
+
+      const countEl = document.getElementById(`qty-${id}`);
+      countEl.textContent = quantities[id];
+      countEl.classList.toggle('zero', quantities[id] === 0);
+
+      const card = document.getElementById(`card-${id}`);
+      card.classList.toggle('active', quantities[id] > 0);
+
+      updateOrderBar();
+    }
+
+    function updateOrderBar() {
+      let totalItems = 0;
+      let totalPrice = 0;
+      ITEMS.forEach(item => {
+        totalItems += quantities[item.id];
+        totalPrice += quantities[item.id] * item.price;
+      });
+
+      const countEl = document.getElementById('orderCount');
+      const totalEl = document.getElementById('orderTotal');
+      const btnOrder = document.getElementById('btnOrder');
+
+      countEl.textContent = totalItems > 0 ? `${totalItems} piatt${totalItems === 1 ? 'o' : 'i'}` : '';
+      totalEl.textContent = `\u20AC ${totalPrice.toFixed(2)}`;
+      totalEl.classList.toggle('empty', totalItems === 0);
+
+      const tableValue = document.getElementById('tableInput').value;
+      btnOrder.classList.toggle('disabled', totalItems === 0 || !tableValue);
+    }
+
+    // --- Invio ordine ---
+    async function submitOrder() {
+      if (!connected || submitting) return;
+
+      const tableInput = document.getElementById('tableInput');
+      const table = parseInt(tableInput.value);
+
+      if (!table || table < 1) {
+        const field = document.getElementById('tableField');
+        field.classList.add('error');
+        setTimeout(() => field.classList.remove('error'), 400);
+        tableInput.focus();
+        return;
+      }
+
+      const items = ITEMS
+        .filter(item => quantities[item.id] > 0)
+        .map(item => ({ id: item.id, qty: quantities[item.id] }));
+
+      if (items.length === 0) return;
+
+      submitting = true;
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table, items }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Mostra conferma
+          document.getElementById('successNumber').textContent = `#${data.order_number}`;
+          document.getElementById('successSub').textContent =
+            `Tavolo ${data.table} \u2014 \u20AC ${data.total.toFixed(2)}`;
+
+          // Badge stampe inviate
+          const printsEl = document.getElementById('successPrints');
+          const badges = [];
+          if (data.prints.receipt) badges.push('Ricevuta');
+          if (data.prints.food) badges.push('Comanda cibo');
+          if (data.prints.drinks) badges.push('Comanda bevande');
+          printsEl.innerHTML = badges.map(b => `<span class="print-badge">${b}</span>`).join('');
+
+          showOverlay('success');
+
+          // Aggiorna "ultimo ordine" nell'header
+          const lastEl = document.getElementById('lastOrder');
+          lastEl.textContent = `Ultimo: #${data.order_number}`;
+          lastEl.classList.add('visible');
+
+          resetOrder();
+        } else {
+          document.getElementById('errorText').textContent = 'Errore';
+          document.getElementById('errorSub').textContent = data.error || 'Errore sconosciuto';
+          showOverlay('error');
+        }
+      } catch (err) {
+        document.getElementById('errorText').textContent = 'Errore di rete';
+        document.getElementById('errorSub').textContent = 'Verifica la connessione';
+        showOverlay('error');
+      }
+
+      submitting = false;
+    }
+
+    function resetOrder() {
+      ITEMS.forEach(item => {
+        quantities[item.id] = 0;
+        document.getElementById(`qty-${item.id}`).textContent = '0';
+        document.getElementById(`qty-${item.id}`).classList.add('zero');
+        document.getElementById(`card-${item.id}`).classList.remove('active');
+      });
+      document.getElementById('tableInput').value = '';
+      updateOrderBar();
+    }
+
+    function showOverlay(type) {
+      const el = document.getElementById(`overlay-${type}`);
+      el.classList.add('visible');
+      setTimeout(() => el.classList.remove('visible'), 2500);
+    }
+
+    // --- Socket.IO ---
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const offlineBanner = document.getElementById('offlineBanner');
+    const statusLed = document.getElementById('statusLed');
+    const statusText = document.getElementById('statusText');
+    const headerStatus = document.getElementById('headerStatus');
+
+    socket.on('connect', () => {
+      connected = true;
+      socket.emit('register', { role: 'cassa' });
+      offlineBanner.classList.remove('visible');
+      statusLed.classList.add('on');
+      statusLed.classList.remove('off');
+      headerStatus.classList.add('online');
+      headerStatus.classList.remove('offline');
+      statusText.textContent = 'Connesso';
+    });
+
+    socket.on('disconnect', () => {
+      connected = false;
+      offlineBanner.classList.add('visible');
+      statusLed.classList.remove('on');
+      statusLed.classList.add('off');
+      headerStatus.classList.remove('online');
+      headerStatus.classList.add('offline');
+      statusText.textContent = 'Offline';
+    });
+
+    // Aggiorna lo stato del pulsante ORDINA quando cambia il tavolo
+    document.getElementById('tableInput').addEventListener('input', updateOrderBar);
+  </script>
+</body>
+</html>

@@ -209,6 +209,136 @@ function buildTestPage(printerId) {
   }
 }
 
+// --- Generazione stampe per ordini reali ---
+
+// Allinea due stringhe ai bordi opposti su 32 caratteri (larghezza 80mm)
+function padLine(left, right) {
+  const space = 32 - left.length - right.length;
+  return left + ' '.repeat(Math.max(1, space)) + right;
+}
+
+// Ricevuta cassa generale — vretti .203 (printer #1)
+function buildReceipt(order) {
+  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+  const parts = [
+    INIT,
+    ALIGN_CENTER,
+    BOLD_ON, DOUBLE_BOTH, text('SAGRA'),
+    NORMAL_SIZE, BOLD_OFF,
+    text(LINE),
+    BOLD_ON, text(`ORDINE #${order.id}`),
+    BOLD_OFF,
+    text(`Tavolo: ${order.table}`),
+    text(now),
+    text(LINE),
+    ALIGN_LEFT,
+    text(''),
+  ];
+
+  order.items.forEach(item => {
+    const desc = `${item.qty}x ${item.name}`;
+    const price = (item.price * item.qty).toFixed(2);
+    parts.push(text(padLine(desc, price)));
+  });
+
+  parts.push(
+    text(''),
+    text(LINE),
+    BOLD_ON,
+    text(padLine('TOTALE', order.total.toFixed(2))),
+    BOLD_OFF,
+    text(LINE),
+    ALIGN_CENTER,
+    text(''),
+    text('Grazie e buon appetito!'),
+    text(''),
+    FEED, CUT,
+  );
+
+  return Buffer.concat(parts);
+}
+
+// Comanda cibo — Fuhuihe .205 (printer #3)
+// Testo in DOUBLE per leggibilità in cucina
+function buildFoodOrder(order) {
+  const foodItems = order.items.filter(i => i.category === 'cibo');
+  if (foodItems.length === 0) return null;
+
+  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+  const parts = [
+    INIT,
+    CODEPAGE_CP437,
+    ALIGN_CENTER,
+    BOLD_ON, text(LINE),
+    DOUBLE_BOTH, text('COMANDA CIBO'),
+    NORMAL_SIZE, BOLD_ON,
+    text(LINE),
+    BOLD_OFF,
+    text(`Ordine #${order.id}  Tavolo ${order.table}`),
+    text(now),
+    text(LINE),
+    ALIGN_LEFT,
+    text(''),
+  ];
+
+  foodItems.forEach(item => {
+    parts.push(BOLD_ON, DOUBLE_BOTH);
+    parts.push(text(`  ${item.qty}x ${item.name}`));
+    parts.push(NORMAL_SIZE, BOLD_OFF);
+  });
+
+  parts.push(
+    text(''),
+    ALIGN_CENTER,
+    text(LINE),
+    FEED, CUT,
+  );
+
+  return Buffer.concat(parts);
+}
+
+// Comanda bevande — Fuhuihe .204 (printer #2)
+// Ritorna null se non ci sono bevande nell'ordine
+function buildDrinkOrder(order) {
+  const drinkItems = order.items.filter(i => i.category === 'bevanda');
+  if (drinkItems.length === 0) return null;
+
+  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+  const parts = [
+    INIT,
+    CODEPAGE_CP437,
+    ALIGN_CENTER,
+    BOLD_ON, text(LINE),
+    DOUBLE_BOTH, text('COMANDA BEVANDE'),
+    NORMAL_SIZE, BOLD_ON,
+    text(LINE),
+    BOLD_OFF,
+    text(`Ordine #${order.id}  Tavolo ${order.table}`),
+    text(now),
+    text(LINE),
+    ALIGN_LEFT,
+    text(''),
+  ];
+
+  drinkItems.forEach(item => {
+    parts.push(BOLD_ON, DOUBLE_BOTH);
+    parts.push(text(`  ${item.qty}x ${item.name}`));
+    parts.push(NORMAL_SIZE, BOLD_OFF);
+  });
+
+  parts.push(
+    text(''),
+    ALIGN_CENTER,
+    text(LINE),
+    FEED, CUT,
+  );
+
+  return Buffer.concat(parts);
+}
+
 module.exports = {
   buildTestPage,
+  buildReceipt,
+  buildFoodOrder,
+  buildDrinkOrder,
 };

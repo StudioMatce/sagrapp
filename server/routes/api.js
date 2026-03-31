@@ -182,6 +182,119 @@ router.post('/orders/:id/fulfill', (req, res) => {
   res.json({ success: true, order_number: orderId, table: order.table });
 });
 
+// Crea ordine dalla cassa (con stampa e aggiornamento vendute)
+router.post('/orders', (req, res) => {
+  const { table, items: orderItems, payment } = req.body;
+
+  if (!table || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+    return res.status(400).json({ error: 'Specificare tavolo e piatti' });
+  }
+
+  orderCounter++;
+
+  // Costruisce l'ordine con info complete dalla config
+  const items = [];
+  orderItems.forEach(({ id, qty }) => {
+    const configItem = config.TEST_ITEMS.find(i => i.id === id);
+    if (!configItem || !qty || qty <= 0) return;
+    const q = parseInt(qty);
+    items.push({
+      id: configItem.id,
+      name: configItem.name,
+      price: configItem.price,
+      category: configItem.category,
+      qty: q,
+    });
+
+    // Aggiorna colonna "vendute" per il monitor cuochi
+    if (counters[configItem.id]) {
+      counters[configItem.id].vendute += q;
+    }
+
+    // Scala le scorte dal magazzino
+    if (inventory[configItem.id]) {
+      inventory[configItem.id].stock = Math.max(0, inventory[configItem.id].stock - q);
+      updateInventoryStatus(configItem.id);
+    }
+  });
+
+  if (items.length === 0) {
+    orderCounter--;
+    return res.status(400).json({ error: 'Nessun piatto valido' });
+  }
+
+  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  const order = {
+    id: orderCounter,
+    table: parseInt(table),
+    items,
+    total,
+    cassa: 'principale',
+    payment: payment || 'contanti',
+    status: 'in_progress',
+    created_at: Date.now(),
+    completed_at: null,
+  };
+
+  orders.push(order);
+
+  // Broadcast contatori aggiornati (vendute cambiate → da_cucinare cambia sul monitor)
+  if (io) {
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    io.emit('order_created', order);
+    io.to('admin').emit('stats_update', { type: 'new_order', order });
+  }
+
+  // --- Stampa ricevuta → vretti .203 (printer #1) ---
+  const receiptData = printer.buildReceipt(order);
+  const receiptPrinter = config.PRINTERS.find(p => p.id === 1);
+  if (io && receiptPrinter) {
+    io.to('proxy').emit('print', {
+      printer_id: 1,
+      printer_ip: receiptPrinter.ip,
+      data: Array.from(receiptData),
+      job_id: `receipt-${order.id}-${Date.now()}`,
+    });
+  }
+
+  // --- Stampa comanda cibo → Fuhuihe .205 (printer #3) ---
+  const foodData = printer.buildFoodOrder(order);
+  const foodPrinter = config.PRINTERS.find(p => p.id === 3);
+  if (io && foodData && foodPrinter) {
+    io.to('proxy').emit('print', {
+      printer_id: 3,
+      printer_ip: foodPrinter.ip,
+      data: Array.from(foodData),
+      job_id: `food-${order.id}-${Date.now()}`,
+    });
+  }
+
+  // --- Stampa comanda bevande → Fuhuihe .204 (printer #2) solo se ci sono bevande ---
+  const drinkData = printer.buildDrinkOrder(order);
+  const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
+  if (io && drinkData && drinkPrinter) {
+    io.to('proxy').emit('print', {
+      printer_id: 2,
+      printer_ip: drinkPrinter.ip,
+      data: Array.from(drinkData),
+      job_id: `drink-${order.id}-${Date.now()}`,
+    });
+  }
+
+  res.json({
+    success: true,
+    order_number: order.id,
+    table: order.table,
+    total: order.total,
+    prints: {
+      receipt: true,
+      food: !!foodData,
+      drinks: !!drinkData,
+    },
+  });
+});
+
 // =============================================
 // ADMIN — LOGIN
 // =============================================

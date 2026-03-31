@@ -48,6 +48,10 @@ app.get('/controllo', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'controllo.html'));
 });
 
+app.get('/cassa', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'cassa.html'));
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
 });
@@ -181,6 +185,7 @@ server.listen(config.PORT, '0.0.0.0', () => {
   console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor`);
   console.log(`    Scaldavivande:    http://localhost:${config.PORT}/scaldavivande`);
   console.log(`    Zona controllo:   http://localhost:${config.PORT}/controllo`);
+  console.log(`    Cassa test:       http://localhost:${config.PORT}/cassa`);
   console.log(`    Admin login:      http://localhost:${config.PORT}/admin/login`);
   console.log(`    Admin live:       http://localhost:${config.PORT}/admin`);
   console.log(`    Admin recap:      http://localhost:${config.PORT}/admin/recap`);
