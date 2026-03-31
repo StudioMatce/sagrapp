@@ -35,8 +35,17 @@ app.get('/monitor', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'monitor.html'));
 });
 
+app.get('/scaldavivande', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'scaldavivande.html'));
+});
+
+// Mantieni compatibilità con il vecchio URL
 app.get('/passapiatti', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'passapiatti.html'));
+  res.redirect('/scaldavivande');
+});
+
+app.get('/controllo', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'controllo.html'));
 });
 
 app.get('/admin', (req, res) => {
@@ -61,7 +70,8 @@ app.get('/admin/login', (req, res) => {
 const connectedDevices = {
   dashboard: new Set(),
   monitor: new Set(),
-  passapiatti: new Set(),
+  scaldavivande: new Set(),
+  controllo: new Set(),
   proxy: new Set(),
   admin: new Set(),
   cassa: new Set(),
@@ -84,34 +94,31 @@ io.on('connection', (socket) => {
     // Invia lo stato aggiornato dei dispositivi a tutte le dashboard
     broadcastDeviceStatus();
 
-    // Se è il proxy, aggiorna lo stato delle stampanti
+    // Se è il proxy, inviagli la config stampanti
     if (role === 'proxy') {
       socket.emit('printer_config', config.PRINTERS);
     }
 
-    // Invia i contatori attuali ai nuovi monitor/passapiatti
-    if (role === 'monitor' || role === 'passapiatti') {
+    // Invia i contatori attuali ai nuovi monitor/scaldavivande
+    if (role === 'monitor' || role === 'scaldavivande') {
       socket.emit('counters_changed', { counters });
     }
   });
 
-  // --- Passa-piatti: aggiornamento contatori ---
+  // --- Scaldavivande: aggiornamento contatori (colonna "pronto") ---
   socket.on('counter_update', ({ item, delta }) => {
     if (counters[item] !== undefined) {
-      counters[item] = Math.max(0, counters[item] + delta);
-      // Broadcast a tutti (monitor TV si aggiorna)
-      io.emit('counters_changed', { counters });
+      counters[item].pronto = Math.max(0, counters[item].pronto + delta);
+      // Broadcast a monitor e scaldavivande
+      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
     }
   });
 
-  // --- Barcode scanner ---
-  socket.on('barcode_scanned', ({ code }) => {
-    console.log(`[Barcode] Scansionato: ${code}`);
-    // Notifica le dashboard
-    io.to('dashboard').emit('barcode_received', {
-      code,
-      timestamp: Date.now(),
-    });
+  // --- Zona controllo: evasione ordine ---
+  socket.on('order_fulfilled', ({ order_number }) => {
+    console.log(`[Controllo] Evasione ordine: ${order_number}`);
+    // Il risultato viene gestito via API REST, qui facciamo broadcast
+    io.to('dashboard').to('admin').emit('order_fulfilled_broadcast', { order_number });
   });
 
   // --- Print proxy: risultato stampa ---
@@ -170,12 +177,13 @@ server.listen(config.PORT, '0.0.0.0', () => {
   console.log('  ==============================');
   console.log('');
   console.log('  Pagine disponibili:');
-  console.log(`    Dashboard test:  http://localhost:${config.PORT}/`);
-  console.log(`    Monitor cuochi:  http://localhost:${config.PORT}/monitor`);
-  console.log(`    Passa-piatti:    http://localhost:${config.PORT}/passapiatti`);
-  console.log(`    Admin login:     http://localhost:${config.PORT}/admin/login`);
-  console.log(`    Admin live:      http://localhost:${config.PORT}/admin`);
-  console.log(`    Admin recap:     http://localhost:${config.PORT}/admin/recap`);
-  console.log(`    Magazzino:       http://localhost:${config.PORT}/admin/magazzino`);
+  console.log(`    Dashboard test:   http://localhost:${config.PORT}/`);
+  console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor`);
+  console.log(`    Scaldavivande:    http://localhost:${config.PORT}/scaldavivande`);
+  console.log(`    Zona controllo:   http://localhost:${config.PORT}/controllo`);
+  console.log(`    Admin login:      http://localhost:${config.PORT}/admin/login`);
+  console.log(`    Admin live:       http://localhost:${config.PORT}/admin`);
+  console.log(`    Admin recap:      http://localhost:${config.PORT}/admin/recap`);
+  console.log(`    Magazzino:        http://localhost:${config.PORT}/admin/magazzino`);
   console.log('');
 });

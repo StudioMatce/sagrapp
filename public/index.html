@@ -617,7 +617,7 @@
             <span class="led gray" id="ledServer"></span>
             <div>
               <div class="status-name">Server cloud</div>
-              <div class="status-detail" id="serverPing">—</div>
+              <div class="status-detail" id="serverPing">&mdash;</div>
             </div>
           </div>
           <div class="status-right">
@@ -639,10 +639,10 @@
       </div>
     </section>
 
-    <!-- STAMPANTI -->
+    <!-- STAMPANTI (6 LAN) -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">STAMPANTI <span class="tag" style="background:var(--yellow);color:var(--bg-deep);">HARDWARE</span></span>
+        <span class="card-title">STAMPANTI <span class="tag" style="background:var(--yellow);color:var(--bg-deep);">6x LAN</span></span>
         <span class="status-time" id="printerLastCheck">Nessun check</span>
       </div>
       <div class="card-body" id="printerList">
@@ -650,7 +650,7 @@
       </div>
     </section>
 
-    <!-- MONITOR + PASSA-PIATTI (griglia 2 colonne) -->
+    <!-- MONITOR + SCALDAVIVANDE (griglia 2 colonne) -->
     <div class="grid-2">
 
       <!-- MONITOR CUOCHI -->
@@ -669,6 +669,7 @@
             </div>
             <span class="status-label unknown" id="monitorStatus">Offline</span>
           </div>
+          <div class="info-box">3 colonne: da cucinare / pronto / vendute</div>
           <div class="btn-actions" style="margin-top:0.75rem;">
             <a href="/monitor" target="_blank" class="btn btn-link">Apri monitor &nearr;</a>
             <button class="btn btn-test" id="btnTestMonitor">Invia dato test</button>
@@ -676,56 +677,51 @@
         </div>
       </section>
 
-      <!-- PASSA-PIATTI -->
+      <!-- SCALDAVIVANDE -->
       <section class="card">
         <div class="card-header">
-          <span class="card-title">TABLET PASSA-PIATTI</span>
-          <span class="led gray" id="ledPassapiatti"></span>
+          <span class="card-title">TABLET SCALDAVIVANDE</span>
+          <span class="led gray" id="ledScaldavivande"></span>
         </div>
         <div class="card-body">
           <div class="status-row">
             <div class="status-left">
               <div>
-                <div class="status-name">Scalda vivande</div>
-                <div class="status-detail" id="passapiattiDetail">Non connesso</div>
+                <div class="status-name">Scaldavivande</div>
+                <div class="status-detail" id="scaldavivandeDetail">Non connesso</div>
               </div>
             </div>
-            <span class="status-label unknown" id="passapiattiStatus">Offline</span>
+            <span class="status-label unknown" id="scaldavivandeStatus">Offline</span>
           </div>
+          <div class="info-box">Pulsanti: +10, +20, +30, +40, +50 e &minus;</div>
           <div class="btn-actions" style="margin-top:0.75rem;">
-            <a href="/passapiatti" target="_blank" class="btn btn-link">Apri passa-piatti &nearr;</a>
-          </div>
-          <div class="info-box" id="lastTapInfo" style="display:none;">
-            Ultimo tap: <span class="highlight" id="lastTapText">—</span>
+            <a href="/scaldavivande" target="_blank" class="btn btn-link">Apri scaldavivande &nearr;</a>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- LETTORE BARCODE -->
+    <!-- ZONA CONTROLLO -->
     <section class="card">
       <div class="card-header">
-        <span class="card-title">LETTORE BARCODE <span class="tag" style="background:var(--green);color:var(--bg-deep);">BLUETOOTH</span></span>
-        <span class="led gray" id="ledBarcode"></span>
+        <span class="card-title">TABLET ZONA CONTROLLO</span>
+        <span class="led gray" id="ledControllo"></span>
       </div>
       <div class="card-body">
         <div class="status-row">
           <div class="status-left">
             <div>
-              <div class="status-name">Scanner BT &rarr; tastiera</div>
-              <div class="status-detail">Scansiona un codice per testare</div>
+              <div class="status-name">Zona controllo</div>
+              <div class="status-detail" id="controlloDetail">Non connesso</div>
             </div>
           </div>
           <div class="status-right">
-            <span class="status-label unknown" id="barcodeStatus">In attesa</span>
+            <span class="status-label unknown" id="controlloStatus">In attesa</span>
           </div>
         </div>
+        <div class="info-box">Tastierino numerico per evasione ordini</div>
         <div class="btn-actions" style="margin-top:0.75rem;">
-          <button class="btn btn-test" id="btnBarcodeTest">Stampa barcode test</button>
-        </div>
-        <div class="info-box" id="lastBarcodeInfo" style="display:none;">
-          Ultimo barcode: <span class="highlight" id="lastBarcodeText">—</span>
-          <span id="lastBarcodeTime" style="margin-left:0.5rem;">—</span>
+          <a href="/controllo" target="_blank" class="btn btn-link">Apri zona controllo &nearr;</a>
         </div>
       </div>
     </section>
@@ -742,7 +738,7 @@
     <section class="card test-report" id="testReport">
       <div class="card-header">
         <span class="card-title">REPORT TEST</span>
-        <span class="status-time" id="reportTime">—</span>
+        <span class="status-time" id="reportTime">&mdash;</span>
       </div>
       <div class="card-body" id="reportBody">
         <!-- Generato da JS -->
@@ -761,17 +757,17 @@
       pingMs: null,
       proxyOnline: false,
       monitorOnline: false,
-      passapiattiOnline: false,
+      scaldavivandeOnline: false,
+      controlloOnline: false,
       printers: [
-        { id: 1, name: 'Custom (Ricevuta cassa)', type: 'usb', conn: 'USB', online: false, lastCheck: null },
-        { id: 2, name: 'vretti (Comanda cibo)', type: 'lan', conn: '192.168.1.202:9100', online: false, lastCheck: null },
-        { id: 3, name: 'Fuhuihe (Comanda bev.)', type: 'lan', conn: '192.168.1.204:9100', online: false, lastCheck: null },
+        { id: 1, name: 'vretti (Ricevuta cassa)', conn: '192.168.1.203:9100', online: false, lastCheck: null },
+        { id: 2, name: 'Fuhuihe (Comanda bev.)', conn: '192.168.1.204:9100', online: false, lastCheck: null },
+        { id: 3, name: 'Fuhuihe (Comanda cibo)', conn: '192.168.1.205:9100', online: false, lastCheck: null },
+        { id: 4, name: 'Fuhuihe (Ricevuta bar)', conn: '192.168.1.206:9100', online: false, lastCheck: null },
+        { id: 5, name: 'Fuhuihe (Piatti spec.)', conn: '192.168.1.207:9100', online: false, lastCheck: null },
+        { id: 6, name: 'Fuhuihe (Casetta aper.)', conn: '192.168.1.208:9100', online: false, lastCheck: null },
       ],
-      lastBarcode: null,
-      lastBarcodeTime: null,
-      lastTap: null,
-      lastTapTime: null,
-      printJobs: {},       // job_id -> { resolve, reject, timeout }
+      printJobs: {},
       fullTestRunning: false,
     };
 
@@ -801,7 +797,8 @@
     socket.on('device_status', ({ devices }) => {
       state.proxyOnline = (devices.proxy || 0) > 0;
       state.monitorOnline = (devices.monitor || 0) > 0;
-      state.passapiattiOnline = (devices.passapiatti || 0) > 0;
+      state.scaldavivandeOnline = (devices.scaldavivande || 0) > 0;
+      state.controlloOnline = (devices.controllo || 0) > 0;
       updateNetworkUI();
       updateDevicesUI();
     });
@@ -827,30 +824,6 @@
         else job.reject(new Error(error || 'Errore stampa'));
         delete state.printJobs[job_id];
       }
-    });
-
-    // Barcode ricevuto
-    socket.on('barcode_received', ({ code, timestamp }) => {
-      state.lastBarcode = code;
-      state.lastBarcodeTime = timestamp;
-      updateBarcodeUI();
-    });
-
-    // Contatori aggiornati (dal passa-piatti)
-    socket.on('counters_changed', ({ counters }) => {
-      // Trova quale contatore è cambiato (per il "ultimo tap")
-      if (state._prevCounters) {
-        for (const [key, val] of Object.entries(counters)) {
-          const prev = state._prevCounters[key] || 0;
-          if (val !== prev) {
-            const delta = val - prev;
-            state.lastTap = `${key} ${delta > 0 ? '+' : ''}${delta}`;
-            state.lastTapTime = Date.now();
-            updateLastTapUI();
-          }
-        }
-      }
-      state._prevCounters = { ...counters };
     });
 
     // =============================================
@@ -879,32 +852,6 @@
     }, 5000);
 
     // =============================================
-    // BARCODE KEYBOARD BUFFER
-    // =============================================
-    let barcodeBuffer = '';
-    let barcodeTimeout = null;
-
-    document.addEventListener('keypress', (e) => {
-      // Ignora se l'utente sta scrivendo in un input
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      if (e.key === 'Enter') {
-        if (barcodeBuffer.length > 0) {
-          // Invia il codice scansionato al server
-          socket.emit('barcode_scanned', { code: barcodeBuffer });
-          state.lastBarcode = barcodeBuffer;
-          state.lastBarcodeTime = Date.now();
-          updateBarcodeUI();
-          barcodeBuffer = '';
-        }
-      } else {
-        barcodeBuffer += e.key;
-        clearTimeout(barcodeTimeout);
-        barcodeTimeout = setTimeout(() => { barcodeBuffer = ''; }, 100);
-      }
-    });
-
-    // =============================================
     // UI UPDATES
     // =============================================
 
@@ -927,7 +874,6 @@
     }
 
     function updateNetworkUI() {
-      // Server
       const ledServer = document.getElementById('ledServer');
       const serverStatus = document.getElementById('serverStatus');
       const serverPing = document.getElementById('serverPing');
@@ -941,10 +887,9 @@
         ledServer.className = 'led red';
         serverStatus.className = 'status-label offline';
         serverStatus.textContent = 'Offline';
-        serverPing.textContent = '—';
+        serverPing.textContent = '\u2014';
       }
 
-      // Proxy
       const ledProxy = document.getElementById('ledProxy');
       const proxyStatus = document.getElementById('proxyStatus');
 
@@ -961,37 +906,29 @@
 
     function updateDevicesUI() {
       // Monitor
-      const ledMonitor = document.getElementById('ledMonitor');
-      const monitorStatus = document.getElementById('monitorStatus');
-      const monitorDetail = document.getElementById('monitorDetail');
+      updateDeviceLed('ledMonitor', 'monitorStatus', 'monitorDetail', state.monitorOnline);
+      // Scaldavivande
+      updateDeviceLed('ledScaldavivande', 'scaldavivandeStatus', 'scaldavivandeDetail', state.scaldavivandeOnline);
+      // Zona controllo
+      updateDeviceLed('ledControllo', 'controlloStatus', 'controlloDetail', state.controlloOnline);
+    }
 
-      if (state.monitorOnline) {
-        ledMonitor.className = 'led green pulse';
-        monitorStatus.className = 'status-label online';
-        monitorStatus.textContent = 'Online';
-        monitorDetail.textContent = 'Connesso al server';
+    function updateDeviceLed(ledId, statusId, detailId, isOnline) {
+      const led = document.getElementById(ledId);
+      const status = document.getElementById(statusId);
+      const detail = document.getElementById(detailId);
+      if (!led || !status || !detail) return;
+
+      if (isOnline) {
+        led.className = 'led green pulse';
+        status.className = 'status-label online';
+        status.textContent = 'Online';
+        detail.textContent = 'Connesso al server';
       } else {
-        ledMonitor.className = 'led gray';
-        monitorStatus.className = 'status-label unknown';
-        monitorStatus.textContent = 'Offline';
-        monitorDetail.textContent = 'Non connesso';
-      }
-
-      // Passa-piatti
-      const ledPP = document.getElementById('ledPassapiatti');
-      const ppStatus = document.getElementById('passapiattiStatus');
-      const ppDetail = document.getElementById('passapiattiDetail');
-
-      if (state.passapiattiOnline) {
-        ledPP.className = 'led green pulse';
-        ppStatus.className = 'status-label online';
-        ppStatus.textContent = 'Online';
-        ppDetail.textContent = 'Connesso al server';
-      } else {
-        ledPP.className = 'led gray';
-        ppStatus.className = 'status-label unknown';
-        ppStatus.textContent = 'Offline';
-        ppDetail.textContent = 'Non connesso';
+        led.className = 'led gray';
+        status.className = 'status-label unknown';
+        status.textContent = 'Offline';
+        detail.textContent = 'Non connesso';
       }
     }
 
@@ -999,7 +936,6 @@
       const container = document.getElementById('printerList');
       const lastCheck = document.getElementById('printerLastCheck');
 
-      // Aggiorna timestamp ultimo check
       const checks = state.printers.filter(p => p.lastCheck).map(p => p.lastCheck);
       if (checks.length > 0) {
         lastCheck.textContent = 'Check: ' + relativeTime(Math.max(...checks));
@@ -1017,7 +953,7 @@
               <span class="led ${ledClass}" id="led-printer-${p.id}"></span>
               <div class="printer-meta">
                 <div class="printer-name">${p.name}</div>
-                <div class="printer-conn">${p.conn} &middot; ${p.type.toUpperCase()}</div>
+                <div class="printer-conn">${p.conn} &middot; LAN</div>
               </div>
             </div>
             <div class="printer-status">
@@ -1029,49 +965,10 @@
       }).join('');
     }
 
-    function updateBarcodeUI() {
-      const led = document.getElementById('ledBarcode');
-      const status = document.getElementById('barcodeStatus');
-      const info = document.getElementById('lastBarcodeInfo');
-      const text = document.getElementById('lastBarcodeText');
-      const time = document.getElementById('lastBarcodeTime');
-
-      if (state.lastBarcode) {
-        led.className = 'led green';
-        status.className = 'status-label online';
-        status.textContent = 'Funzionante';
-        info.style.display = 'block';
-        text.textContent = state.lastBarcode;
-        time.textContent = relativeTime(state.lastBarcodeTime);
-      }
-    }
-
-    function updateLastTapUI() {
-      const info = document.getElementById('lastTapInfo');
-      const text = document.getElementById('lastTapText');
-
-      if (state.lastTap) {
-        info.style.display = 'block';
-        text.textContent = `${state.lastTap} (${relativeTime(state.lastTapTime)})`;
-      }
-    }
-
-    // Aggiorna tempi relativi ogni secondo
-    setInterval(() => {
-      if (state.lastBarcodeTime) {
-        const time = document.getElementById('lastBarcodeTime');
-        if (time) time.textContent = relativeTime(state.lastBarcodeTime);
-      }
-      if (state.lastTapTime) {
-        updateLastTapUI();
-      }
-    }, 1000);
-
     // =============================================
     // AZIONI
     // =============================================
 
-    // Stampa test su una stampante
     function testPrint(printerId) {
       const btn = document.getElementById(`btn-print-${printerId}`);
       if (!btn) return;
@@ -1082,62 +979,17 @@
       fetch(`/api/printers/${printerId}/test`, { method: 'POST' })
         .then(r => r.json())
         .then(data => {
-          if (data.success) {
-            // Aspetta il risultato dal proxy (con timeout)
-            return waitForPrintResult(data.job_id, 8000);
-          }
+          if (data.success) return waitForPrintResult(data.job_id, 8000);
           throw new Error(data.error || 'Errore');
         })
         .then(() => {
           btn.classList.remove('firing');
-          btn.classList.add('firing');  // flash verde
+          btn.classList.add('firing');
           btn.textContent = 'OK!';
           setTimeout(() => {
             btn.classList.remove('firing');
             btn.textContent = 'Stampa Test';
           }, 1500);
-        })
-        .catch(err => {
-          btn.classList.remove('firing');
-          btn.classList.add('error');
-          btn.textContent = 'Errore';
-          setTimeout(() => {
-            btn.classList.remove('error');
-            btn.textContent = 'Stampa Test';
-          }, 2000);
-        });
-    }
-
-    // Aspetta il risultato di un job di stampa
-    function waitForPrintResult(jobId, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          delete state.printJobs[jobId];
-          reject(new Error('Timeout stampa'));
-        }, timeoutMs);
-
-        state.printJobs[jobId] = { resolve, reject, timeout };
-      });
-    }
-
-    // Stampa barcode test
-    document.getElementById('btnBarcodeTest').addEventListener('click', () => {
-      const btn = document.getElementById('btnBarcodeTest');
-      btn.classList.add('firing');
-      btn.textContent = 'Invio...';
-
-      fetch('/api/barcode/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-        .then(r => r.json())
-        .then(data => {
-          btn.textContent = `Inviato: ${data.code}`;
-          setTimeout(() => {
-            btn.classList.remove('firing');
-            btn.textContent = 'Stampa barcode test';
-          }, 2000);
         })
         .catch(() => {
           btn.classList.remove('firing');
@@ -1145,16 +997,25 @@
           btn.textContent = 'Errore';
           setTimeout(() => {
             btn.classList.remove('error');
-            btn.textContent = 'Stampa barcode test';
+            btn.textContent = 'Stampa Test';
           }, 2000);
         });
-    });
+    }
 
-    // Invia dato test al monitor
+    function waitForPrintResult(jobId, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          delete state.printJobs[jobId];
+          reject(new Error('Timeout stampa'));
+        }, timeoutMs);
+        state.printJobs[jobId] = { resolve, reject, timeout };
+      });
+    }
+
+    // Invia dato test al monitor (simula contatori scaldavivande)
     document.getElementById('btnTestMonitor').addEventListener('click', () => {
       const btn = document.getElementById('btnTestMonitor');
-      // Simula un counter_update per ogni piatto (resetta a valori test)
-      const testValues = { bistecca: 12, costine: 8, salsiccia: 15, spiedini: 6 };
+      const testValues = { bistecca: 10, costine: 20, salsiccia: 30, spiedini: 10 };
       Object.entries(testValues).forEach(([item, val]) => {
         socket.emit('counter_update', { item, delta: val });
       });
@@ -1189,28 +1050,24 @@
 
       const results = [];
 
-      // 1. Server health
       results.push(await runTestStep(body, 'Server cloud raggiungibile', async () => {
         const r = await fetch('/api/health');
         const data = await r.json();
         return { ok: data.status === 'ok', detail: `Uptime: ${Math.round(data.uptime)}s` };
       }));
 
-      // 2. Socket.IO connesso
       results.push(await runTestStep(body, 'Connessione Socket.IO', async () => {
         return { ok: state.connected, detail: state.pingMs ? `Ping: ${state.pingMs}ms` : 'N/A' };
       }));
 
-      // 3. Print proxy connesso
       results.push(await runTestStep(body, 'Print proxy connesso', async () => {
         return { ok: state.proxyOnline, detail: state.proxyOnline ? 'Attivo' : 'Non rilevato' };
       }));
 
-      // 4-6. Stampanti raggiungibili
+      // Stampanti (6)
       for (const p of state.printers) {
         results.push(await runTestStep(body, `Stampante #${p.id} ${p.name}`, async () => {
           if (!state.proxyOnline) return { ok: false, detail: 'Proxy non connesso' };
-          // Richiedi check e aspetta un momento
           socket.emit('request_printer_check');
           await sleep(3000);
           const current = state.printers.find(pr => pr.id === p.id);
@@ -1218,17 +1075,18 @@
         }));
       }
 
-      // 7. Monitor connesso
       results.push(await runTestStep(body, 'Monitor cuochi connesso', async () => {
         return { ok: state.monitorOnline, detail: state.monitorOnline ? 'Attivo' : 'Non connesso' };
       }));
 
-      // 8. Passa-piatti connesso
-      results.push(await runTestStep(body, 'Tablet passa-piatti connesso', async () => {
-        return { ok: state.passapiattiOnline, detail: state.passapiattiOnline ? 'Attivo' : 'Non connesso' };
+      results.push(await runTestStep(body, 'Tablet scaldavivande connesso', async () => {
+        return { ok: state.scaldavivandeOnline, detail: state.scaldavivandeOnline ? 'Attivo' : 'Non connesso' };
       }));
 
-      // Summary
+      results.push(await runTestStep(body, 'Tablet zona controllo connesso', async () => {
+        return { ok: state.controlloOnline, detail: state.controlloOnline ? 'Attivo' : 'Non connesso' };
+      }));
+
       const passed = results.filter(r => r).length;
       const total = results.length;
       const allPass = passed === total;
@@ -1237,7 +1095,7 @@
       summary.className = `report-summary ${allPass ? 'all-pass' : 'has-fail'}`;
       summary.innerHTML = allPass
         ? `&#10003; Tutti i test superati (${passed}/${total})`
-        : `&#10007; ${passed}/${total} test superati — verifica i problemi sopra`;
+        : `&#10007; ${passed}/${total} test superati \u2014 verifica i problemi sopra`;
       body.appendChild(summary);
 
       btn.classList.remove('running');
@@ -1246,7 +1104,6 @@
     }
 
     async function runTestStep(container, label, testFn) {
-      // Aggiungi riga in attesa
       const row = document.createElement('div');
       row.className = 'report-item';
       row.innerHTML = `
@@ -1285,7 +1142,7 @@
     // =============================================
 
     function relativeTime(timestamp) {
-      if (!timestamp) return '—';
+      if (!timestamp) return '\u2014';
       const diff = Math.floor((Date.now() - timestamp) / 1000);
       if (diff < 5) return 'ora';
       if (diff < 60) return `${diff} sec fa`;

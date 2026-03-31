@@ -8,39 +8,54 @@ module.exports = {
   // Segreto per token sessioni admin
   ADMIN_TOKEN_SECRET: process.env.ADMIN_TOKEN_SECRET || 'sagrapp-test-2026',
 
-  // Stampanti — configurazione hardware reale
-  // type: 'lan' = stampante di rete (TCP porta 9100)
-  // type: 'usb' = stampante USB collegata al PC dove gira il print proxy
+  // Stampanti — tutte in rete LAN via Powerline (ESC/POS TCP porta 9100)
+  // Nessuna stampante USB
   PRINTERS: [
     {
       id: 1,
-      name: 'Custom (Ricevuta cassa)',
-      type: 'usb',
-      model: 'Custom',
-      usb_name: 'CustomPOS',       // Nome condivisione Windows
-      usb_device: '/dev/usb/lp0',  // Device Linux/Mac
-    },
-    {
-      id: 2,
-      name: 'vretti (Comanda cibo)',
-      type: 'lan',
+      name: 'vretti (Ricevuta cassa generale)',
       model: 'vretti 80mm',
-      ip: '192.168.1.202',
+      ip: '192.168.1.203',
       port: 9100,
     },
     {
-      id: 3,
+      id: 2,
       name: 'Fuhuihe (Comanda bevande)',
-      type: 'lan',
       model: 'Fuhuihe POS',
       ip: '192.168.1.204',
       port: 9100,
     },
-    // Predisposta per il futuro — 4a stampante (ricevuta bar)
-    // { id: 4, name: 'Ricevuta bar', type: 'lan', ip: '192.168.1.203', port: 9100 },
+    {
+      id: 3,
+      name: 'Fuhuihe (Comanda cibo)',
+      model: 'Fuhuihe POS',
+      ip: '192.168.1.205',
+      port: 9100,
+    },
+    {
+      id: 4,
+      name: 'Fuhuihe (Ricevuta cassa bar)',
+      model: 'Fuhuihe POS',
+      ip: '192.168.1.206',
+      port: 9100,
+    },
+    {
+      id: 5,
+      name: 'Fuhuihe (Piatti speciali)',
+      model: 'Fuhuihe POS',
+      ip: '192.168.1.207',
+      port: 9100,
+    },
+    {
+      id: 6,
+      name: 'Fuhuihe (Casetta aperitivi)',
+      model: 'Fuhuihe POS',
+      ip: '192.168.1.208',
+      port: 9100,
+    },
   ],
 
-  // Piatti di test per monitor, passa-piatti e magazzino
+  // Piatti di test per monitor, scaldavivande e magazzino
   TEST_ITEMS: [
     { id: 'bistecca', name: 'Bistecca', station: 'griglia', price: 12.00, category: 'cibo',
       initial_stock: 200, alert_threshold: 20 },

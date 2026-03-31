@@ -13,24 +13,29 @@
 
 SagrApp è un sistema di gestione ordini per una sagra di paese (500-1000 coperti). Il software è una web app cloud-based accessibile da browser.
 
-Questo documento descrive la **piattaforma di test hardware**: una web app diagnostica che permette di verificare che tutti i dispositivi hardware (stampanti, TV, tablet, lettore barcode) siano correttamente configurati e funzionanti PRIMA di costruire la piattaforma completa.
+Questo documento descrive la **piattaforma di test hardware**: una web app diagnostica che permette di verificare che tutti i dispositivi hardware (stampanti, TV, tablet scaldavivande, tablet zona controllo) siano correttamente configurati e funzionanti PRIMA di costruire la piattaforma completa.
 
-Il codice prodotto in questa fase **non è usa e getta**: il server, la connessione alle stampanti, il protocollo barcode, e il real-time verso i dispositivi verranno riutilizzati nella piattaforma finale.
+Il codice prodotto in questa fase **non è usa e getta**: il server, la connessione alle stampanti, il tablet zona controllo, e il real-time verso i dispositivi verranno riutilizzati nella piattaforma finale.
 
-### Hardware disponibile per il test
+### Hardware disponibile
 
-| Dispositivo | Modello | Connessioni | Ruolo nel test |
+| Dispositivo | Modello | Connessione | Ruolo |
 |---|---|---|---|
-| **PC all-in-one** | — | Wi-Fi | Cassa principale + Print Proxy |
+| **PC all-in-one** | — | Wi-Fi | Cassa generale + Print Proxy |
 | **Mini-PC** | — | LAN + HDMI | Collegato a TV per monitor cuochi |
-| **Stampante 1** | **Custom** (vecchia) | **Solo USB** | Ricevuta cassa — collegata via USB al PC all-in-one |
-| **Stampante 2** | **vretti 80mm** | **USB + LAN + Seriale** | Comanda cibo (barcode) — LAN via Powerline, IP 192.168.1.202 |
-| **Stampante 3** | **Fuhuihe POS** | **USB + LAN** | Comanda bevande — LAN via Powerline, IP 192.168.1.204 |
-| **Tablet** | Android (generico) | Wi-Fi | Test passa-piatti |
+| **Stampante 1** | **vretti 80mm** | **LAN** | Ricevuta cassa generale — IP 192.168.1.203 |
+| **Stampante 2** | **Fuhuihe POS** | **LAN** | Comanda bevande — IP 192.168.1.204 (già testata ✅) |
+| **Stampante 3** | **Fuhuihe POS** | **LAN** | Comanda cibo — IP 192.168.1.205 |
+| **Stampante 4** | **Fuhuihe POS** | **LAN** | Ricevuta cassa bar — IP 192.168.1.206 |
+| **Stampante 5** | **Fuhuihe POS** | **LAN** | Piatti speciali — IP 192.168.1.207 |
+| **Stampante 6** | **Fuhuihe POS** | **LAN** | Casetta aperitivi — IP 192.168.1.208 |
+| **Tablet 1** | Android | Wi-Fi | Scaldavivande: registra pezzi a decine (+10/+20/+30/+40/+50 e −) |
+| **Tablet 2** | Android | Wi-Fi | Zona controllo: tastierino numerico evasione ordini |
+| **PC/Tablet** | — | Wi-Fi | Casetta aperitivi (cassa indipendente) |
 | **Router 4G/5G** | — | Wi-Fi + LAN | Rete locale + internet |
 | **Kit Powerline** | — | Via corrente | Collegamento stampanti LAN + mini-PC |
 
-**NOTA IMPORTANTE:** La stampante Custom ha solo porta USB. Il Print Proxy deve gestire sia stampanti LAN (via TCP porta 9100) sia la stampante USB (via scrittura diretta al device USB). Questo è un caso misto che il sistema deve supportare.
+**Tutte le stampanti sono in rete LAN via Powerline. Nessuna stampante USB. Nessun lettore barcode (sostituito da tablet zona controllo).**
 
 ---
 
@@ -46,7 +51,6 @@ Il codice prodotto in questa fase **non è usa e getta**: il server, la connessi
 | **Database** | SQLite (via better-sqlite3) | Zero configurazione, file singolo, perfetto per sagra |
 | **Frontend** | HTML/CSS/JS vanilla + Socket.IO client | Nessun framework frontend necessario, deve girare su qualsiasi browser |
 | **Stampa** | escpos + node-thermal-printer via rete TCP | Stampa diretta ESC/POS su stampanti LAN |
-| **Barcode generation** | JsBarcode (client-side per anteprima) + escpos (per stampa) | Code 128, 1D |
 | **Deploy** | VPS (Hetzner/DigitalOcean) con Node.js + PM2 | Processo persistente, auto-restart |
 
 ### Architettura di rete
@@ -71,7 +75,7 @@ Il codice prodotto in questa fase **non è usa e getta**: il server, la connessi
          Cassa  Bar  Tablet .201 .202 .203 .204 +miniPC
           princ.           ↑                    ↑
             │              └── LAN TCP ─────────┘
-         📟 Barcode BT         (porta 9100)
+         📱 Tablet    📱 Tablet
 ```
 
 ### Flusso di stampa (CRITICO)
@@ -128,14 +132,20 @@ Browser (PC cassa)                 Server Cloud              Print Proxy (PC loc
 | Dispositivo | IP | Porta | Tipo connessione |
 |---|---|---|---|
 | Router | 192.168.1.1 | — | Gateway |
-| Stampante Custom (ricevuta cassa) | — | USB | **USB diretta al PC all-in-one** (no rete) |
-| Stampante vretti (comanda cibo) | 192.168.1.202 | 9100 | LAN via Powerline, ESC/POS TCP |
-| Stampante Fuhuihe (comanda bevande) | 192.168.1.204 | 9100 | LAN via Powerline, ESC/POS TCP |
-| PC all-in-one (cassa) | DHCP (.100-.199) | — | Wi-Fi |
+| vretti (ricevuta cassa generale) | 192.168.1.203 | 9100 | LAN via Powerline |
+| Fuhuihe (comanda bevande) | 192.168.1.204 | 9100 | LAN via Powerline |
+| Fuhuihe (comanda cibo) | 192.168.1.205 | 9100 | LAN via Powerline |
+| Fuhuihe (ricevuta cassa bar) | 192.168.1.206 | 9100 | LAN via Powerline |
+| Fuhuihe (piatti speciali) | 192.168.1.207 | 9100 | LAN via Powerline |
+| Fuhuihe (casetta aperitivi) | 192.168.1.208 | 9100 | LAN via Powerline |
+| PC Cassa generale | DHCP (.100-.199) | — | Wi-Fi |
+| PC Cassa bar | DHCP (.100-.199) | — | Wi-Fi |
+| PC/Tablet casetta aperitivi | DHCP (.100-.199) | — | Wi-Fi |
 | Mini-PC (TV griglia) | DHCP (.100-.199) | — | Powerline + LAN |
-| Tablet (passa-piatti) | DHCP (.100-.199) | — | Wi-Fi |
+| Tablet scaldavivande | DHCP (.100-.199) | — | Wi-Fi |
+| Tablet zona controllo | DHCP (.100-.199) | — | Wi-Fi |
 
-**Nota:** Per il test attuale abbiamo 3 stampanti (di cui 4 previste nel progetto finale). La 4ᵃ (ricevuta bar) non è presente nel test ma la struttura è predisposta per aggiungerla.
+**Tutte le stampanti sono in rete LAN via Powerline. Nessuna stampante USB. Protocollo ESC/POS via TCP porta 9100.**
 
 ---
 
@@ -158,22 +168,31 @@ sagrapp/
 │   └── config.js             # Configurazione proxy (server URL, stampanti)
 │
 ├── public/
-│   ├── index.html            # Dashboard test hardware (pagina principale)
-│   ├── monitor.html          # Pagina test monitor cuochi (per la TV)
-│   ├── passapiatti.html      # Pagina test passa-piatti (per il tablet)
+│   ├── index.html            # Landing page — selezione ruolo dispositivo
+│   ├── test.html             # Dashboard test hardware
+│   ├── setup.html            # Wizard setup inizio turno
+│   ├── monitor.html          # Monitor cuochi — 3 colonne (da cucinare / pronto / vendute)
+│   ├── scaldavivande.html    # Tablet scaldavivande — pulsanti +10/+20/+30/+40/+50 e −
+│   ├── controllo.html        # Tablet zona controllo — tastierino numerico evasione ordini
 │   ├── admin.html            # Dashboard admin LIVE (monitoraggio durante servizio)
 │   ├── admin-recap.html      # Dashboard admin RECAP (report post servizio)
 │   ├── admin-magazzino.html  # Gestione magazzino / scorte
+│   ├── admin-hardware.html   # Pannello controllo hardware in tempo reale
+│   ├── admin-chiusura.html   # Procedura chiusura turno guidata
 │   ├── admin-login.html      # Pagina login admin (PIN numerico)
 │   ├── css/
 │   │   └── style.css         # Stili
 │   └── js/
 │       ├── dashboard.js      # Logica dashboard test
-│       ├── monitor.js        # Logica pagina monitor TV
-│       ├── passapiatti.js    # Logica pagina passa-piatti
+│       ├── monitor.js        # Logica monitor cuochi (3 colonne)
+│       ├── scaldavivande.js  # Logica scaldavivande (pulsanti decine)
+│       ├── controllo.js      # Logica zona controllo (tastierino numerico)
 │       ├── admin.js          # Logica dashboard admin live
 │       ├── admin-recap.js    # Logica dashboard recap
 │       ├── admin-magazzino.js # Logica gestione magazzino
+│       ├── admin-hardware.js  # Logica controllo hardware
+│       ├── admin-chiusura.js  # Logica chiusura turno
+│       ├── alerts.js          # Sistema alert sonori/visivi + emergenza stampante
 │       └── socket-client.js  # Socket.IO client wrapper
 │
 ├── package.json
@@ -202,7 +221,7 @@ sagrapp/
 | GET | /api/health | Health check del server |
 | GET | /api/printers/status | Stato di tutte le stampanti (ping TCP) |
 | POST | /api/printers/:id/test | Stampa pagina di test sulla stampante specificata |
-| POST | /api/barcode/test | Genera e stampa un barcode di test |
+| POST | /api/orders/:id/fulfill | Segna un ordine come evaso (dal tablet zona controllo) |
 | POST | /api/admin/login | Verifica PIN → restituisce token sessione |
 | GET | /api/admin/stats/live | Dati live: ordini, incasso, stati (richiede auth) |
 | GET | /api/admin/stats/recap | Dati recap serata: report completo (richiede auth) |
@@ -216,13 +235,13 @@ sagrapp/
 | Evento | Direzione | Payload | Descrizione |
 |---|---|---|---|
 | `connect` | Client → Server | — | Nuovo dispositivo connesso |
-| `register` | Client → Server | `{ role: 'dashboard' \| 'monitor' \| 'passapiatti' \| 'proxy' \| 'admin' \| 'cassa' }` | Registra il tipo di dispositivo |
-| `print` | Server → Proxy | `{ printer_id, printer_ip, printer_type, data, job_id }` | Comando stampa al proxy (type: 'lan' o 'usb') |
+| `register` | Client → Server | `{ role: 'dashboard' \| 'monitor' \| 'scaldavivande' \| 'controllo' \| 'proxy' \| 'admin' \| 'cassa' }` | Registra il tipo di dispositivo |
+| `print` | Server → Proxy | `{ printer_ip, data, job_id }` | Comando stampa al proxy (tutte LAN) |
 | `print_result` | Proxy → Server | `{ job_id, success, error? }` | Risultato stampa |
-| `counter_update` | Client → Server | `{ item, delta }` | Passa-piatti aggiorna un contatore (+1/-1) |
-| `counters_changed` | Server → All | `{ counters: {...} }` | Broadcast nuovi contatori a tutti (monitor TV si aggiorna) |
-| `barcode_scanned` | Client → Server | `{ code }` | Lettore barcode ha scansionato un codice |
-| `barcode_received` | Server → Dashboard | `{ code, timestamp }` | Notifica ricezione barcode sulla dashboard |
+| `counter_update` | Scaldavivande → Server | `{ item, delta }` | Scaldavivande aggiorna un contatore (+10, +20, ecc. o -1) |
+| `counters_changed` | Server → Monitor | `{ counters: { item: { pronto, vendute } } }` | Broadcast nuovi contatori al monitor cuochi (3 colonne) |
+| `order_fulfilled` | Controllo → Server | `{ order_number }` | Tablet zona controllo segna ordine come evaso |
+| `order_fulfilled_result` | Server → Controllo | `{ success, order_number, table? }` | Risultato evasione ordine |
 | `device_status` | Server → Dashboard | `{ devices: [...] }` | Aggiornamento dispositivi connessi |
 | `inventory_updated` | Server → All | `{ item_id, stock, status }` | Scorta aggiornata, broadcast a casse e admin |
 | `inventory_alert` | Server → Casse + Admin | `{ item_id, name, remaining, threshold }` | Piatto sotto soglia alert |
@@ -232,14 +251,13 @@ sagrapp/
 ### 4.3 — Componente: Print Proxy (print-proxy/index.js)
 
 **Responsabilità:**
-- Gira sul **PC all-in-one** (cassa principale)
+- Gira su un PC locale alla sagra (qualsiasi PC collegato alla stessa rete)
 - Si connette al server cloud via Socket.IO come client con ruolo `proxy`
 - Riceve comandi di stampa dal server
-- Li inoltra alle stampanti: **via TCP per stampanti LAN** oppure **via USB per la stampante Custom**
+- Li inoltra alle stampanti sulla rete locale via **TCP porta 9100**
 - Restituisce il risultato al server
 
-**IMPORTANTE — Gestione mista USB + LAN:**
-La stampante Custom è collegata via USB al PC all-in-one. Le stampanti vretti e Fuhuihe sono sulla rete LAN. Il print proxy deve distinguere il tipo di connessione e usare il metodo corretto.
+**NOTA:** Tutte le stampanti sono in rete LAN. Non ci sono stampanti USB. Il print proxy usa un solo metodo di stampa (TCP) per tutte le stampanti.
 
 **Funzionamento:**
 
@@ -250,63 +268,21 @@ const net = require('net');
 
 socket.emit('register', { role: 'proxy' });
 
-socket.on('print', async ({ printer_id, printer_ip, printer_type, data, job_id }) => {
+socket.on('print', async ({ printer_ip, data, job_id }) => {
   try {
-    if (printer_type === 'lan') {
-      // Stampante LAN (vretti, Fuhuihe) — connessione TCP diretta
-      const client = new net.Socket();
-      client.connect(9100, printer_ip, () => {
-        client.write(Buffer.from(data));
-        client.end();
-      });
-      socket.emit('print_result', { job_id, success: true });
-    } else if (printer_type === 'usb') {
-      // Stampante USB (Custom) — scrittura al device USB
-      // Su Windows: usa il nome della stampante condivisa o la porta raw
-      // Su Linux: scrive su /dev/usb/lp0
-      await printToUSB(data);
-      socket.emit('print_result', { job_id, success: true });
-    }
+    const client = new net.Socket();
+    client.connect(9100, printer_ip, () => {
+      client.write(Buffer.from(data));
+      client.end();
+    });
+    socket.emit('print_result', { job_id, success: true });
   } catch (err) {
     socket.emit('print_result', { job_id, success: false, error: err.message });
   }
 });
 ```
 
-**Stampa USB — Implementazione cross-platform:**
-
-```javascript
-const os = require('os');
-const fs = require('fs');
-const { execSync } = require('child_process');
-
-async function printToUSB(data) {
-  const platform = os.platform();
-
-  if (platform === 'win32') {
-    // Windows: scrive su un file temporaneo e lo invia alla stampante
-    // La stampante Custom deve essere installata come stampante Windows
-    // e condivisa con un nome (es. "CustomPOS")
-    const tmpFile = 'C:\\temp\\print_job.bin';
-    fs.writeFileSync(tmpFile, Buffer.from(data));
-    // Invia raw data alla stampante Windows
-    execSync(`copy /b "${tmpFile}" "\\\\localhost\\CustomPOS"`, { shell: true });
-    // Alternativa: se la stampante è su una porta COM o USB raw
-    // execSync(`copy /b "${tmpFile}" USB001:`, { shell: true });
-  } else {
-    // Linux/Mac: scrive direttamente al device
-    fs.writeFileSync('/dev/usb/lp0', Buffer.from(data));
-  }
-}
-```
-
-**Setup stampante Custom su Windows (prerequisito):**
-1. Collegare la stampante Custom via USB al PC all-in-one
-2. Installare il driver (dal CD o scaricandolo)
-3. Nelle impostazioni stampante di Windows, condividere la stampante con nome "CustomPOS"
-4. Verificare che funzioni: `echo test > \\localhost\CustomPOS`
-
-**Verifica connettività stampanti LAN:**
+**Verifica connettività stampanti (TCP ping):**
 
 ```javascript
 function tcpPing(ip, port, timeout = 2000) {
@@ -319,18 +295,10 @@ function tcpPing(ip, port, timeout = 2000) {
   });
 }
 
-// Per la stampante USB: verificare che il device esista
-function checkUSBPrinter() {
-  try {
-    if (os.platform() === 'win32') {
-      // Verifica che la stampante condivisa esista
-      execSync('net view \\\\localhost', { shell: true });
-      return true;
-    } else {
-      return fs.existsSync('/dev/usb/lp0');
-    }
-  } catch { return false; }
-}
+socket.on('check_printer', async ({ printer_ip }) => {
+  const reachable = await tcpPing(printer_ip, 9100, 2000);
+  socket.emit('printer_status', { printer_ip, reachable });
+});
 ```
 
 ### 4.4 — Componente: Dashboard Test Hardware (public/index.html)
@@ -353,32 +321,39 @@ Questa è la pagina principale che si apre su qualsiasi browser. Mostra lo stato
 ║                                                          ║
 ║  🖨️ STAMPANTI                                           ║
 ║  ┌──────────────────────────────────────────────────┐   ║
-║  │ #1 Custom (ricevuta cassa)  USB     ● Online     │   ║
+║  │ #1 vretti (ricevuta cassa)      .203  ● Online   │   ║
 ║  │                              [Stampa Test]        │   ║
-║  │ #2 vretti (comanda cibo)   .202     ● Online     │   ║
+║  │ #2 Fuhuihe (comanda bevande)    .204  ● Online   │   ║
 ║  │                              [Stampa Test]        │   ║
-║  │ #3 Fuhuihe (comanda bev.)  .204     ● Online     │   ║
+║  │ #3 Fuhuihe (comanda cibo)       .205  ● Online   │   ║
+║  │                              [Stampa Test]        │   ║
+║  │ #4 Fuhuihe (ricevuta bar)       .206  ● Online   │   ║
+║  │                              [Stampa Test]        │   ║
+║  │ #5 Fuhuihe (piatti speciali)    .207  ● Online   │   ║
+║  │                              [Stampa Test]        │   ║
+║  │ #6 Fuhuihe (casetta aperitivi)  .208  ● Online   │   ║
 ║  │                              [Stampa Test]        │   ║
 ║  └──────────────────────────────────────────────────┘   ║
 ║                                                          ║
 ║  📺 MONITOR CUOCHI (TV)                                 ║
 ║  ┌──────────────────────────────────────────────────┐   ║
 ║  │ Stato: ● Connesso                                │   ║
+║  │ Mostra: 3 colonne (da cucinare / pronto / vendute)│   ║
 ║  │ [Apri pagina monitor]  [Invia dato test]         │   ║
 ║  └──────────────────────────────────────────────────┘   ║
 ║                                                          ║
-║  📱 TABLET PASSA-PIATTI                                 ║
+║  📱 TABLET SCALDAVIVANDE                                ║
 ║  ┌──────────────────────────────────────────────────┐   ║
 ║  │ Stato: ● Connesso                                │   ║
-║  │ [Apri pagina passa-piatti]                        │   ║
-║  │ Ultimo tap: Bistecca +1 (2 sec fa)               │   ║
+║  │ Pulsanti: +10, +20, +30, +40, +50, −            │   ║
+║  │ [Apri scaldavivande]                              │   ║
 ║  └──────────────────────────────────────────────────┘   ║
 ║                                                          ║
-║  📟 LETTORE BARCODE                                     ║
+║  📱 TABLET ZONA CONTROLLO                               ║
 ║  ┌──────────────────────────────────────────────────┐   ║
-║  │ [Stampa barcode test]                             │   ║
-║  │ Ultimo barcode ricevuto: TEST-001 (5 sec fa)     │   ║
-║  │ Stato: ● Funzionante                             │   ║
+║  │ Stato: ● Connesso                                │   ║
+║  │ Tastierino numerico per evasione ordini          │   ║
+║  │ [Apri zona controllo]                             │   ║
 ║  └──────────────────────────────────────────────────┘   ║
 ║                                                          ║
 ║  [▶ ESEGUI TEST COMPLETO]                               ║
@@ -392,92 +367,124 @@ Questa è la pagina principale che si apre su qualsiasi browser. Mostra lo stato
 - Ogni 5 secondi chiede lo stato delle stampanti (via proxy → TCP ping)
 - I dispositivi connessi (monitor, passa-piatti, proxy) appaiono automaticamente quando si collegano
 - Il pulsante "Stampa Test" invia un comando di stampa alla stampante specifica via server → proxy → stampante
-- La sezione barcode ascolta l'input: quando il lettore BT scansiona un codice, il browser lo intercetta (il lettore BT funziona come tastiera) e mostra il codice ricevuto
+- La sezione zona controllo mostra lo stato del tablet e gli ultimi ordini evasi
 - Il pulsante "Test Completo" esegue tutti i test in sequenza e produce un report verde/rosso
 
-### 4.5 — Componente: Pagina Monitor Cuochi (public/monitor.html)
+### 4.5 — Componente: Monitor Cuochi (public/monitor.html)
 
-Questa pagina viene aperta sulla TV della griglia (via mini-PC).
+Questa pagina viene aperta sulla TV della griglia (via mini-PC). Mostra **3 colonne** per ogni piatto.
 
-**Layout (font molto grandi, alto contrasto):**
+**Layout (font molto grandi, alto contrasto) — usa /frontend-design:**
 
 ```
-╔══════════════════════════════╗
-║   GRIGLIA — Test Monitor     ║
-║                              ║
-║   Bistecca       12          ║
-║   Costine         8          ║
-║   Salsiccia      15          ║
-║   Spiedini        6          ║
-║                              ║
-║   ● Connesso al server      ║
-╚══════════════════════════════╝
+╔════════════════════════════════════════════════════════╗
+║   GRIGLIA            Da cucinare   Pronto   Vendute   ║
+║                                                        ║
+║   Bistecca               15          30        45      ║
+║   Costine                 8          22        30      ║
+║   Salsiccia               3          47        50      ║
+║   Spiedini               12          18        30      ║
+║                                                        ║
+║   ● Connesso                                          ║
+╚════════════════════════════════════════════════════════╝
 ```
+
+**Significato colonne:**
+- **Vendute** = totale ordinato alle casse (incrementa automaticamente a ogni ordine)
+- **Pronto** = pezzi nello scalda vivande (dal tablet scaldavivande, a decine)
+- **Da cucinare** = vendute − pronto (calcolato, quello che i cuochi devono ancora produrre)
 
 **Comportamento:**
 - Si connette via Socket.IO con ruolo `monitor`
-- Mostra una lista di piatti di test con contatori
-- Si aggiorna in tempo reale quando il passa-piatti modifica un contatore
-- Font molto grandi (leggibili da 2-3 metri), sfondo scuro, numeri in colore contrastante
+- "Vendute" si aggiorna in tempo reale quando arriva un ordine dalla cassa
+- "Pronto" si aggiorna quando il tablet scaldavivande registra pezzi
+- "Da cucinare" si ricalcola automaticamente
+- **Colore "da cucinare":** verde se 0, giallo se 1-10, rosso se > 10
+- Font molto grandi (leggibili da 2-3 metri), sfondo scuro, numeri contrastanti
+- Flash visivo quando un numero cambia (200ms)
 - Schermo intero automatico
+- Se la connessione cade: overlay rosso "CONNESSIONE PERSA"
 
-### 4.6 — Componente: Pagina Passa-Piatti (public/passapiatti.html)
+### 4.6 — Componente: Tablet Scaldavivande (public/scaldavivande.html)
 
-Questa pagina viene aperta sul tablet allo scalda vivande.
+Questa pagina viene aperta sul tablet allo scalda vivande della griglia. L'addetto registra i pezzi cucinati a **decine**.
 
-**Layout (pulsanti grandi, touch-friendly):**
+**Layout (pulsanti grandi, touch-friendly) — usa /frontend-design:**
 
 ```
-╔══════════════════════════════╗
-║  SCALDA VIVANDE — Test       ║
-║                              ║
-║  Bistecca    [−]  12  [+]   ║
-║  Costine     [−]   8  [+]   ║
-║  Salsiccia   [−]  15  [+]   ║
-║  Spiedini    [−]   6  [+]   ║
-║                              ║
-║  ● Connesso al server       ║
-╚══════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+║  SCALDAVIVANDE                          ● Connesso        ║
+║                                                            ║
+║  Bistecca     [−]   30   [+10] [+20] [+30] [+40] [+50]  ║
+║  Costine      [−]   22   [+10] [+20] [+30] [+40] [+50]  ║
+║  Salsiccia    [−]   47   [+10] [+20] [+30] [+40] [+50]  ║
+║  Spiedini     [−]   18   [+10] [+20] [+30] [+40] [+50]  ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
 **Comportamento:**
-- Si connette via Socket.IO con ruolo `passapiatti`
-- Mostra piatti di test con pulsanti + e − molto grandi (touch-friendly)
-- Ogni tap invia `counter_update` al server
-- Il server fa broadcast a tutti → il monitor TV si aggiorna
-- Feedback visivo immediato al tap (colore del pulsante cambia per 200ms)
+- Si connette via Socket.IO con ruolo `scaldavivande`
+- Per ogni piatto: pulsanti **+10, +20, +30, +40, +50** per aggiungere velocemente i pezzi cucinati
+- Pulsante **−** per correggere errori (toglie 1 alla volta, o tenendo premuto apre input numerico per togliere N pezzi)
+- Il contatore al centro mostra il totale "pronto" per quel piatto
+- Ogni tap invia `counter_update` al server con il delta
+- Il server fa broadcast → la colonna "pronto" del monitor cuochi si aggiorna in tempo reale
+- Feedback visivo immediato al tap (pulsante lampeggia per 200ms)
+- Pulsanti enormi touch-friendly (minimo 80x80px)
+- Spazio tra le righe generoso per evitare tap accidentali
+- Se la connessione cade: disabilitare i pulsanti e mostrare avviso
 
-### 4.7 — Componente: Gestione Barcode
+**Eventi Socket.IO:**
 
-Il lettore barcode Bluetooth collegato al PC cassa funziona come una **tastiera esterna**. Quando scansiona un codice, il PC riceve i caratteri come se fossero digitati sulla tastiera, seguiti da un INVIO.
+| Evento | Direzione | Payload |
+|---|---|---|
+| `counter_update` | Scaldavivande → Server | `{ item: 'bistecca', delta: 10 }` |
+| `counters_changed` | Server → Monitor | `{ counters: { bistecca: { pronto: 30, vendute: 45 } } }` |
 
-**Implementazione lato dashboard (browser):**
+### 4.7 — Componente: Tablet Zona Controllo (public/controllo.html)
 
-```javascript
-// Il barcode scanner invia caratteri come una tastiera
-// Accumula i caratteri e quando riceve ENTER, processa il codice
-let barcodeBuffer = '';
-let barcodeTimeout = null;
+Tablet fisso alla zona uscita. L'addetto digita il numero ordine per segnarlo come evaso. **Sostituisce il lettore barcode.**
 
-document.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    if (barcodeBuffer.length > 0) {
-      processBarcodeScanned(barcodeBuffer);
-      barcodeBuffer = '';
-    }
-  } else {
-    barcodeBuffer += e.key;
-    // Reset timeout: se non arriva ENTER entro 100ms, svuota il buffer
-    clearTimeout(barcodeTimeout);
-    barcodeTimeout = setTimeout(() => { barcodeBuffer = ''; }, 100);
-  }
-});
+**Layout — usa /frontend-design:**
 
-function processBarcodeScanned(code) {
-  socket.emit('barcode_scanned', { code });
-  // Aggiorna UI per mostrare il codice ricevuto
-}
 ```
+╔════════════════════════════════════════╗
+║  ZONA CONTROLLO           ● Connesso  ║
+║                                        ║
+║  Digita il numero ordine:             ║
+║                                        ║
+║  ┌────────────────────────┐           ║
+║  │        385             │           ║
+║  └────────────────────────┘           ║
+║                                        ║
+║  [1] [2] [3]                          ║
+║  [4] [5] [6]                          ║
+║  [7] [8] [9]                          ║
+║  [C] [0] [EVADI ✓]                   ║
+║                                        ║
+║  Ultimo evaso: #384 — Tav.7 ✓        ║
+║                                        ║
+╚════════════════════════════════════════╝
+```
+
+**Comportamento:**
+- Si connette via Socket.IO con ruolo `controllo`
+- Tastierino numerico grande (touch-friendly, pulsanti 80x80px)
+- L'addetto digita il numero ordine e preme "EVADI ✓"
+- Il sistema cerca l'ordine → se trovato: schermata verde "Ordine #XXX evaso — Tav.Y" per 3 secondi
+- Se non trovato: schermata rossa "Ordine non trovato" per 3 secondi
+- Se ordine già evaso: schermata gialla "Ordine #XXX già evaso" per 3 secondi
+- Il campo si svuota automaticamente dopo ogni operazione (pronto per il prossimo)
+- Mostra l'ultimo ordine evaso in basso come riferimento
+- Pulsante [C] cancella l'input corrente
+
+**Eventi Socket.IO:**
+
+| Evento | Direzione | Payload |
+|---|---|---|
+| `order_fulfilled` | Controllo → Server | `{ order_number: 385 }` |
+| `order_fulfilled_result` | Server → Controllo | `{ success: true, order_number: 385, table: 7 }` |
 
 ### 4.8 — Contenuto stampa di test
 
@@ -488,8 +495,8 @@ Quando l'utente preme "Stampa Test" su una stampante, il sistema stampa una pagi
     ★ SAGRAPP — TEST STAMPA ★
 ================================
 
-Stampante: Custom (Ricevuta Cassa)
-Connessione: USB
+Stampante: vretti (Ricevuta Cassa Generale)
+Connessione: LAN (192.168.1.203)
 Data: 16/03/2026 15:30:22
 
 Questa stampante funziona
@@ -505,14 +512,14 @@ Test caratteri speciali:
 ================================
 ```
 
-Per la stampante vretti (comanda cibo), la stampa di test include anche un **barcode 1D di prova**:
+Per la stampante Fuhuihe (comanda cibo .205):
 
 ```
 ================================
   COMANDA CIBO — TEST
 ================================
-Stampante: vretti 80mm (LAN)
-IP: 192.168.1.202
+Stampante: Fuhuihe POS (LAN)
+IP: 192.168.1.205
 Ordine: TEST-001
 Tavolo: 99
 
@@ -520,9 +527,7 @@ Tavolo: 99
 1x Pasta test
 1x Birra test
 
-|||||||||||||||||||||||||||||||
-    TEST-001
-(barcode Code 128)
+================================
 ================================
 ```
 
@@ -683,6 +688,198 @@ Per aggiungere scorte: tap su [+10] o [+50] → la scorta si aggiorna istantanea
 Per impostare un valore esatto: tap sul campo [Imposta: ___] → appare tastierino numerico → inserisci numero → conferma.
 Per segnare esaurito manualmente: swipe a sinistra sulla riga → pulsante "Esaurisci" (o pulsante dedicato).
 
+### 4.13 — Componente: Selezione Ruolo (public/index.html — Landing Page)
+
+Un singolo URL per tutti i dispositivi. All'apertura, l'utente sceglie il ruolo del dispositivo.
+
+**Layout — usa /frontend-design:**
+
+```
+╔══════════════════════════════════════════════════════════╗
+║                     🎪 SagrApp                           ║
+║              Seleziona il tuo dispositivo                ║
+║                                                          ║
+║   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ ║
+║   │  🖥️ CASSA    │  │  🖥️ CASSA    │  │  🖥️ CASSA    │ ║
+║   │  PRINCIPALE  │  │    BAR       │  │    EXTRA     │ ║
+║   └──────────────┘  └──────────────┘  └──────────────┘ ║
+║                                                          ║
+║   ┌──────────────┐  ┌──────────────┐                    ║
+║   │  📺 MONITOR  │  │  📱 TABLET   │                    ║
+║   │   CUOCHI     │  │ PASSA-PIATTI │                    ║
+║   └──────────────┘  └──────────────┘                    ║
+║                                                          ║
+║   ┌──────────────┐  ┌──────────────┐                    ║
+║   │  📊 DASHBOARD│  │  🔧 CONTROLLO│                    ║
+║   │    ADMIN     │  │   HARDWARE   │                    ║
+║   └──────────────┘  └──────────────┘                    ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Comportamento:**
+- Card grandi, touch-friendly, con icona e nome ruolo
+- Tap su un ruolo → redirect alla pagina corrispondente
+- I ruoli admin richiedono il PIN prima di accedere
+- Il ruolo scelto viene salvato in `localStorage`: al prossimo avvio, il dispositivo va direttamente alla pagina del ruolo salvato senza passare dalla selezione
+- Pulsante piccolo "Cambia ruolo" sempre visibile in ogni pagina per tornare alla selezione
+
+### 4.14 — Componente: Setup Inizio Turno (public/setup.html)
+
+Wizard guidato che verifica tutto l'hardware prima di iniziare il servizio. Accessibile solo dall'admin.
+
+**Layout — usa /frontend-design:**
+
+```
+╔══════════════════════════════════════════════════════════╗
+║  🚀 Setup Inizio Turno                                  ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  ✅ Server cloud              Online (32ms)              ║
+║  ✅ Print proxy               Connesso                   ║
+║  ✅ vretti (ricevuta cassa)   .203 OK                    ║
+║  ✅ vretti (comanda cibo)     192.168.1.202 OK           ║
+║  ⏳ Fuhuihe (comanda bev.)   Test in corso...            ║
+║  ⬜ Monitor cuochi            In attesa                   ║
+║  ⬜ Tablet passa-piatti       In attesa                   ║
+║  ⬜ Tablet zona controllo     In attesa                   ║
+║                                                          ║
+║  ████████████░░░░░░░░░  62% completato                  ║
+║                                                          ║
+║  ┌──────────────────────────────────────────────────┐   ║
+║  │ ⚠ Fuhuihe: timeout connessione.                 │   ║
+║  │ Suggerimento: verifica che sia accesa e          │   ║
+║  │ collegata al Powerline con cavo LAN.             │   ║
+║  └──────────────────────────────────────────────────┘   ║
+║                                                          ║
+║  [▶ AVVIA SERVIZIO]  (attivo solo quando tutto ✅)      ║
+║  [⚠ Avvia con limitazioni]  (se dispositivi non critici)║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Comportamento:**
+- I check partono automaticamente uno dopo l'altro con animazione
+- Per ogni stampante: TCP ping (LAN) o device check (USB) + stampa di test opzionale
+- Per monitor e tablet: verifica che siano connessi via Socket.IO
+- Per tablet zona controllo: verifica connessione Socket.IO
+- Se un check fallisce: mostra il problema specifico e un suggerimento per risolverlo
+- Pulsante "Riprova" per ritentare un check fallito singolarmente
+- "Avvia Servizio" abilitato solo quando tutti i check critici (server, proxy, almeno 1 stampante) sono verdi
+- "Avvia con limitazioni" se mancano dispositivi non critici (monitor, scaldavivande, zona controllo)
+
+### 4.15 — Componente: Pannello Controllo Hardware (public/admin-hardware.html)
+
+Monitoraggio continuo di tutti i dispositivi durante il servizio.
+
+**Layout — usa /frontend-design:**
+
+```
+╔══════════════════════════════════════════════════════════╗
+║  🔧 Controllo Hardware              Ultimo check: 3s fa ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  DISPOSITIVI                                             ║
+║  ┌──────────────────────────────────────────────────┐   ║
+║  │ ● Server cloud          Online    32ms   da 18:00│   ║
+║  │ ● Print proxy           Connesso        da 18:00│   ║
+║  │ ● vretti (.203)         Online    8ms   da 18:01│   ║
+║  │ ● vretti (.202)         Online    8ms   da 18:01│   ║
+║  │ ● Fuhuihe (.204)        Online    12ms  da 18:01│   ║
+║  │ ● Monitor cuochi        Connesso        da 18:02│   ║
+║  │ ● Tablet passa-piatti   Connesso        da 18:03│   ║
+║  │ ○ Tablet zona controllo In attesa              │   ║
+║  └──────────────────────────────────────────────────┘   ║
+║                                                          ║
+║  LOG EVENTI                                              ║
+║  ┌──────────────────────────────────────────────────┐   ║
+║  │ 21:15  ⚠ vretti (.202) disconnessa              │   ║
+║  │ 21:16  ✅ vretti (.202) riconnessa               │   ║
+║  │ 20:30  ℹ Tablet passa-piatti connesso            │   ║
+║  │ 18:00  ℹ Setup completato — servizio avviato     │   ║
+║  └──────────────────────────────────────────────────┘   ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Comportamento:**
+- Check automatico ogni 5 secondi su tutti i dispositivi
+- Indicatore colorato: verde = online, rosso = offline, giallo = latenza alta, grigio = mai connesso
+- Per ogni dispositivo: tempo di connessione ("da 18:00"), latenza (per LAN)
+- Log cronologico degli eventi hardware della serata (scrollabile)
+- Se un dispositivo va offline: riga diventa rossa con animazione pulsante
+
+### 4.16 — Alert Sonori/Visivi e Modalità Emergenza Stampante
+
+Queste non sono pagine separate ma comportamenti integrati nelle pagine cassa e admin.
+
+**Alert alle casse (integrato nella pagina cassa):**
+Quando una stampante si disconnette:
+- Popup overlay semitrasparente a centro schermo: "⚠ STAMPANTE [nome] OFFLINE"
+- Suono di alert (beep) ripetuto 3 volte
+- Il popup ha due pulsanti: "OK, ho capito" (chiude il popup) e "Dettagli" (apre pannello HW)
+- Il cassiere può continuare a lavorare dopo aver chiuso il popup
+
+**Modalità emergenza stampante (integrata nella logica di stampa):**
+Se una stampante è offline al momento di stampare:
+- La comanda/ricevuta viene messa in **coda di stampa** (salvata nel DB)
+- La comanda viene mostrata a schermo in formato grande e leggibile (popup con contenuto della comanda)
+- Banner giallo fisso in alto nella cassa: "⚠ EMERGENZA — [nome stampante] offline — comande a schermo"
+- Opzione admin: "Redirect stampe su stampante [altra]" per deviare temporaneamente
+- Quando la stampante torna online: le comande in coda vengono stampate automaticamente con notifica "Coda stampa esaurita"
+
+**Eventi Socket.IO aggiuntivi:**
+
+| Evento | Direzione | Payload | Descrizione |
+|---|---|---|---|
+| `hw_alert` | Server → Casse + Admin | `{ device, status, message }` | Dispositivo cambiato stato |
+| `print_queued` | Server → Cassa | `{ job_id, content_preview }` | Stampa messa in coda (stampante offline) |
+| `print_queue_flushed` | Server → Cassa + Admin | `{ printer_id, jobs_printed }` | Coda svuotata, stampante tornata online |
+| `service_started` | Server → All | `{ timestamp }` | Setup completato, servizio avviato |
+| `service_closed` | Server → All | `{ timestamp, summary }` | Servizio chiuso dal responsabile |
+
+### 4.17 — Componente: Chiusura Turno (public/admin-chiusura.html)
+
+Procedura guidata per chiudere il servizio a fine serata.
+
+**Layout — usa /frontend-design:**
+
+```
+╔══════════════════════════════════════════════════════════╗
+║  🔒 Chiusura Servizio                                   ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║  STEP 1 — Verifica ordini aperti                        ║
+║  ┌──────────────────────────────────────────────────┐   ║
+║  │ ⚠ 3 ordini ancora incompleti:                   │   ║
+║  │   #389 Tav.12 — creato 15 min fa                │   ║
+║  │   #391 Tav.5  — creato 8 min fa                 │   ║
+║  │   #394 Tav.22 — creato 3 min fa                 │   ║
+║  │                                                   │   ║
+║  │ [Chiudi tutti forzatamente]  [Aspetta]           │   ║
+║  └──────────────────────────────────────────────────┘   ║
+║                                                          ║
+║  STEP 2 — Riepilogo flash                               ║
+║  ┌──────────────────────────────────────────────────┐   ║
+║  │ Incasso totale:      €8.450                      │   ║
+║  │ Ordini totali:       342                          │   ║
+║  │ Piatti esauriti:     2 (Salsiccia, Costine)      │   ║
+║  │ Tempo medio ordine:  4:32 min                    │   ║
+║  └──────────────────────────────────────────────────┘   ║
+║                                                          ║
+║  STEP 3 — Conferma [PIN richiesto]                      ║
+║  [🔒 CHIUDI SERVIZIO]                                   ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Comportamento:**
+- Step 1: mostra ordini incompleti. L'admin può chiuderli forzatamente o aspettare
+- Step 2: riepilogo numeri chiave della serata (non il report completo, quello è nella RECAP)
+- Step 3: richiede il PIN admin e conferma definitiva
+- Dopo la chiusura: tutte le casse mostrano "Servizio chiuso" e non accettano più ordini
+- Il report completo è disponibile nella dashboard RECAP
+
 ---
 
 ## 5. Stampa ESC/POS — Riferimento Tecnico
@@ -813,35 +1010,20 @@ pm2 save
 pm2 startup
 ```
 
-### 6.2 — Print Proxy (PC all-in-one alla sagra)
+### 6.2 — Print Proxy (qualsiasi PC alla sagra)
 
 ```bash
-# Sul PC all-in-one (cassa principale) — Windows
+# Su un PC collegato alla stessa rete Wi-Fi del router
 # Richiede Node.js installato (scaricare da https://nodejs.org)
 
-# Scaricare la cartella print-proxy/
 cd print-proxy
 npm install
 
 # Configurare il server URL in config.js
 # SERVER_URL = 'https://sagrapp.server.com'
 
-# SETUP STAMPANTE USB (Custom) — FARE UNA SOLA VOLTA:
-# 1. Collegare la stampante Custom via USB
-# 2. Installare il driver (dal CD o scaricandolo dal sito Custom)
-# 3. In Impostazioni Windows > Stampanti: condividere la stampante con nome "CustomPOS"
-# 4. Verificare: aprire Prompt comandi e digitare:
-#    echo test > \\localhost\CustomPOS
-#    (deve stampare "test" sulla Custom)
-
 # Avviare il print proxy
 node index.js
-
-# Per avvio automatico su Windows, creare un file start-proxy.bat:
-# @echo off
-# cd C:\sagrapp\print-proxy
-# node index.js
-# (e metterlo nella cartella Startup di Windows)
 ```
 ```
 
@@ -851,9 +1033,12 @@ Ogni dispositivo apre semplicemente il browser e naviga a:
 
 | Dispositivo | URL |
 |---|---|
-| PC Cassa (dashboard) | `https://sagrapp.server.com/` |
-| TV Monitor cuochi | `https://sagrapp.server.com/monitor` |
-| Tablet passa-piatti | `https://sagrapp.server.com/passapiatti` |
+| Tutti (landing page) | `https://sagrapp.server.com/` |
+| Dashboard test HW | `https://sagrapp.server.com/test` |
+| Monitor cuochi (TV) | `https://sagrapp.server.com/monitor` |
+| Tablet scaldavivande | `https://sagrapp.server.com/scaldavivande` |
+| Tablet zona controllo | `https://sagrapp.server.com/controllo` |
+| Admin | `https://sagrapp.server.com/admin` |
 
 ---
 
@@ -866,22 +1051,21 @@ module.exports = {
   // PIN accesso admin (4-6 cifre)
   ADMIN_PIN: '1234',
 
-  // Stampanti reali — configurazione per il test
-  // type: 'lan' = stampante di rete (TCP porta 9100)
-  // type: 'usb' = stampante USB collegata al PC dove gira il print proxy
+  // Stampanti — tutte in rete LAN via Powerline (ESC/POS TCP porta 9100)
+  // Nessuna stampante USB
   PRINTERS: [
-    { id: 1, name: 'Custom (Ricevuta cassa)', type: 'usb', model: 'Custom',
-      usb_name: 'CustomPOS',       // Nome condivisione Windows
-      usb_device: '/dev/usb/lp0'   // Device Linux/Mac
-    },
-    { id: 2, name: 'vretti (Comanda cibo)', type: 'lan', model: 'vretti 80mm',
-      ip: '192.168.1.202', port: 9100
-    },
-    { id: 3, name: 'Fuhuihe (Comanda bevande)', type: 'lan', model: 'Fuhuihe POS',
-      ip: '192.168.1.204', port: 9100
-    },
-    // Predisposta per il futuro — 4a stampante (ricevuta bar)
-    // { id: 4, name: 'Ricevuta bar', type: 'lan', ip: '192.168.1.203', port: 9100 },
+    { id: 1, name: 'vretti (Ricevuta cassa generale)', model: 'vretti 80mm',
+      ip: '192.168.1.203', port: 9100 },
+    { id: 2, name: 'Fuhuihe (Comanda bevande)', model: 'Fuhuihe POS',
+      ip: '192.168.1.204', port: 9100 },
+    { id: 3, name: 'Fuhuihe (Comanda cibo)', model: 'Fuhuihe POS',
+      ip: '192.168.1.205', port: 9100 },
+    { id: 4, name: 'Fuhuihe (Ricevuta cassa bar)', model: 'Fuhuihe POS',
+      ip: '192.168.1.206', port: 9100 },
+    { id: 5, name: 'Fuhuihe (Piatti speciali)', model: 'Fuhuihe POS',
+      ip: '192.168.1.207', port: 9100 },
+    { id: 6, name: 'Fuhuihe (Casetta aperitivi)', model: 'Fuhuihe POS',
+      ip: '192.168.1.208', port: 9100 },
   ],
 
   // Piatti di test per il monitor, passa-piatti, e magazzino
@@ -935,15 +1119,17 @@ Il test è superato quando:
 - [ ] Il server si avvia e risponde su porta 3000
 - [ ] La dashboard mostra lo stato connessione al server
 - [ ] Il print proxy si connette al server e appare come "online" sulla dashboard
-- [ ] Ogni stampante viene testata e mostra online/offline (TCP ping per LAN, device check per USB)
+- [ ] Ogni stampante viene testata con TCP ping e mostra online/offline
 - [ ] Il pulsante "Stampa Test" stampa effettivamente sulla stampante corretta
-- [ ] La stampante Custom (USB) stampa la pagina di test con caratteri speciali (àèìòù €)
-- [ ] La stampante vretti (LAN .202) stampa la comanda cibo con barcode Code 128 leggibile
-- [ ] La stampante Fuhuihe (LAN .204) stampa la comanda bevande
-- [ ] La pagina monitor (TV) si apre e mostra i contatori
-- [ ] La pagina passa-piatti si apre e mostra i pulsanti +/−
-- [ ] Un tap sul passa-piatti aggiorna il monitor TV in tempo reale (< 1 secondo)
-- [ ] Il lettore barcode BT scansiona un codice e la dashboard lo mostra
+- [ ] Tutte e 6 le stampanti LAN rispondono ai rispettivi IP (.203-.208)
+- [ ] La pagina monitor cuochi mostra 3 colonne: da cucinare / pronto / vendute
+- [ ] La pagina scaldavivande ha pulsanti +10, +20, +30, +40, +50 e − per ogni piatto
+- [ ] Un tap sullo scaldavivande aggiorna la colonna "pronto" del monitor in tempo reale (< 1 secondo)
+- [ ] Un ordine dalla cassa aggiorna la colonna "vendute" del monitor in tempo reale
+- [ ] La colonna "da cucinare" si ricalcola automaticamente (vendute − pronto)
+- [ ] Il tablet zona controllo mostra tastierino numerico
+- [ ] Digitare un numero ordine e premere "Evadi" segna l'ordine come evaso
+- [ ] Ordine non trovato → feedback rosso, ordine già evaso → feedback giallo
 - [ ] Il pulsante "Test Completo" esegue tutti i test in sequenza
 - [ ] Se una stampante è offline, il sistema lo segnala senza bloccarsi
 - [ ] Se il proxy si disconnette, la dashboard lo mostra chiaramente
@@ -960,6 +1146,16 @@ Il test è superato quando:
 - [ ] **Quando un piatto arriva a zero → segnato esaurito, non ordinabile**
 - [ ] **Admin può riattivare un piatto esaurito con nuova scorta**
 - [ ] **Esportazione report RECAP in CSV funzionante**
+- [ ] **Landing page con selezione ruolo funzionante**
+- [ ] **Ruolo salvato in localStorage: al riavvio va diretto alla pagina giusta**
+- [ ] **Setup inizio turno: wizard con check automatici su tutti i dispositivi**
+- [ ] **Setup: pulsante "Avvia Servizio" attivo solo quando tutti i check critici sono verdi**
+- [ ] **Pannello controllo HW: stato real-time tutti i dispositivi + log eventi**
+- [ ] **Alert sonoro/visivo alle casse quando una stampante va offline**
+- [ ] **Modalità emergenza: se stampante offline, comanda mostrata a schermo + coda di stampa**
+- [ ] **Coda di stampa: quando la stampante torna online, le comande in coda vengono stampate**
+- [ ] **Chiusura turno: verifica ordini aperti, riepilogo flash, conferma con PIN**
+- [ ] **Dopo chiusura: casse mostrano "Servizio chiuso" e non accettano ordini**
 
 ---
 
@@ -967,17 +1163,22 @@ Il test è superato quando:
 
 ### Priorità di sviluppo
 1. Server Express + Socket.IO (scheletro) + SQLite con schema inventario
-2. Print proxy con TCP verso stampanti
-3. Dashboard test hardware con stato stampanti e pulsanti test — **usa /frontend-design**
-4. Pagine monitor e passa-piatti con real-time — **usa /frontend-design**
-5. Gestione barcode input
-6. Login admin con PIN
-7. Gestione magazzino / scorte con pulsanti rapidi — **usa /frontend-design**
-8. Dashboard admin LIVE con statistiche real-time — **usa /frontend-design**
-9. Dashboard admin RECAP con report e esportazione CSV — **usa /frontend-design**
-10. Alert scorte alle casse (WebSocket push)
-11. Test completo automatizzato
-12. Polish finale e verifica contrasto/leggibilità
+2. Print proxy con TCP verso stampanti LAN + USB
+3. **Landing page selezione ruolo** — **usa /frontend-design**
+4. Dashboard test hardware con stato stampanti e pulsanti test — **usa /frontend-design**
+5. Pagine monitor e passa-piatti con real-time — **usa /frontend-design**
+6. Tablet zona controllo con tastierino numerico
+7. Login admin con PIN
+8. **Setup inizio turno (wizard)** — **usa /frontend-design**
+9. **Pannello controllo hardware real-time** — **usa /frontend-design**
+10. Gestione magazzino / scorte con pulsanti rapidi — **usa /frontend-design**
+11. Dashboard admin LIVE con statistiche real-time — **usa /frontend-design**
+12. Dashboard admin RECAP con report e esportazione CSV — **usa /frontend-design**
+13. Alert scorte alle casse (WebSocket push)
+14. **Alert sonori/visivi per problemi HW + modalità emergenza stampante**
+15. **Chiusura turno guidata** — **usa /frontend-design**
+16. Test completo automatizzato
+17. Polish finale e verifica contrasto/leggibilità
 
 ### Librerie npm da usare
 ```json

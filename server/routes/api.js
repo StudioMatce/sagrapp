@@ -8,10 +8,13 @@ const router = express.Router();
 // --- Stato in-memory (per la piattaforma di test) ---
 // In produzione verrà sostituito con SQLite
 
-// Contatori passa-piatti / monitor
+// Contatori scaldavivande / monitor — 3 colonne
+// pronto = pezzi nello scaldavivande (dal tablet)
+// vendute = totale ordinato alle casse (incrementa con gli ordini)
+// da_cucinare = vendute - pronto (calcolato lato client)
 const counters = {};
 config.TEST_ITEMS.forEach(item => {
-  counters[item.id] = 0;
+  counters[item.id] = { pronto: 0, vendute: 0 };
 });
 
 // Inventario / scorte
@@ -112,10 +115,9 @@ router.get('/printers/status', (req, res) => {
   const statuses = config.PRINTERS.map(p => ({
     id: p.id,
     name: p.name,
-    type: p.type,
     model: p.model,
-    ip: p.ip || null,
-    port: p.port || null,
+    ip: p.ip,
+    port: p.port,
     // Lo stato reale viene dal proxy via socket
     online: p._online || false,
     lastCheck: p._lastCheck || null,
@@ -142,11 +144,10 @@ router.post('/printers/:id/test', (req, res) => {
   // Genera un ID univoco per il job di stampa
   const jobId = `test-${printerId}-${Date.now()}`;
 
-  // Invia il comando al print proxy via Socket.IO
+  // Invia il comando al print proxy via Socket.IO (tutte LAN)
   io.to('proxy').emit('print', {
     printer_id: printerId,
-    printer_ip: printerConfig.ip || null,
-    printer_type: printerConfig.type,
+    printer_ip: printerConfig.ip,
     data: Array.from(data), // Converte Buffer in array per JSON
     job_id: jobId,
   });
@@ -158,26 +159,27 @@ router.post('/printers/:id/test', (req, res) => {
   });
 });
 
-// Stampa barcode di test (sulla stampante #2 vretti)
-router.post('/barcode/test', (req, res) => {
-  const code = req.body.code || `TEST-${Date.now().toString().slice(-6)}`;
-  const data = printer.buildTestBarcodePage(code);
-  const jobId = `barcode-${Date.now()}`;
+// Evasione ordine (dal tablet zona controllo)
+router.post('/orders/:id/fulfill', (req, res) => {
+  const orderId = parseInt(req.params.id);
+  const order = orders.find(o => o.id === orderId);
 
-  if (!io) {
-    return res.status(500).json({ error: 'Socket.IO non inizializzato' });
+  if (!order) {
+    return res.status(404).json({ success: false, error: 'Ordine non trovato' });
   }
 
-  const vretti = config.PRINTERS.find(p => p.id === 2);
-  io.to('proxy').emit('print', {
-    printer_id: 2,
-    printer_ip: vretti.ip,
-    printer_type: vretti.type,
-    data: Array.from(data),
-    job_id: jobId,
-  });
+  if (order.status === 'completed') {
+    return res.json({ success: false, already_fulfilled: true, order_number: orderId, table: order.table });
+  }
 
-  res.json({ success: true, code, job_id: jobId });
+  order.status = 'completed';
+  order.completed_at = Date.now();
+
+  if (io) {
+    io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
+  }
+
+  res.json({ success: true, order_number: orderId, table: order.table });
 });
 
 // =============================================
@@ -260,7 +262,7 @@ router.get('/admin/stats/live', requireAdmin, (req, res) => {
   const grillaProduced = {};
   grillaItems.forEach(item => {
     grillaOrdered[item.id] = 0;
-    grillaProduced[item.id] = counters[item.id] || 0;
+    grillaProduced[item.id] = counters[item.id] ? counters[item.id].pronto : 0;
   });
   orders.forEach(o => {
     (o.items || []).forEach(oi => {

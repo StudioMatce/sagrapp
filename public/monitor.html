@@ -32,11 +32,34 @@
       gap: 0;
     }
 
+    /* Riga header con nomi colonne */
+    .header-row {
+      display: flex;
+      align-items: flex-end;
+      padding: 0 2vw 1vh;
+      flex-shrink: 0;
+    }
+
+    .col-spacer {
+      flex: 1;
+    }
+
+    .col-label {
+      width: clamp(80px, 14vw, 200px);
+      flex-shrink: 0;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(11px, 1.5vw, 20px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(240, 244, 248, 0.35);
+    }
+
     /* Ogni riga è un piatto */
     .row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       flex: 1;
       max-height: 14vh;
       padding: 0 2vw;
@@ -52,31 +75,36 @@
 
     /* Nome piatto — grande, bold, a sinistra */
     .dish-name {
+      flex: 1;
       font-weight: 700;
-      font-size: clamp(28px, 4vw, 56px);
+      font-size: clamp(22px, 3vw, 40px);
       letter-spacing: -0.01em;
       color: rgba(240, 244, 248, 0.7);
       text-transform: uppercase;
     }
 
-    /* Numero — enorme, monospace, a destra */
+    /* Numeri — 3 colonne a destra */
     .dish-count {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(72px, 10vw, 140px);
+      font-size: clamp(48px, 7vw, 100px);
       line-height: 1;
       color: #ffffff;
-      min-width: 3ch;
-      text-align: right;
-      transition: color 200ms ease;
-      /* Leggera ombra per dare profondità al numero */
+      width: clamp(80px, 14vw, 200px);
+      flex-shrink: 0;
+      text-align: center;
+      transition: color 200ms ease, text-shadow 200ms ease;
       text-shadow: 0 0 40px rgba(78, 204, 163, 0.12);
     }
 
     .dish-count.changed {
-      color: #4ecca3;
-      text-shadow: 0 0 50px rgba(78, 204, 163, 0.3);
+      text-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
     }
+
+    /* Colori per "da cucinare" */
+    .dish-count.cook-green { color: #4ecca3; }
+    .dish-count.cook-yellow { color: #ffd93d; }
+    .dish-count.cook-red { color: #e94560; }
 
     /* Indicatore connessione — angolo in basso a destra, minimo */
     .conn-dot {
@@ -194,20 +222,30 @@
       { id: 'costine',    label: 'Costine' },
       { id: 'salsiccia',  label: 'Salsiccia' },
       { id: 'spiedini',   label: 'Spiedini' },
-      { id: 'pasta_ragu', label: 'Pasta Ragù' },
+      { id: 'pasta_ragu', label: 'Pasta Ragu' },
       { id: 'birra_media',label: 'Birra Media' },
     ];
 
-    // Stato contatori
+    // Stato contatori — 3 colonne: pronto (scaldavivande), vendute (cassa)
+    // da_cucinare = vendute - pronto (calcolato)
     const counters = {};
-    ITEMS.forEach(i => { counters[i.id] = 0; });
+    ITEMS.forEach(i => { counters[i.id] = { pronto: 0, vendute: 0 }; });
 
-    // Genera il tabellone
+    // Genera il tabellone con header + righe
     const board = document.getElementById('board');
-    board.innerHTML = ITEMS.map(item => `
+    board.innerHTML = `
+      <div class="header-row">
+        <span class="col-spacer"></span>
+        <span class="col-label">Da cucinare</span>
+        <span class="col-label">Pronto</span>
+        <span class="col-label">Vendute</span>
+      </div>
+    ` + ITEMS.map(item => `
       <div class="row" id="row-${item.id}">
         <span class="dish-name">${item.label}</span>
-        <span class="dish-count" id="count-${item.id}">0</span>
+        <span class="dish-count cook-green" id="cook-${item.id}">0</span>
+        <span class="dish-count" id="ready-${item.id}">0</span>
+        <span class="dish-count" id="sold-${item.id}">0</span>
       </div>
     `).join('');
 
@@ -232,29 +270,56 @@
       lostOverlay.classList.add('visible');
     });
 
-    // Aggiornamento contatori
+    // Aggiornamento contatori — 3 colonne
     socket.on('counters_changed', ({ counters: newCounters }) => {
       ITEMS.forEach(item => {
-        const oldVal = counters[item.id];
-        const newVal = newCounters[item.id] !== undefined ? newCounters[item.id] : oldVal;
+        const oldData = counters[item.id];
+        const newData = newCounters[item.id];
+        if (!newData) return;
 
-        if (newVal !== oldVal) {
-          counters[item.id] = newVal;
-          const el = document.getElementById(`count-${item.id}`);
-          const row = document.getElementById(`row-${item.id}`);
+        const oldPronto = oldData.pronto;
+        const oldVendute = oldData.vendute;
+        const newPronto = newData.pronto;
+        const newVendute = newData.vendute;
 
-          el.textContent = newVal;
+        // Aggiorna stato locale
+        counters[item.id] = { pronto: newPronto, vendute: newVendute };
 
-          // Flash sul numero
-          el.classList.add('changed');
+        // Calcola "da cucinare"
+        const oldCook = Math.max(0, oldVendute - oldPronto);
+        const newCook = Math.max(0, newVendute - newPronto);
+
+        const cookEl = document.getElementById(`cook-${item.id}`);
+        const readyEl = document.getElementById(`ready-${item.id}`);
+        const soldEl = document.getElementById(`sold-${item.id}`);
+        const row = document.getElementById(`row-${item.id}`);
+
+        // Aggiorna valori
+        cookEl.textContent = newCook;
+        readyEl.textContent = newPronto;
+        soldEl.textContent = newVendute;
+
+        // Colore "da cucinare": verde=0, giallo=1-10, rosso=>10
+        cookEl.classList.remove('cook-green', 'cook-yellow', 'cook-red');
+        if (newCook === 0) cookEl.classList.add('cook-green');
+        else if (newCook <= 10) cookEl.classList.add('cook-yellow');
+        else cookEl.classList.add('cook-red');
+
+        // Flash se qualcosa è cambiato
+        if (newCook !== oldCook || newPronto !== oldPronto || newVendute !== oldVendute) {
           row.classList.add('flash');
-          setTimeout(() => {
-            el.classList.remove('changed');
-            row.classList.remove('flash');
-          }, 400);
+          if (newCook !== oldCook) flashEl(cookEl);
+          if (newPronto !== oldPronto) flashEl(readyEl);
+          if (newVendute !== oldVendute) flashEl(soldEl);
+          setTimeout(() => row.classList.remove('flash'), 400);
         }
       });
     });
+
+    function flashEl(el) {
+      el.classList.add('changed');
+      setTimeout(() => el.classList.remove('changed'), 400);
+    }
 
     // Fullscreen mode (?mode=fullscreen)
     const params = new URLSearchParams(window.location.search);

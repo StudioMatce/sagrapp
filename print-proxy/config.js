@@ -12,7 +12,7 @@
 
 const SERVERS = {
   // Inserisci qui l'URL di Railway dopo il deploy
-  cloud: process.env.SERVER_URL || 'https://sagrapp.up.railway.app',
+  cloud: process.env.SERVER_URL || 'https://web-production-4fa18.up.railway.app',
   local: 'http://localhost:3000',
 };
 
@@ -23,12 +23,6 @@ const SERVER_URL = SERVERS[mode] || SERVERS.cloud;
 module.exports = {
   SERVER_URL,
   MODE: mode,
-
-  // Stampante USB — configurazione
-  USB_PRINTER: {
-    windows_share_name: 'CustomPOS',
-    unix_device: '/dev/usb/lp0',
-  },
 
   // Intervallo check stampanti (ms)
   CHECK_INTERVAL: 10000,
