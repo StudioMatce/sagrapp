@@ -34,7 +34,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 8px 16px;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
@@ -89,128 +89,118 @@
     .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
     .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
 
-    /* ===== GRIGLIA PIATTI ===== */
-    .menu {
+    /* ===== LAYOUT DUE COLONNE (identico al foglio cartaceo) ===== */
+    .menu-wrapper {
       flex: 1;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      padding: 12px 12px 90px;
-      align-content: start;
+      display: flex;
+      gap: 12px;
+      padding: 8px 10px 132px;
+      overflow-y: auto;
+      align-items: flex-start;
     }
 
-    @media (min-width: 600px) {
-      .menu {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        padding: 16px 16px 96px;
-      }
-    }
-
-    /* ===== CARD PIATTO ===== */
-    .item-card {
-      background: rgba(255, 255, 255, 0.025);
-      border: 1.5px solid rgba(255, 255, 255, 0.05);
-      border-left: 3px solid var(--sc);
-      border-radius: 12px;
-      padding: 12px 14px;
+    .menu-col {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
     }
 
-    .item-card.active {
-      border-color: rgba(78, 204, 163, 0.45);
-      border-left-color: rgba(78, 204, 163, 0.45);
-      background: rgba(78, 204, 163, 0.04);
-      box-shadow: 0 0 20px rgba(78, 204, 163, 0.06);
-    }
-
-    .item-station {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--sc);
-      opacity: 0.7;
-    }
-
-    .item-info {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .item-name {
-      font-weight: 600;
-      font-size: clamp(15px, 3.5vw, 20px);
-      color: rgba(240, 244, 248, 0.85);
-    }
-
-    .item-price {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: clamp(14px, 3vw, 18px);
-      color: #4ecca3;
-      white-space: nowrap;
-    }
-
-    /* ===== STEPPER ===== */
-    .item-stepper {
+    /* ===== RIGA PIATTO ===== */
+    .menu-row {
       display: flex;
       align-items: center;
-      border-radius: 8px;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      transition: background 120ms ease;
+      min-height: 38px;
+    }
+
+    .menu-row:active {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .menu-row.active {
+      background: rgba(78, 204, 163, 0.06);
+    }
+
+    .row-name {
+      flex: 1;
+      font-weight: 500;
+      font-size: 13px;
+      color: rgba(240, 244, 248, 0.8);
+      line-height: 1.2;
+      min-width: 0;
+    }
+
+    .menu-row.active .row-name {
+      color: #f0f4f8;
+      font-weight: 600;
+    }
+
+    .row-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(78, 204, 163, 0.6);
+      white-space: nowrap;
+      min-width: 46px;
+      text-align: right;
+    }
+
+    .menu-row.active .row-price {
+      color: #4ecca3;
+    }
+
+    /* ===== STEPPER COMPATTO ===== */
+    .row-stepper {
+      display: flex;
+      align-items: center;
+      border-radius: 6px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.06);
-      margin-top: 4px;
+      flex-shrink: 0;
     }
 
     .step-btn {
-      width: clamp(44px, 10vw, 56px);
-      height: clamp(40px, 9vw, 48px);
-      background: rgba(255, 255, 255, 0.03);
+      width: 34px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.02);
       border: none;
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(20px, 4.5vw, 28px);
+      font-size: 18px;
       font-weight: 800;
       cursor: pointer;
       touch-action: manipulation;
-      transition: background 100ms ease;
+      transition: background 80ms ease;
       line-height: 1;
       padding: 0;
     }
 
-    .step-btn:active {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .step-minus {
-      color: #e94560;
-      border-right: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .step-plus {
-      color: #4ecca3;
-      border-left: 1px solid rgba(255, 255, 255, 0.04);
-    }
+    .step-btn:active { background: rgba(255, 255, 255, 0.1); }
+    .step-minus { color: #e94560; border-right: 1px solid rgba(255, 255, 255, 0.04); }
+    .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      flex: 1;
+      width: 28px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(18px, 4vw, 24px);
+      font-size: 14px;
       color: rgba(255, 255, 255, 0.9);
-      height: clamp(40px, 9vw, 48px);
-      line-height: clamp(40px, 9vw, 48px);
+      height: 32px;
+      line-height: 32px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
 
-    .step-count.zero {
-      color: rgba(255, 255, 255, 0.2);
+    .step-count.zero { color: rgba(255, 255, 255, 0.15); }
+
+    /* ===== SEPARATORE tra gruppi ===== */
+    .sep {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 4px 8px;
     }
 
     /* ===== ORDER BAR ===== */
@@ -275,15 +265,9 @@
       -moz-appearance: textfield;
     }
 
-    .table-field input::placeholder {
-      color: rgba(255, 255, 255, 0.15);
-    }
-
+    .table-field input::placeholder { color: rgba(255, 255, 255, 0.15); }
     .table-field input::-webkit-outer-spin-button,
-    .table-field input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
+    .table-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
     .order-summary {
       flex: 1;
@@ -335,10 +319,7 @@
       border-color: #4ecca3;
     }
 
-    .btn-order.disabled {
-      opacity: 0.25;
-      pointer-events: none;
-    }
+    .btn-order.disabled { opacity: 0.25; pointer-events: none; }
 
     /* ===== OVERLAYS ===== */
     .overlay {
@@ -354,11 +335,7 @@
       transition: opacity 200ms ease;
     }
 
-    .overlay.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
+    .overlay.visible { opacity: 1; pointer-events: auto; }
     .overlay-success { background: rgba(78, 204, 163, 0.93); }
     .overlay-error { background: rgba(233, 69, 96, 0.93); }
 
@@ -424,6 +401,154 @@
     }
 
     .offline-banner.visible { transform: translateY(0); }
+
+    /* ===== RIGA SUPERIORE ORDER BAR ===== */
+    .order-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      margin-bottom: 6px;
+    }
+
+    .order-bottom {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .field-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 4px 8px;
+      flex-shrink: 0;
+    }
+
+    .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .field-group input[type="text"] {
+      width: 110px;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .field-group input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+    .field-group input[type="number"] {
+      width: 36px;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .field-group input[type="number"]::-webkit-outer-spin-button,
+    .field-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .field-group input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+    .toggle-unit {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(240, 244, 248, 0.5);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms ease;
+      touch-action: manipulation;
+    }
+
+    .toggle-unit:active { background: rgba(255, 255, 255, 0.1); }
+
+    .courtesy-flags {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .flag-btn {
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.35);
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+      white-space: nowrap;
+    }
+
+    .flag-btn:active { transform: scale(0.95); }
+
+    .flag-btn.active {
+      border-color: #ffd93d;
+      background: rgba(255, 217, 61, 0.12);
+      color: #ffd93d;
+      box-shadow: 0 0 10px rgba(255, 217, 61, 0.1);
+    }
+
+    /* Indicatore omaggio sul totale */
+    .order-total.courtesy {
+      color: #ffd93d;
+      font-size: clamp(16px, 4vw, 22px);
+    }
+
+    .courtesy-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #ffd93d;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .real-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(240, 244, 248, 0.25);
+      text-decoration: line-through;
+    }
+
+    .discount-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 217, 61, 0.6);
+    }
   </style>
 </head>
 <body>
@@ -443,22 +568,43 @@
     </span>
   </header>
 
-  <!-- Griglia piatti -->
-  <div class="menu" id="menu">
-    <!-- Generato da JS -->
+  <!-- Due colonne — stessa disposizione del foglio cartaceo -->
+  <div class="menu-wrapper">
+    <div class="menu-col" id="colLeft"></div>
+    <div class="menu-col" id="colRight"></div>
   </div>
 
-  <!-- Barra ordine -->
+  <!-- Barra ordine — due righe -->
   <div class="order-bar">
-    <div class="table-field" id="tableField">
-      <span class="table-label">Tav</span>
-      <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+    <!-- Riga superiore: nome, sconto, flag omaggio -->
+    <div class="order-top">
+      <div class="field-group">
+        <span class="field-label">Nome</span>
+        <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Sconto</span>
+        <input type="number" id="discountInput" inputmode="decimal" min="0" step="any" placeholder="0">
+        <button class="toggle-unit" id="discountToggle" onclick="toggleDiscountUnit()">&euro;</button>
+      </div>
+      <div class="courtesy-flags">
+        <button class="flag-btn" id="flag-sponsor" onclick="toggleFlag('sponsor')">Sponsor</button>
+        <button class="flag-btn" id="flag-don_pierino" onclick="toggleFlag('don_pierino')">Don Pierino</button>
+        <button class="flag-btn" id="flag-amici" onclick="toggleFlag('amici')">Amici</button>
+      </div>
     </div>
-    <div class="order-summary">
-      <span class="order-count" id="orderCount"></span>
-      <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
+    <!-- Riga inferiore: tavolo, totale, ordina -->
+    <div class="order-bottom">
+      <div class="table-field" id="tableField">
+        <span class="table-label">Tav</span>
+        <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+      </div>
+      <div class="order-summary">
+        <span class="order-count" id="orderCount"></span>
+        <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
+      </div>
+      <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
     </div>
-    <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
   </div>
 
   <!-- Overlay successo -->
@@ -478,47 +624,183 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Piatti — stessa lista del server/config.js
+    // ===== MENU — stessi piatti e stessi dati del server =====
     const ITEMS = [
-      { id: 'bistecca',    name: 'Bistecca',       station: 'griglia', price: 12.00, category: 'cibo' },
-      { id: 'costine',     name: 'Costine',        station: 'griglia', price: 10.00, category: 'cibo' },
-      { id: 'salsiccia',   name: 'Salsiccia',      station: 'griglia', price:  8.00, category: 'cibo' },
-      { id: 'spiedini',    name: 'Spiedini',       station: 'griglia', price:  9.00, category: 'cibo' },
-      { id: 'pasta_ragu',  name: 'Pasta al ragu',  station: 'primi',   price:  7.00, category: 'cibo' },
-      { id: 'birra_media', name: 'Birra media',    station: 'bar',     price:  4.00, category: 'bevanda' },
+      // PRIMI
+      { id: 'gnocchi_ragu', name: 'Gnocchi al ragù', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
+      { id: 'gnocchi_burro', name: 'Gnocchi burro e salvia', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
+      { id: 'pasta_ragu', name: 'Pasta al ragù', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
+      { id: 'pasta_bianco', name: 'Pasta in bianco', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
+      // SECONDI
+      { id: 'formaggio_polenta', name: 'Formaggio cotto con polenta*', price: 6.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
+      { id: 'wurstel_patate', name: 'Wurstel con patate fritte', price: 5.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
+      { id: 'pastin_patate', name: 'Pastin patate fritte', price: 7.50, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'salsiccia_polenta', name: 'Salsiccia con polenta*', price: 6.80, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'costicine_polenta', name: 'Costicine con polenta*', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'sovracoscia_polenta', name: 'Sovracoscia di pollo con polenta*', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'grigliata_mista', name: 'Grigliata mista con polenta*', price: 11.00, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      // SPECIALI
+      { id: 'pesce_fritto', name: 'Pesce fritto', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'coniglio', name: 'Coniglio', price: 15.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'costata', name: 'Costata', price: 24.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'galletto_patate', name: 'Galletto con patate', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'trippa', name: 'Trippa', price: 7.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'paella', name: 'Paella', price: 16.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'spiedo', name: 'Spiedo', price: 12.80, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      { id: 'frico', name: 'Frico', price: 8.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
+      // CONDIMENTI
+      { id: 'maionese', name: 'Maionese', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
+      { id: 'ketchup', name: 'Ketchup', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
+      // CONTORNI
+      { id: 'patate_fritte', name: 'Patate fritte', price: 2.90, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
+      { id: 'fagioli', name: 'Fagioli', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
+      { id: 'fagioli_cipolla', name: 'Fagioli con cipolla', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
+      { id: 'cappuccio', name: 'Cappuccio', price: 2.00, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
+      { id: 'funghi', name: 'Funghi misto bosco', price: 3.20, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
+      // BEVANDE
+      { id: 'birra_spina', name: 'Birra alla spina', price: 3.50, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'vino_bianco_ombra', name: 'Vino ombra bianco', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'vino_rosso_ombra', name: 'Vino ombra rosso', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'vino_bianco_mezzo', name: 'Vino bianco sfuso 1/2L', price: 3.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'vino_rosso_mezzo', name: 'Vino rosso sfuso 1/2L', price: 3.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'vino_bianco_trequarti', name: 'Vino bianco sfuso 3/4L', price: 4.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'vino_rosso_trequarti', name: 'Vino rosso sfuso 3/4L', price: 4.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'prosecco', name: 'Prosecco Superiore DOCG', price: 9.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'cabernet', name: 'Bottiglia Cabernet', price: 7.50, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'acqua_naturale', name: 'Acqua naturale 1/2L', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'acqua_frizzante', name: 'Acqua frizzante 1/2L', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'the_pesca', name: 'The alla pesca', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'the_limone', name: 'The al limone', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'coca_cola', name: 'Coca Cola', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'coca_zero', name: 'Coca Cola Zero', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+      { id: 'fanta', name: 'Fanta', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
     ];
 
-    // Colori per stazione (bordo sinistro delle card)
-    const STATION_COLORS = {
-      griglia: '#e8983a',
-      primi:   '#d4a843',
-      bar:     '#4eb8d4',
-    };
+    // ===== DISPOSIZIONE COLONNE — identica al foglio cartaceo =====
+    // '---' = separatore visivo tra gruppi
+
+    const LEFT_COL = [
+      // Primi
+      'gnocchi_ragu', 'gnocchi_burro', 'pasta_ragu', 'pasta_bianco',
+      '---',
+      // Secondi
+      'formaggio_polenta', 'wurstel_patate', 'pastin_patate', 'salsiccia_polenta',
+      'costicine_polenta', 'sovracoscia_polenta', 'grigliata_mista',
+      '---',
+      // Piatti speciali
+      'pesce_fritto', 'coniglio', 'costata', 'galletto_patate',
+      'trippa', 'paella', 'spiedo', 'frico',
+      '---',
+      // Condimenti
+      'maionese', 'ketchup',
+    ];
+
+    const RIGHT_COL = [
+      // Contorni
+      'patate_fritte', 'fagioli', 'fagioli_cipolla', 'cappuccio', 'funghi',
+      '---',
+      // Birra
+      'birra_spina',
+      '---',
+      // Vini sfusi
+      'vino_bianco_ombra', 'vino_rosso_ombra',
+      'vino_bianco_mezzo', 'vino_rosso_mezzo',
+      'vino_bianco_trequarti', 'vino_rosso_trequarti',
+      '---',
+      // Bottiglie
+      'prosecco', 'cabernet',
+      '---',
+      // Acqua
+      'acqua_naturale', 'acqua_frizzante',
+      '---',
+      // Lattine
+      'the_pesca', 'the_limone', 'coca_cola', 'coca_zero', 'fanta',
+    ];
 
     const quantities = {};
     ITEMS.forEach(i => { quantities[i.id] = 0; });
 
     let connected = false;
     let submitting = false;
+    let activeCourtesy = null; // 'sponsor' | 'don_pierino' | 'amici' | null
+    let discountIsPercent = false;
 
-    // --- Genera la griglia piatti ---
-    const menu = document.getElementById('menu');
-    menu.innerHTML = ITEMS.map(item => `
-      <div class="item-card" id="card-${item.id}" style="--sc: ${STATION_COLORS[item.station] || '#666'}">
-        <div class="item-station">${item.station}</div>
-        <div class="item-info">
-          <span class="item-name">${item.name}</span>
-          <span class="item-price">&euro; ${item.price.toFixed(2)}</span>
-        </div>
-        <div class="item-stepper">
-          <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">&minus;</button>
-          <span class="step-count zero" id="qty-${item.id}">0</span>
-          <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
-        </div>
-      </div>
-    `).join('');
+    // --- Genera HTML di una colonna ---
+    function renderCol(entries) {
+      return entries.map(entry => {
+        if (entry === '---') return '<div class="sep"></div>';
+        const item = ITEMS.find(i => i.id === entry);
+        if (!item) return '';
+        return `
+          <div class="menu-row" id="card-${item.id}">
+            <span class="row-name">${item.name}</span>
+            <span class="row-price">\u20AC${item.price.toFixed(2)}</span>
+            <div class="row-stepper">
+              <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
+              <span class="step-count zero" id="qty-${item.id}">0</span>
+              <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
 
-    // --- Logica quantita ---
+    document.getElementById('colLeft').innerHTML = renderCol(LEFT_COL);
+    document.getElementById('colRight').innerHTML = renderCol(RIGHT_COL);
+
+    // --- Flag omaggio: solo uno attivo alla volta ---
+    function toggleFlag(type) {
+      if (activeCourtesy === type) {
+        activeCourtesy = null;
+        document.getElementById(`flag-${type}`).classList.remove('active');
+      } else {
+        // Disattiva il precedente
+        if (activeCourtesy) {
+          document.getElementById(`flag-${activeCourtesy}`).classList.remove('active');
+        }
+        activeCourtesy = type;
+        document.getElementById(`flag-${type}`).classList.add('active');
+      }
+      updateOrderBar();
+    }
+
+    // --- Toggle unità sconto: € ↔ % ---
+    function toggleDiscountUnit() {
+      discountIsPercent = !discountIsPercent;
+      document.getElementById('discountToggle').textContent = discountIsPercent ? '%' : '\u20AC';
+      updateOrderBar();
+    }
+
+    // --- Calcola totale con sconto e omaggio ---
+    function calcOrder() {
+      let totalItems = 0;
+      let subtotal = 0;
+      ITEMS.forEach(item => {
+        totalItems += quantities[item.id];
+        subtotal += quantities[item.id] * item.price;
+      });
+
+      // Se flag omaggio attivo → totale = 0, ma il valore reale resta
+      if (activeCourtesy) {
+        return { totalItems, subtotal, discount: 0, total: 0, courtesyType: activeCourtesy };
+      }
+
+      // Calcolo sconto
+      const discountInput = parseFloat(document.getElementById('discountInput').value) || 0;
+      let discount = 0;
+      if (discountInput > 0) {
+        if (discountIsPercent) {
+          discount = subtotal * (discountInput / 100);
+        } else {
+          discount = discountInput;
+        }
+        discount = Math.min(discount, subtotal);
+        discount = Math.round(discount * 100) / 100;
+      }
+
+      return { totalItems, subtotal, discount, total: subtotal - discount, courtesyType: null };
+    }
+
+    // --- Logica quantità ---
     function changeQty(id, delta) {
       if (!connected || submitting) return;
       quantities[id] = Math.max(0, quantities[id] + delta);
@@ -534,20 +816,31 @@
     }
 
     function updateOrderBar() {
-      let totalItems = 0;
-      let totalPrice = 0;
-      ITEMS.forEach(item => {
-        totalItems += quantities[item.id];
-        totalPrice += quantities[item.id] * item.price;
-      });
+      const { totalItems, subtotal, discount, total, courtesyType } = calcOrder();
 
       const countEl = document.getElementById('orderCount');
       const totalEl = document.getElementById('orderTotal');
       const btnOrder = document.getElementById('btnOrder');
 
-      countEl.textContent = totalItems > 0 ? `${totalItems} piatt${totalItems === 1 ? 'o' : 'i'}` : '';
-      totalEl.textContent = `\u20AC ${totalPrice.toFixed(2)}`;
+      // Conteggio piatti
+      countEl.innerHTML = '';
+      if (totalItems > 0) {
+        let label = `${totalItems} piatt${totalItems === 1 ? 'o' : 'i'}`;
+        // Mostra info extra sotto il conteggio
+        if (courtesyType) {
+          const names = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+          label += ` <span class="courtesy-label">OMAGGIO ${names[courtesyType]}</span>`;
+          if (subtotal > 0) label += ` <span class="real-value">\u20AC${subtotal.toFixed(2)}</span>`;
+        } else if (discount > 0) {
+          label += ` <span class="discount-label">-\u20AC${discount.toFixed(2)}</span>`;
+        }
+        countEl.innerHTML = label;
+      }
+
+      // Totale
+      totalEl.textContent = `\u20AC ${total.toFixed(2)}`;
       totalEl.classList.toggle('empty', totalItems === 0);
+      totalEl.classList.toggle('courtesy', !!courtesyType && totalItems > 0);
 
       const tableValue = document.getElementById('tableInput').value;
       btnOrder.classList.toggle('disabled', totalItems === 0 || !tableValue);
@@ -574,33 +867,48 @@
 
       if (items.length === 0) return;
 
+      const { subtotal, discount, total, courtesyType } = calcOrder();
+      const customerName = document.getElementById('nameInput').value.trim() || null;
+      const discountRaw = parseFloat(document.getElementById('discountInput').value) || 0;
+
       submitting = true;
 
       try {
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ table, items }),
+          body: JSON.stringify({
+            table,
+            items,
+            customer_name: customerName,
+            discount: discount,
+            discount_type: discountIsPercent ? 'percent' : 'euro',
+            discount_value: discountRaw,
+            courtesy_type: courtesyType,
+          }),
         });
         const data = await res.json();
 
         if (data.success) {
-          // Mostra conferma
           document.getElementById('successNumber').textContent = `#${data.order_number}`;
-          document.getElementById('successSub').textContent =
-            `Tavolo ${data.table} \u2014 \u20AC ${data.total.toFixed(2)}`;
+          // Mostra il totale effettivo pagato
+          let subText = `Tavolo ${data.table} \u2014 \u20AC ${data.total.toFixed(2)}`;
+          if (data.courtesy_type) {
+            const names = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+            subText = `Tavolo ${data.table} \u2014 OMAGGIO ${names[data.courtesy_type]}`;
+          }
+          document.getElementById('successSub').textContent = subText;
 
-          // Badge stampe inviate
           const printsEl = document.getElementById('successPrints');
           const badges = [];
           if (data.prints.receipt) badges.push('Ricevuta');
           if (data.prints.food) badges.push('Comanda cibo');
           if (data.prints.drinks) badges.push('Comanda bevande');
+          if (data.prints.special) badges.push('Piatti speciali');
           printsEl.innerHTML = badges.map(b => `<span class="print-badge">${b}</span>`).join('');
 
           showOverlay('success');
 
-          // Aggiorna "ultimo ordine" nell'header
           const lastEl = document.getElementById('lastOrder');
           lastEl.textContent = `Ultimo: #${data.order_number}`;
           lastEl.classList.add('visible');
@@ -628,6 +936,13 @@
         document.getElementById(`card-${item.id}`).classList.remove('active');
       });
       document.getElementById('tableInput').value = '';
+      document.getElementById('nameInput').value = '';
+      document.getElementById('discountInput').value = '';
+      // Reset flag omaggio
+      if (activeCourtesy) {
+        document.getElementById(`flag-${activeCourtesy}`).classList.remove('active');
+        activeCourtesy = null;
+      }
       updateOrderBar();
     }
 
@@ -670,8 +985,8 @@
       statusText.textContent = 'Offline';
     });
 
-    // Aggiorna lo stato del pulsante ORDINA quando cambia il tavolo
     document.getElementById('tableInput').addEventListener('input', updateOrderBar);
+    document.getElementById('discountInput').addEventListener('input', updateOrderBar);
   </script>
 </body>
 </html>

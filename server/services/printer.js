@@ -223,7 +223,7 @@ function buildReceipt(order) {
   const parts = [
     INIT,
     ALIGN_CENTER,
-    BOLD_ON, DOUBLE_BOTH, text('SAGRA'),
+    BOLD_ON, DOUBLE_BOTH, text('SAGRA M.D.G.'),
     NORMAL_SIZE, BOLD_OFF,
     text(LINE),
     BOLD_ON, text(`ORDINE #${order.id}`),
@@ -241,15 +241,54 @@ function buildReceipt(order) {
     parts.push(text(padLine(desc, price)));
   });
 
+  const subtotal = order.subtotal !== undefined ? order.subtotal : order.total;
+
   parts.push(
     text(''),
     text(LINE),
+  );
+
+  // Mostra subtotale se c'è sconto o omaggio
+  if (order.discount > 0 || order.courtesy_type) {
+    parts.push(text(padLine('SUBTOTALE', subtotal.toFixed(2))));
+  }
+
+  // Sconto
+  if (order.discount > 0) {
+    const discountLabel = order.discount_type === 'percent'
+      ? `SCONTO (${order.discount_value}%)`
+      : 'SCONTO';
+    parts.push(text(padLine(discountLabel, `-${order.discount.toFixed(2)}`)));
+  }
+
+  // Omaggio
+  const courtesyLabels = {
+    sponsor: 'OMAGGIO SPONSOR',
+    don_pierino: 'OMAGGIO DON PIERINO',
+    amici: 'OMAGGIO AMICI',
+  };
+  if (order.courtesy_type && courtesyLabels[order.courtesy_type]) {
+    parts.push(BOLD_ON);
+    parts.push(text(courtesyLabels[order.courtesy_type]));
+    parts.push(BOLD_OFF);
+  }
+
+  // Totale
+  parts.push(
     BOLD_ON,
     text(padLine('TOTALE', order.total.toFixed(2))),
     BOLD_OFF,
     text(LINE),
     ALIGN_CENTER,
     text(''),
+  );
+
+  // Nome cliente se presente
+  if (order.customer_name) {
+    parts.push(text(`Cliente: ${order.customer_name}`));
+  }
+
+  parts.push(
     text('Grazie e buon appetito!'),
     text(''),
     FEED, CUT,
@@ -259,9 +298,12 @@ function buildReceipt(order) {
 }
 
 // Comanda cibo — Fuhuihe .205 (printer #3)
+// Filtra per print_to che include 'cibo' (include anche i piatti speciali)
 // Testo in DOUBLE per leggibilità in cucina
 function buildFoodOrder(order) {
-  const foodItems = order.items.filter(i => i.category === 'cibo');
+  const foodItems = order.items.filter(i =>
+    i.print_to && i.print_to.includes('cibo')
+  );
   if (foodItems.length === 0) return null;
 
   const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
@@ -283,7 +325,9 @@ function buildFoodOrder(order) {
 
   foodItems.forEach(item => {
     parts.push(BOLD_ON, DOUBLE_BOTH);
-    parts.push(text(`  ${item.qty}x ${item.name}`));
+    // Evidenzia i piatti speciali con asterisco
+    const prefix = item.special ? '* ' : '  ';
+    parts.push(text(`${prefix}${item.qty}x ${item.name}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
   });
 
@@ -298,9 +342,11 @@ function buildFoodOrder(order) {
 }
 
 // Comanda bevande — Fuhuihe .204 (printer #2)
-// Ritorna null se non ci sono bevande nell'ordine
+// Filtra per print_to che include 'bevande'
 function buildDrinkOrder(order) {
-  const drinkItems = order.items.filter(i => i.category === 'bevanda');
+  const drinkItems = order.items.filter(i =>
+    i.print_to && i.print_to.includes('bevande')
+  );
   if (drinkItems.length === 0) return null;
 
   const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
@@ -336,9 +382,50 @@ function buildDrinkOrder(order) {
   return Buffer.concat(parts);
 }
 
+// Comanda piatti speciali — Fuhuihe .207 (printer #5)
+// DOPPIA STAMPA: questi piatti vanno GIA' sulla comanda cibo (.205),
+// qui stampiamo SOLO i piatti speciali per la zona dedicata
+function buildSpecialOrder(order) {
+  const specialItems = order.items.filter(i => i.special);
+  if (specialItems.length === 0) return null;
+
+  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+  const parts = [
+    INIT,
+    CODEPAGE_CP437,
+    ALIGN_CENTER,
+    BOLD_ON, text(LINE),
+    DOUBLE_BOTH, text('PIATTO SPECIALE'),
+    NORMAL_SIZE, BOLD_ON,
+    text(LINE),
+    BOLD_OFF,
+    text(`Ordine #${order.id}  Tavolo ${order.table}`),
+    text(now),
+    text(LINE),
+    ALIGN_LEFT,
+    text(''),
+  ];
+
+  specialItems.forEach(item => {
+    parts.push(BOLD_ON, DOUBLE_BOTH);
+    parts.push(text(`  ${item.qty}x ${item.name}`));
+    parts.push(NORMAL_SIZE, BOLD_OFF);
+  });
+
+  parts.push(
+    text(''),
+    ALIGN_CENTER,
+    text(LINE),
+    FEED, CUT,
+  );
+
+  return Buffer.concat(parts);
+}
+
 module.exports = {
   buildTestPage,
   buildReceipt,
   buildFoodOrder,
   buildDrinkOrder,
+  buildSpecialOrder,
 };

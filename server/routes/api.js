@@ -6,41 +6,40 @@ const printer = require('../services/printer');
 const router = express.Router();
 
 // --- Stato in-memory (per la piattaforma di test) ---
-// In produzione verrà sostituito con SQLite
 
-// Contatori scaldavivande / monitor — 3 colonne
+// Contatori monitor cuochi — pezzi singoli dalla griglia/scaldavivande
 // pronto = pezzi nello scaldavivande (dal tablet)
-// vendute = totale ordinato alle casse (incrementa con gli ordini)
+// vendute = totale pezzi calcolato dagli ordini (via composizione piatti)
 // da_cucinare = vendute - pronto (calcolato lato client)
 const counters = {};
-config.TEST_ITEMS.forEach(item => {
-  counters[item.id] = { pronto: 0, vendute: 0 };
+config.MONITOR_ITEMS.forEach(item => {
+  counters[item] = { pronto: 0, vendute: 0 };
 });
 
-// Inventario / scorte
+// Inventario / scorte — un record per ogni piatto del menu
 const inventory = {};
-config.TEST_ITEMS.forEach(item => {
+config.MENU.forEach(item => {
   inventory[item.id] = {
     id: item.id,
     name: item.name,
     station: item.station,
     price: item.price,
     category: item.category,
-    stock: item.initial_stock,
-    initial_stock: item.initial_stock,
-    alert_threshold: item.alert_threshold,
-    status: 'available', // available, low, exhausted
+    stock: item.initial_stock || 999,
+    initial_stock: item.initial_stock || 999,
+    alert_threshold: item.alert_threshold || 20,
+    status: 'available',
   };
 });
 
-// Ordini di test (per le dashboard admin)
+// Ordini
 const orders = [];
 let orderCounter = 0;
 
 // Sessioni admin attive
 const adminSessions = new Map();
 
-// Riferimento a io — verrà impostato dal server principale
+// Riferimento a io
 let io = null;
 
 function setIO(socketIO) {
@@ -64,7 +63,6 @@ function updateInventoryStatus(itemId) {
   if (item.stock <= 0) {
     item.stock = 0;
     item.status = 'exhausted';
-    // Notifica esaurimento a casse e admin
     if (io) {
       io.to('cassa').to('admin').emit('inventory_exhausted', {
         item_id: itemId,
@@ -73,7 +71,6 @@ function updateInventoryStatus(itemId) {
     }
   } else if (item.stock <= item.alert_threshold) {
     item.status = 'low';
-    // Notifica scorta bassa
     if (io) {
       io.to('cassa').to('admin').emit('inventory_alert', {
         item_id: itemId,
@@ -86,7 +83,6 @@ function updateInventoryStatus(itemId) {
     item.status = 'available';
   }
 
-  // Broadcast aggiornamento scorta a tutti
   if (io) {
     io.emit('inventory_updated', {
       item_id: itemId,
@@ -96,11 +92,15 @@ function updateInventoryStatus(itemId) {
   }
 }
 
+// --- Helper: trova piatto nel menu ---
+function findMenuItem(id) {
+  return config.MENU.find(i => i.id === id);
+}
+
 // =============================================
 // ENDPOINT PUBBLICI
 // =============================================
 
-// Health check
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -109,8 +109,17 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Stato stampanti — il proxy reale fa il ping TCP,
-// qui restituiamo la config con lo stato dal proxy
+// Menu completo (usato dalla cassa per caricare i piatti)
+router.get('/menu', (req, res) => {
+  // Restituisce il menu con lo stato stock di ogni piatto
+  const menuWithStock = config.MENU.map(item => ({
+    ...item,
+    stock: inventory[item.id] ? inventory[item.id].stock : 0,
+    status: inventory[item.id] ? inventory[item.id].status : 'available',
+  }));
+  res.json(menuWithStock);
+});
+
 router.get('/printers/status', (req, res) => {
   const statuses = config.PRINTERS.map(p => ({
     id: p.id,
@@ -118,14 +127,12 @@ router.get('/printers/status', (req, res) => {
     model: p.model,
     ip: p.ip,
     port: p.port,
-    // Lo stato reale viene dal proxy via socket
     online: p._online || false,
     lastCheck: p._lastCheck || null,
   }));
   res.json(statuses);
 });
 
-// Stampa pagina di test su una stampante specifica
 router.post('/printers/:id/test', (req, res) => {
   const printerId = parseInt(req.params.id);
   const printerConfig = config.PRINTERS.find(p => p.id === printerId);
@@ -138,17 +145,13 @@ router.post('/printers/:id/test', (req, res) => {
     return res.status(500).json({ error: 'Socket.IO non inizializzato' });
   }
 
-  // Genera i dati ESC/POS
   const data = printer.buildTestPage(printerId);
-
-  // Genera un ID univoco per il job di stampa
   const jobId = `test-${printerId}-${Date.now()}`;
 
-  // Invia il comando al print proxy via Socket.IO (tutte LAN)
   io.to('proxy').emit('print', {
     printer_id: printerId,
     printer_ip: printerConfig.ip,
-    data: Array.from(data), // Converte Buffer in array per JSON
+    data: Array.from(data),
     job_id: jobId,
   });
 
@@ -182,9 +185,11 @@ router.post('/orders/:id/fulfill', (req, res) => {
   res.json({ success: true, order_number: orderId, table: order.table });
 });
 
-// Crea ordine dalla cassa (con stampa e aggiornamento vendute)
+// =============================================
+// CREA ORDINE — con composizione pezzi, stampa multipla, e piatti speciali
+// =============================================
 router.post('/orders', (req, res) => {
-  const { table, items: orderItems, payment } = req.body;
+  const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type } = req.body;
 
   if (!table || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
     return res.status(400).json({ error: 'Specificare tavolo e piatti' });
@@ -192,29 +197,47 @@ router.post('/orders', (req, res) => {
 
   orderCounter++;
 
-  // Costruisce l'ordine con info complete dalla config
+  // Costruisce l'ordine con info dal menu
   const items = [];
+  let hasFood = false;
+  let hasDrinks = false;
+  let hasSpecial = false;
+
   orderItems.forEach(({ id, qty }) => {
-    const configItem = config.TEST_ITEMS.find(i => i.id === id);
-    if (!configItem || !qty || qty <= 0) return;
+    const menuItem = findMenuItem(id);
+    if (!menuItem || !qty || qty <= 0) return;
     const q = parseInt(qty);
+
     items.push({
-      id: configItem.id,
-      name: configItem.name,
-      price: configItem.price,
-      category: configItem.category,
+      id: menuItem.id,
+      name: menuItem.name,
+      price: menuItem.price,
+      category: menuItem.category,
+      station: menuItem.station,
+      print_to: menuItem.print_to || [],
+      special: menuItem.special || false,
       qty: q,
     });
 
-    // Aggiorna colonna "vendute" per il monitor cuochi
-    if (counters[configItem.id]) {
-      counters[configItem.id].vendute += q;
+    // Controlla tipo per decidere le stampe
+    if (menuItem.print_to && menuItem.print_to.includes('cibo')) hasFood = true;
+    if (menuItem.print_to && menuItem.print_to.includes('bevande')) hasDrinks = true;
+    if (menuItem.special) hasSpecial = true;
+
+    // Scomponi in pezzi singoli per i contatori del monitor cuochi
+    // Esempio: "Costicine con polenta" → costicine +3, polenta +1
+    if (menuItem.composition) {
+      for (const [piece, count] of Object.entries(menuItem.composition)) {
+        if (counters[piece] !== undefined) {
+          counters[piece].vendute += count * q;
+        }
+      }
     }
 
     // Scala le scorte dal magazzino
-    if (inventory[configItem.id]) {
-      inventory[configItem.id].stock = Math.max(0, inventory[configItem.id].stock - q);
-      updateInventoryStatus(configItem.id);
+    if (inventory[menuItem.id]) {
+      inventory[menuItem.id].stock = Math.max(0, inventory[menuItem.id].stock - q);
+      updateInventoryStatus(menuItem.id);
     }
   });
 
@@ -223,13 +246,34 @@ router.post('/orders', (req, res) => {
     return res.status(400).json({ error: 'Nessun piatto valido' });
   }
 
-  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  // Calcolo totale con sconto e omaggio
+  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  let appliedDiscount = 0;
+  let total = subtotal;
+
+  // Courtesy: ordine gratis ma registrato con valore reale
+  const validCourtesy = ['sponsor', 'don_pierino', 'amici'];
+  const orderCourtesy = validCourtesy.includes(courtesy_type) ? courtesy_type : null;
+
+  if (orderCourtesy) {
+    // Omaggio: totale pagato = 0, valore reale conservato
+    total = 0;
+  } else if (discount && discount > 0) {
+    appliedDiscount = Math.min(parseFloat(discount), subtotal);
+    total = Math.round((subtotal - appliedDiscount) * 100) / 100;
+  }
 
   const order = {
     id: orderCounter,
     table: parseInt(table),
     items,
+    subtotal,
     total,
+    discount: appliedDiscount,
+    discount_type: discount_type || null,
+    discount_value: discount_value || 0,
+    courtesy_type: orderCourtesy,
+    customer_name: customer_name || null,
     cassa: 'principale',
     payment: payment || 'contanti',
     status: 'in_progress',
@@ -246,7 +290,10 @@ router.post('/orders', (req, res) => {
     io.to('admin').emit('stats_update', { type: 'new_order', order });
   }
 
-  // --- Stampa ricevuta → vretti .203 (printer #1) ---
+  // --- STAMPA ---
+  const prints = { receipt: false, food: false, drinks: false, special: false };
+
+  // 1. Ricevuta cassa generale → vretti .203 (printer #1)
   const receiptData = printer.buildReceipt(order);
   const receiptPrinter = config.PRINTERS.find(p => p.id === 1);
   if (io && receiptPrinter) {
@@ -256,30 +303,55 @@ router.post('/orders', (req, res) => {
       data: Array.from(receiptData),
       job_id: `receipt-${order.id}-${Date.now()}`,
     });
+    prints.receipt = true;
   }
 
-  // --- Stampa comanda cibo → Fuhuihe .205 (printer #3) ---
-  const foodData = printer.buildFoodOrder(order);
-  const foodPrinter = config.PRINTERS.find(p => p.id === 3);
-  if (io && foodData && foodPrinter) {
-    io.to('proxy').emit('print', {
-      printer_id: 3,
-      printer_ip: foodPrinter.ip,
-      data: Array.from(foodData),
-      job_id: `food-${order.id}-${Date.now()}`,
-    });
+  // 2. Comanda cibo → Fuhuihe .205 (printer #3)
+  //    Include TUTTI i piatti con print_to 'cibo' (anche speciali)
+  if (hasFood) {
+    const foodData = printer.buildFoodOrder(order);
+    const foodPrinter = config.PRINTERS.find(p => p.id === 3);
+    if (io && foodData && foodPrinter) {
+      io.to('proxy').emit('print', {
+        printer_id: 3,
+        printer_ip: foodPrinter.ip,
+        data: Array.from(foodData),
+        job_id: `food-${order.id}-${Date.now()}`,
+      });
+      prints.food = true;
+    }
   }
 
-  // --- Stampa comanda bevande → Fuhuihe .204 (printer #2) solo se ci sono bevande ---
-  const drinkData = printer.buildDrinkOrder(order);
-  const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
-  if (io && drinkData && drinkPrinter) {
-    io.to('proxy').emit('print', {
-      printer_id: 2,
-      printer_ip: drinkPrinter.ip,
-      data: Array.from(drinkData),
-      job_id: `drink-${order.id}-${Date.now()}`,
-    });
+  // 3. Comanda bevande → Fuhuihe .204 (printer #2)
+  if (hasDrinks) {
+    const drinkData = printer.buildDrinkOrder(order);
+    const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
+    if (io && drinkData && drinkPrinter) {
+      io.to('proxy').emit('print', {
+        printer_id: 2,
+        printer_ip: drinkPrinter.ip,
+        data: Array.from(drinkData),
+        job_id: `drink-${order.id}-${Date.now()}`,
+      });
+      prints.drinks = true;
+    }
+  }
+
+  // 4. Piatti speciali → Fuhuihe .207 (printer #5)
+  //    DOPPIA STAMPA: gli speciali vanno già sulla comanda cibo (.205),
+  //    qui stampiamo SOLO i piatti speciali sulla stampante dedicata
+  if (hasSpecial) {
+    const specialData = printer.buildSpecialOrder(order);
+    const specialPrinter = config.PRINTERS.find(p => p.id === 5);
+    if (io && specialData && specialPrinter) {
+      io.to('proxy').emit('print', {
+        printer_id: 5,
+        printer_ip: specialPrinter.ip,
+        data: Array.from(specialData),
+        job_id: `special-${order.id}-${Date.now()}`,
+      });
+      prints.special = true;
+    }
   }
 
   res.json({
@@ -287,11 +359,10 @@ router.post('/orders', (req, res) => {
     order_number: order.id,
     table: order.table,
     total: order.total,
-    prints: {
-      receipt: true,
-      food: !!foodData,
-      drinks: !!drinkData,
-    },
+    subtotal: order.subtotal,
+    courtesy_type: order.courtesy_type,
+    discount: order.discount,
+    prints,
   });
 });
 
@@ -306,18 +377,15 @@ router.post('/admin/login', (req, res) => {
     return res.status(403).json({ error: 'PIN errato' });
   }
 
-  // Genera token di sessione
   const token = crypto.randomBytes(32).toString('hex');
   adminSessions.set(token, {
     created: Date.now(),
-    // Scade dopo 12 ore (una serata intera)
     expires: Date.now() + 12 * 60 * 60 * 1000,
   });
 
   res.json({ success: true, token });
 });
 
-// Verifica se il token è valido
 router.get('/admin/verify', (req, res) => {
   const token = req.headers['x-admin-token'] || req.query.token;
   if (!token || !adminSessions.has(token)) {
@@ -336,53 +404,39 @@ router.get('/admin/verify', (req, res) => {
 // =============================================
 
 router.get('/admin/stats/live', requireAdmin, (req, res) => {
-  // Calcola statistiche dagli ordini in memoria
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const incompleteOrders = orders.filter(o => o.status !== 'completed').length;
 
-  // Ordini ultima mezz'ora
   const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
   const recentOrders = orders.filter(o => o.created_at > thirtyMinAgo);
   const recentCount = recentOrders.length;
   const recentRevenue = recentOrders.reduce((sum, o) => sum + o.total, 0);
 
-  // Incasso per cassa
   const revenueByCassa = {};
   orders.forEach(o => {
     const key = o.cassa || 'principale';
     revenueByCassa[key] = (revenueByCassa[key] || 0) + o.total;
   });
 
-  // Incasso per metodo pagamento
   const revenueByPayment = {};
   orders.forEach(o => {
     const key = o.payment || 'contanti';
     revenueByPayment[key] = (revenueByPayment[key] || 0) + o.total;
   });
 
-  // Scorte sotto soglia
   const lowStockItems = Object.values(inventory).filter(
     i => i.status === 'low' || i.status === 'exhausted'
   );
 
-  // Ultimi 10 ordini
   const lastOrders = orders.slice(-10).reverse();
 
-  // Griglia sprechi (confronto contatori passa-piatti vs ordini)
-  const grillaItems = config.TEST_ITEMS.filter(i => i.station === 'griglia');
+  // Griglia sprechi — confronta pezzi venduti vs prodotti (dallo scaldavivande)
   const grillaOrdered = {};
   const grillaProduced = {};
-  grillaItems.forEach(item => {
-    grillaOrdered[item.id] = 0;
-    grillaProduced[item.id] = counters[item.id] ? counters[item.id].pronto : 0;
-  });
-  orders.forEach(o => {
-    (o.items || []).forEach(oi => {
-      if (grillaOrdered[oi.id] !== undefined) {
-        grillaOrdered[oi.id] += oi.qty;
-      }
-    });
+  config.MONITOR_ITEMS.forEach(item => {
+    grillaOrdered[item] = counters[item] ? counters[item].vendute : 0;
+    grillaProduced[item] = counters[item] ? counters[item].pronto : 0;
   });
 
   res.json({
@@ -407,7 +461,6 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
 
-  // Classifica vendite per piatto
   const salesByItem = {};
   orders.forEach(o => {
     (o.items || []).forEach(oi => {
@@ -420,20 +473,17 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
   });
   const salesRanking = Object.values(salesByItem).sort((a, b) => b.qty - a.qty);
 
-  // Distribuzione ordini per ora
   const ordersByHour = {};
   orders.forEach(o => {
     const hour = new Date(o.created_at).getHours();
     ordersByHour[hour] = (ordersByHour[hour] || 0) + 1;
   });
 
-  // Tempo medio evasione (solo ordini completati)
   const completedOrders = orders.filter(o => o.status === 'completed' && o.completed_at);
   const avgTime = completedOrders.length > 0
     ? completedOrders.reduce((sum, o) => sum + (o.completed_at - o.created_at), 0) / completedOrders.length
     : 0;
 
-  // Incasso per cassa e per pagamento
   const revenueByCassa = {};
   const revenueByPayment = {};
   orders.forEach(o => {
@@ -443,7 +493,6 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
     revenueByPayment[pk] = (revenueByPayment[pk] || 0) + o.total;
   });
 
-  // Magazzino: scorta iniziale → venduto → rimanente
   const inventoryReport = Object.values(inventory).map(item => {
     const sold = salesByItem[item.id] ? salesByItem[item.id].qty : 0;
     return {
@@ -456,20 +505,39 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
     };
   });
 
-  // Ordini incompleti
   const incomplete = orders.filter(o => o.status !== 'completed');
+
+  // Omaggi per tipo (sponsor, don_pierino, amici)
+  const courtesyTypes = ['sponsor', 'don_pierino', 'amici'];
+  const courtesy = {};
+  courtesyTypes.forEach(type => {
+    const courtesyOrders = orders.filter(o => o.courtesy_type === type);
+    courtesy[type] = {
+      count: courtesyOrders.length,
+      realValue: courtesyOrders.reduce((sum, o) => sum + (o.subtotal || 0), 0),
+    };
+  });
+  courtesy.total = {
+    count: courtesyTypes.reduce((sum, t) => sum + courtesy[t].count, 0),
+    realValue: courtesyTypes.reduce((sum, t) => sum + courtesy[t].realValue, 0),
+  };
+
+  // Totale sconti applicati
+  const discountTotal = orders.reduce((sum, o) => sum + (o.discount || 0), 0);
 
   res.json({
     totalOrders,
     totalRevenue,
     salesRanking,
     ordersByHour,
-    avgCompletionTime: Math.round(avgTime / 1000), // secondi
+    avgCompletionTime: Math.round(avgTime / 1000),
     revenueByCassa,
     revenueByPayment,
     inventoryReport,
     incompleteOrders: incomplete.length,
     incompleteDetails: incomplete,
+    courtesy,
+    discountTotal,
   });
 });
 
@@ -477,12 +545,10 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
 // INVENTARIO / MAGAZZINO
 // =============================================
 
-// Lista piatti con scorte
 router.get('/inventory', (req, res) => {
   res.json(Object.values(inventory));
 });
 
-// Aggiorna scorta piatto
 router.put('/inventory/:id', requireAdmin, (req, res) => {
   const item = inventory[req.params.id];
   if (!item) {
@@ -495,11 +561,9 @@ router.put('/inventory/:id', requireAdmin, (req, res) => {
   if (status !== undefined) item.status = status;
 
   updateInventoryStatus(item.id);
-
   res.json(item);
 });
 
-// Aggiustamento rapido scorta (+/- quantità)
 router.post('/inventory/:id/adjust', requireAdmin, (req, res) => {
   const item = inventory[req.params.id];
   if (!item) {
@@ -513,16 +577,14 @@ router.post('/inventory/:id/adjust', requireAdmin, (req, res) => {
 
   item.stock = Math.max(0, item.stock + parseInt(delta));
   updateInventoryStatus(item.id);
-
   res.json(item);
 });
 
-// Reset scorte a valori iniziali
 router.post('/inventory/reset', requireAdmin, (req, res) => {
-  config.TEST_ITEMS.forEach(testItem => {
-    const item = inventory[testItem.id];
+  config.MENU.forEach(menuItem => {
+    const item = inventory[menuItem.id];
     if (item) {
-      item.stock = testItem.initial_stock;
+      item.stock = menuItem.initial_stock || 999;
       item.status = 'available';
     }
   });
@@ -538,27 +600,46 @@ router.post('/inventory/reset', requireAdmin, (req, res) => {
 // ORDINI DI TEST (per generare dati nelle dashboard admin)
 // =============================================
 
-// Genera un ordine di test casuale
 router.post('/orders/test', (req, res) => {
   orderCounter++;
-  const items = [];
-  // Seleziona 1-3 piatti random
-  const numItems = 1 + Math.floor(Math.random() * 3);
-  const available = config.TEST_ITEMS.filter(i => inventory[i.id].status !== 'exhausted');
-  for (let i = 0; i < numItems && available.length > 0; i++) {
-    const item = available[Math.floor(Math.random() * available.length)];
-    const qty = 1 + Math.floor(Math.random() * 3);
-    items.push({ id: item.id, name: item.name, price: item.price, qty });
 
-    // Scala le scorte
-    inventory[item.id].stock = Math.max(0, inventory[item.id].stock - qty);
-    updateInventoryStatus(item.id);
+  // Seleziona 1-3 piatti random dal menu (escluse bevande e condimenti per semplicità)
+  const foodMenu = config.MENU.filter(i =>
+    ['primo', 'secondo', 'contorno'].includes(i.category) &&
+    inventory[i.id] && inventory[i.id].status !== 'exhausted'
+  );
+
+  const items = [];
+  const numItems = 1 + Math.floor(Math.random() * 3);
+
+  for (let i = 0; i < numItems && foodMenu.length > 0; i++) {
+    const item = foodMenu[Math.floor(Math.random() * foodMenu.length)];
+    const qty = 1 + Math.floor(Math.random() * 3);
+    items.push({
+      id: item.id, name: item.name, price: item.price,
+      category: item.category, station: item.station,
+      print_to: item.print_to || [], special: item.special || false,
+      qty,
+    });
+
+    // Scala scorte e aggiorna contatori monitor
+    if (inventory[item.id]) {
+      inventory[item.id].stock = Math.max(0, inventory[item.id].stock - qty);
+      updateInventoryStatus(item.id);
+    }
+    if (item.composition) {
+      for (const [piece, count] of Object.entries(item.composition)) {
+        if (counters[piece] !== undefined) {
+          counters[piece].vendute += count * qty;
+        }
+      }
+    }
   }
 
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const casse = ['principale', 'bar'];
   const payments = ['contanti', 'pos'];
-  const statuses = ['completed', 'completed', 'completed', 'in_progress']; // 75% completati
+  const statuses = ['completed', 'completed', 'completed', 'in_progress'];
 
   const order = {
     id: orderCounter,
@@ -573,23 +654,18 @@ router.post('/orders/test', (req, res) => {
   };
 
   if (order.status === 'completed') {
-    // Tempo evasione simulato: 3-15 minuti
     order.completed_at = order.created_at + (3 + Math.floor(Math.random() * 12)) * 60 * 1000;
   }
 
   orders.push(order);
 
-  // Broadcast a tutti
   if (io) {
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
     io.emit('order_created', order);
     io.to('admin').emit('stats_update', { type: 'new_order', order });
   }
 
   res.json({ success: true, order });
 });
-
-// =============================================
-// ESPORTAZIONI
-// =============================================
 
 module.exports = { router, setIO, counters, inventory, orders };

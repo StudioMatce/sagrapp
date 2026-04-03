@@ -311,6 +311,9 @@ sagrapp/
 │   ├── index.html            # Landing page — selezione ruolo dispositivo
 │   ├── test.html             # Dashboard test hardware
 │   ├── setup.html            # Wizard setup inizio turno
+│   ├── cassa.html            # Interfaccia cassa generale (layout come foglio cartaceo)
+│   ├── cassa-bar.html        # Interfaccia cassa bar (solo bevande)
+│   ├── cassa-casetta.html    # Interfaccia cassa casetta aperitivi
 │   ├── monitor.html          # Monitor cuochi — 3 colonne (da cucinare / pronto / vendute)
 │   ├── scaldavivande.html    # Tablet scaldavivande — pulsanti +10/+20/+30/+40/+50 e −
 │   ├── controllo.html        # Tablet zona controllo — tastierino numerico evasione ordini
@@ -324,6 +327,7 @@ sagrapp/
 │   │   └── style.css         # Stili
 │   └── js/
 │       ├── dashboard.js      # Logica dashboard test
+│       ├── cassa.js          # Logica interfaccia cassa (ordini, stampa, flag)
 │       ├── monitor.js        # Logica monitor cuochi (3 colonne)
 │       ├── scaldavivande.js  # Logica scaldavivande (pulsanti decine)
 │       ├── controllo.js      # Logica zona controllo (tastierino numerico)
@@ -351,24 +355,35 @@ sagrapp/
 
 | Metodo | Path | Descrizione |
 |---|---|---|
-| GET | / | Dashboard test hardware |
-| GET | /monitor | Pagina monitor cuochi (per TV) |
-| GET | /passapiatti | Pagina passa-piatti (per tablet) |
+| GET | / | Landing page — selezione ruolo |
+| GET | /cassa | Interfaccia cassa generale |
+| GET | /cassa-bar | Interfaccia cassa bar |
+| GET | /cassa-casetta | Interfaccia cassa casetta aperitivi |
+| GET | /monitor | Monitor cuochi (3 colonne, per TV) |
+| GET | /scaldavivande | Tablet scaldavivande |
+| GET | /controllo | Tablet zona controllo (tastierino numerico) |
+| GET | /test | Dashboard test hardware |
 | GET | /admin | Dashboard admin LIVE (richiede PIN) |
 | GET | /admin/recap | Dashboard admin RECAP (richiede PIN) |
 | GET | /admin/magazzino | Gestione magazzino (richiede PIN) |
+| GET | /admin/hardware | Pannello controllo hardware (richiede PIN) |
 | GET | /admin/login | Pagina login PIN |
+| GET | /setup | Wizard setup inizio turno |
 | GET | /api/health | Health check del server |
+| GET | /api/menu | Menu completo (piatti, prezzi, disponibilità) |
+| POST | /api/orders | **Crea un nuovo ordine** (piatti, tavolo, coperti, nome, sconto, flag gratis) |
+| GET | /api/orders/:id | Dettaglio ordine |
+| POST | /api/orders/:id/fulfill | Segna ordine come evaso (tablet zona controllo) |
 | GET | /api/printers/status | Stato di tutte le stampanti (ping TCP) |
-| POST | /api/printers/:id/test | Stampa pagina di test sulla stampante specificata |
-| POST | /api/orders/:id/fulfill | Segna un ordine come evaso (dal tablet zona controllo) |
+| POST | /api/printers/:id/test | Stampa pagina di test |
 | POST | /api/admin/login | Verifica PIN → restituisce token sessione |
 | GET | /api/admin/stats/live | Dati live: ordini, incasso, stati (richiede auth) |
-| GET | /api/admin/stats/recap | Dati recap serata: report completo (richiede auth) |
+| GET | /api/admin/stats/recap | Dati recap serata con omaggi e sconti (richiede auth) |
 | GET | /api/inventory | Lista piatti con scorte attuali |
 | PUT | /api/inventory/:id | Aggiorna scorta piatto (quantità, soglia, stato) |
 | POST | /api/inventory/:id/adjust | Aggiustamento rapido scorta (+/- quantità) |
 | POST | /api/inventory/reset | Reset scorte a valori iniziali (inizio serata) |
+| PUT | /api/menu/:id | Modifica piatto (prezzo, disponibilità, composizione) |
 
 **Eventi Socket.IO:**
 
@@ -378,6 +393,7 @@ sagrapp/
 | `register` | Client → Server | `{ role: 'dashboard' \| 'monitor' \| 'scaldavivande' \| 'controllo' \| 'proxy' \| 'admin' \| 'cassa' }` | Registra il tipo di dispositivo |
 | `print` | Server → Proxy | `{ printer_ip, data, job_id }` | Comando stampa al proxy (tutte LAN) |
 | `print_result` | Proxy → Server | `{ job_id, success, error? }` | Risultato stampa |
+| `order_created` | Server → All | `{ order_id, table, items, total, flag_gratis? }` | Nuovo ordine creato — aggiorna monitor vendute |
 | `counter_update` | Scaldavivande → Server | `{ item, delta }` | Scaldavivande aggiorna un contatore (+10, +20, ecc. o -1) |
 | `counters_changed` | Server → Monitor | `{ counters: { item: { pronto, vendute } } }` | Broadcast nuovi contatori al monitor cuochi (3 colonne) |
 | `order_fulfilled` | Controllo → Server | `{ order_number }` | Tablet zona controllo segna ordine come evaso |
@@ -690,7 +706,104 @@ Ordine: TEST-002
 
 ---
 
-### 5.9 — Componente: Login Admin (public/admin-login.html)
+### 5.9 — Componente: Interfaccia Cassa (public/cassa.html)
+
+Pagina principale per il cassiere. La disposizione dei piatti **replica esattamente il foglio cartaceo** della comanda (file `2025_sagra_COMANDA.pdf`) così il cassiere segue lo stesso ordine visivo.
+
+**Layout a due colonne — usa /frontend-design:**
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  CASSA GENERALE         Ordine #247         ● Connesso          ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║  Nome: [_______________]  Tavolo: [__]  Coperti: [__]           ║
+║                                                                  ║
+║  ☐ Sponsor (gratis)  ☐ Don Pierino (gratis)  ☐ Amici (gratis)  ║
+║  Sconto: [___] €                                                 ║
+║                                                                  ║
+║  COLONNA SINISTRA              │  COLONNA DESTRA                ║
+║  (come foglio cartaceo)        │  (come foglio cartaceo)        ║
+║                                │                                 ║
+║  PRIMI                         │  CONTORNI                      ║
+║  [Gnocchi ragù    €5,50  −0+] │  [Patate fritte  €2,90  −0+]  ║
+║  [Gnocchi burro   €5,50  −0+] │  [Fagioli        €2,50  −0+]  ║
+║  [Pasta ragù      €4,50  −0+] │  [Fagioli cip.   €2,50  −0+]  ║
+║  [Pasta bianco    €4,50  −0+] │  [Cappuccio       €2,00  −0+]  ║
+║                                │  [Funghi          €3,20  −0+]  ║
+║  SECONDI                       │                                 ║
+║  [Form. cotto*    €6,00  −0+] │  BEVANDE                       ║
+║  [Wurstel patate  €5,00  −0+] │  [Birra spina    €3,50  −0+]  ║
+║  [Pastin patate   €7,50  −0+] │  [Vino ombra B   €1,00  −0+]  ║
+║  [Salsiccia*      €6,80  −0+] │  [Vino ombra R   €1,00  −0+]  ║
+║  [Costicine*      €7,30  −0+] │  [Vino B 1/2     €3,00  −0+]  ║
+║  [Sovracoscia*    €7,30  −0+] │  [Vino R 1/2     €3,00  −0+]  ║
+║  [Grigliata m.*  €11,00  −0+] │  [Vino B 3/4     €4,00  −0+]  ║
+║                                │  [Vino R 3/4     €4,00  −0+]  ║
+║  SPECIALE DEL GIORNO           │  [Prosecco       €9,00  −0+]  ║
+║  [Pesce fritto   €13,00  −0+] │  [Cabernet       €7,50  −0+]  ║
+║                                │  [Acqua nat.     €1,00  −0+]  ║
+║  CONDIMENTI                    │  [Acqua frizz.   €1,00  −0+]  ║
+║  [Maionese        €0,30  −0+] │  [The pesca      €2,30  −0+]  ║
+║  [Ketchup         €0,30  −0+] │  [The limone     €2,30  −0+]  ║
+║                                │  [Coca Cola      €2,30  −0+]  ║
+║                                │  [Coca Zero      €2,30  −0+]  ║
+║                                │  [Fanta          €2,30  −0+]  ║
+║                                │                                 ║
+║  ══════════════════════════════════════════════════════════════  ║
+║                                                                  ║
+║  RIEPILOGO:  12 articoli              TOTALE: € 45,80           ║
+║                                       Sconto: − € 0,00          ║
+║                                       DA PAGARE: € 45,80        ║
+║                                                                  ║
+║              [ORDINA E STAMPA]                                   ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+**Campi dell'ordine:**
+
+| Campo | Tipo | Obbligatorio | Note |
+|---|---|---|---|
+| Nome cliente | Testo | No | Per identificare l'ordine |
+| Numero tavolo | Numerico | **Sì** | Stampato su tutte le comande |
+| Numero coperti | Numerico | **Sì** | Stampato sulla comanda bevande (per le posate) |
+| Sconto | Numerico (€) | No | Sottratto dal totale |
+| Flag Sponsor | Toggle | No | Se attivo → ordine gratis (totale €0) |
+| Flag Don Pierino | Toggle | No | Se attivo → ordine gratis (totale €0) |
+| Flag Amici | Toggle | No | Se attivo → ordine gratis (totale €0) |
+
+**Logica Flag Gratis (Sponsor / Don Pierino / Amici):**
+- Quando un flag è attivo, il totale diventa **€0,00**
+- L'ordine viene comunque registrato con tutti i piatti e stampato normalmente
+- Il magazzino scala le scorte come un ordine normale
+- Il monitor cuochi si aggiorna normalmente
+- Il tipo di omaggio viene salvato nel database per i report
+- Solo un flag alla volta può essere attivo
+
+**Logica stampa:**
+- Pulsante "ORDINA E STAMPA" → crea l'ordine e stampa su tutte le stampanti necessarie
+- **Ricevuta cliente** → vretti .203 (con nome, tavolo, piatti, totale, eventuale flag gratis)
+- **Comanda cibo** → Fuhuihe .205 (con tavolo, piatti cibo, numero ordine)
+- **Comanda bevande** → Fuhuihe .204 (con tavolo, **COPERTI**, bevande) — **i coperti vanno stampati qui**
+- **Piatti speciali** → Fuhuihe .207 (solo se presenti nell'ordine, doppia stampa)
+- Se l'ordine non ha bevande ma ha cibo: i coperti vengono stampati sulla comanda cibo come fallback
+- Dopo la stampa: conferma a schermo con numero ordine, poi svuota il carrello
+
+**Piatto speciale del giorno:**
+- Il sistema mostra automaticamente solo il piatto speciale disponibile per la data corrente
+- Se nessun piatto speciale è previsto per oggi, la sezione non appare
+- L'admin può attivare/disattivare il piatto speciale dalla dashboard
+
+**Comportamento pulsanti piatto:**
+- Ogni piatto ha un contatore con [−] [numero] [+]
+- Tap su [+] → incrementa quantità, aggiorna totale in tempo reale
+- Tap su [−] → decrementa (minimo 0)
+- I piatti con quantità > 0 sono evidenziati visivamente
+- I piatti esauriti (scorta magazzino = 0) sono disabilitati con badge rosso "ESAURITO"
+- I piatti sotto soglia magazzino hanno badge arancione con porzioni rimanenti
+
+### 5.10 — Componente: Login Admin (public/admin-login.html)
 
 Pagina semplice con un campo PIN numerico. Protegge l'accesso a tutte le pagine admin.
 
@@ -706,7 +819,7 @@ Pagina semplice con un campo PIN numerico. Protegge l'accesso a tutte le pagine 
 - Se corretto, il server restituisce un token (salvato in `sessionStorage`)
 - Tutte le pagine admin verificano il token prima di caricare
 
-### 5.10 — Componente: Dashboard Admin LIVE (public/admin.html)
+### 5.11 — Componente: Dashboard Admin LIVE (public/admin.html)
 
 Dashboard in tempo reale per il responsabile durante il servizio.
 
@@ -760,7 +873,7 @@ Dashboard in tempo reale per il responsabile durante il servizio.
 - Il pulsante [Riattiva] su un piatto esaurito chiede la nuova quantità e lo rimette disponibile
 - Ogni contatore ha un'animazione sottile quando il valore cambia (flash 200ms)
 
-### 5.11 — Componente: Dashboard Admin RECAP (public/admin-recap.html)
+### 5.12 — Componente: Dashboard Admin RECAP (public/admin-recap.html)
 
 Report completo post-servizio. Dati statici (non real-time), calcolati alla chiusura della serata.
 
@@ -769,12 +882,14 @@ Report completo post-servizio. Dati statici (non real-time), calcolati alla chiu
 2. **Classifica vendite** — Piatti ordinati dal più al meno venduto, con quantità e incasso
 3. **Performance** — Tempo medio evasione, distribuzione ordini nel tempo (grafico orario)
 4. **Magazzino** — Per ogni piatto: scorta iniziale → venduto → rimanente. Piatti esauriti con timestamp
-5. **Anomalie** — Ordini incompleti, sprechi griglia (prodotto vs venduto)
-6. **Pulsante esportazione** — CSV per importazione in Excel
+5. **Omaggi** — Totale omaggi suddiviso per tipo (Sponsor, Don Pierino, Amici), con valore economico reale di ciò che è stato regalato, numero ordini per tipo, dettaglio piatti omaggiati
+6. **Sconti** — Totale sconti applicati, numero ordini con sconto
+7. **Anomalie** — Ordini incompleti, sprechi griglia (prodotto vs venduto)
+8. **Pulsante esportazione** — CSV per importazione in Excel
 
 **Layout:** usa /frontend-design — stile report, card per ogni sezione, numeri grandi per i KPI principali
 
-### 5.12 — Componente: Gestione Magazzino (public/admin-magazzino.html)
+### 5.13 — Componente: Gestione Magazzino (public/admin-magazzino.html)
 
 Pagina dedicata alla gestione completa delle scorte. L'admin ci va prima dell'apertura per impostare le quantità, e durante il servizio per aggiornamenti rapidi.
 
@@ -828,7 +943,7 @@ Per aggiungere scorte: tap su [+10] o [+50] → la scorta si aggiorna istantanea
 Per impostare un valore esatto: tap sul campo [Imposta: ___] → appare tastierino numerico → inserisci numero → conferma.
 Per segnare esaurito manualmente: swipe a sinistra sulla riga → pulsante "Esaurisci" (o pulsante dedicato).
 
-### 5.13 — Componente: Selezione Ruolo (public/index.html — Landing Page)
+### 5.14 — Componente: Selezione Ruolo (public/index.html — Landing Page)
 
 Un singolo URL per tutti i dispositivi. All'apertura, l'utente sceglie il ruolo del dispositivo.
 
@@ -864,7 +979,7 @@ Un singolo URL per tutti i dispositivi. All'apertura, l'utente sceglie il ruolo 
 - Il ruolo scelto viene salvato in `localStorage`: al prossimo avvio, il dispositivo va direttamente alla pagina del ruolo salvato senza passare dalla selezione
 - Pulsante piccolo "Cambia ruolo" sempre visibile in ogni pagina per tornare alla selezione
 
-### 5.14 — Componente: Setup Inizio Turno (public/setup.html)
+### 5.15 — Componente: Setup Inizio Turno (public/setup.html)
 
 Wizard guidato che verifica tutto l'hardware prima di iniziare il servizio. Accessibile solo dall'admin.
 
@@ -908,7 +1023,7 @@ Wizard guidato che verifica tutto l'hardware prima di iniziare il servizio. Acce
 - "Avvia Servizio" abilitato solo quando tutti i check critici (server, proxy, almeno 1 stampante) sono verdi
 - "Avvia con limitazioni" se mancano dispositivi non critici (monitor, scaldavivande, zona controllo)
 
-### 5.15 — Componente: Pannello Controllo Hardware (public/admin-hardware.html)
+### 5.16 — Componente: Pannello Controllo Hardware (public/admin-hardware.html)
 
 Monitoraggio continuo di tutti i dispositivi durante il servizio.
 
@@ -949,7 +1064,7 @@ Monitoraggio continuo di tutti i dispositivi durante il servizio.
 - Log cronologico degli eventi hardware della serata (scrollabile)
 - Se un dispositivo va offline: riga diventa rossa con animazione pulsante
 
-### 5.16 — Alert Sonori/Visivi e Modalità Emergenza Stampante
+### 5.17 — Alert Sonori/Visivi e Modalità Emergenza Stampante
 
 Queste non sono pagine separate ma comportamenti integrati nelle pagine cassa e admin.
 
@@ -978,7 +1093,7 @@ Se una stampante è offline al momento di stampare:
 | `service_started` | Server → All | `{ timestamp }` | Setup completato, servizio avviato |
 | `service_closed` | Server → All | `{ timestamp, summary }` | Servizio chiuso dal responsabile |
 
-### 5.17 — Componente: Chiusura Turno (public/admin-chiusura.html)
+### 5.18 — Componente: Chiusura Turno (public/admin-chiusura.html)
 
 Procedura guidata per chiudere il servizio a fine serata.
 
