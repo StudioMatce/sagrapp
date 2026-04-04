@@ -8,7 +8,9 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 - **Database:** In-memory (SQLite previsto per produzione)
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
-- **Deploy:** VPS con PM2 (attualmente test su localhost:3000)
+- **Deploy:** Railway (auto-deploy da GitHub `main`)
+- **URL produzione:** https://web-production-4fa18.up.railway.app
+- **Dev locale:** `node server/index.js` → http://localhost:3000
 
 ## Struttura file
 ```
