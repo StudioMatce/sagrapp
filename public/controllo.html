@@ -411,6 +411,12 @@
           // Ordine evaso con successo
           showFeedback('success', `#${data.order_number}` + (data.table ? ` — Tavolo ${data.table}` : ''));
           socket.emit('order_fulfilled', { order_number: orderNumber });
+        } else if (data.not_ready) {
+          // Pezzi non ancora pronti nello scaldavivande
+          const details = data.missing.map(m =>
+            `${m.piece}: ${m.available}/${m.needed}`
+          ).join(', ');
+          showFeedback('warning', `Cibo non pronto (${details})`, 'NON PRONTO');
         } else if (data.already_fulfilled) {
           // Ordine già evaso
           showFeedback('warning', `#${data.order_number}` + (data.table ? ` — Tavolo ${data.table}` : ''));
@@ -429,16 +435,26 @@
     }
 
     // Mostra overlay di feedback (auto-chiude dopo 1.5s)
-    function showFeedback(type, detail) {
+    function showFeedback(type, detail, customTitle) {
       const el = document.getElementById(
         type === 'success' ? 'feedbackSuccess' :
         type === 'warning' ? 'feedbackWarning' : 'feedbackError'
       );
+      // Titolo personalizzabile (es. "NON PRONTO" invece di "Già evaso")
+      const titleEl = el.querySelector('.feedback-text');
+      if (titleEl && customTitle) titleEl.textContent = customTitle;
       const detailEl = el.querySelector('.feedback-sub');
       if (detailEl) detailEl.textContent = detail || '';
 
       el.classList.add('visible');
-      setTimeout(() => el.classList.remove('visible'), 1500);
+      setTimeout(() => {
+        el.classList.remove('visible');
+        // Ripristina il titolo originale dopo la chiusura
+        if (titleEl && customTitle) {
+          if (type === 'warning') titleEl.textContent = 'Già evaso';
+          else if (type === 'error') titleEl.textContent = 'Ordine non trovato';
+        }
+      }, 2000);
     }
 
     // Abilita/disabilita tastierino

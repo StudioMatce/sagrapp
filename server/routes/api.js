@@ -175,6 +175,32 @@ router.post('/orders/:id/fulfill', (req, res) => {
     return res.json({ success: false, already_fulfilled: true, order_number: orderId, table: order.table });
   }
 
+  // Controlla che ci siano abbastanza pezzi pronti nello scaldavivande
+  // per tutti i piatti griglia dell'ordine
+  const missingPieces = [];
+  order.items.forEach(item => {
+    const menuItem = findMenuItem(item.id);
+    if (menuItem && menuItem.composition) {
+      for (const [piece, count] of Object.entries(menuItem.composition)) {
+        const needed = count * item.qty;
+        const available = counters[piece] ? counters[piece].pronto : 0;
+        if (available < needed) {
+          missingPieces.push({ piece, needed, available });
+        }
+      }
+    }
+  });
+
+  if (missingPieces.length > 0) {
+    return res.json({
+      success: false,
+      not_ready: true,
+      order_number: orderId,
+      table: order.table,
+      missing: missingPieces,
+    });
+  }
+
   order.status = 'completed';
   order.completed_at = Date.now();
 
