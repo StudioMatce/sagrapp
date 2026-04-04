@@ -185,17 +185,18 @@ router.post('/orders/:id/fulfill', (req, res) => {
     return res.json({ success: false, already_fulfilled: true, order_number: orderId, table: order.table });
   }
 
-  // Controlla che ci siano abbastanza pezzi pronti nello scaldavivande
-  // per tutti i piatti griglia dell'ordine
+  // Controlla che la griglia abbia cucinato abbastanza pezzi (da_cucinare == 0)
+  // per ogni tipo di pezzo presente nell'ordine
   const missingPieces = [];
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
-      for (const [piece, count] of Object.entries(menuItem.composition)) {
-        const needed = count * item.qty;
-        const available = counters[piece] ? counters[piece].pronto : 0;
-        if (available < needed) {
-          missingPieces.push({ piece, needed, available });
+      for (const [piece] of Object.entries(menuItem.composition)) {
+        if (counters[piece] !== undefined) {
+          const daCucinare = Math.max(0, counters[piece].vendute - counters[piece].pronto);
+          if (daCucinare > 0) {
+            missingPieces.push({ piece, da_cucinare: daCucinare });
+          }
         }
       }
     }
@@ -214,29 +215,11 @@ router.post('/orders/:id/fulfill', (req, res) => {
   order.status = 'completed';
   order.completed_at = Date.now();
 
-  // Scala i pezzi da ENTRAMBI i contatori — il cibo è stato consegnato al tavolo,
-  // non è più nello scaldavivande (pronto) e non serve più cucinarlo (vendute)
-  let countersChanged = false;
-  order.items.forEach(item => {
-    const menuItem = findMenuItem(item.id);
-    if (menuItem && menuItem.composition) {
-      for (const [piece, count] of Object.entries(menuItem.composition)) {
-        if (counters[piece] !== undefined) {
-          const qty = count * item.qty;
-          counters[piece].pronto = Math.max(0, counters[piece].pronto - qty);
-          counters[piece].vendute = Math.max(0, counters[piece].vendute - qty);
-          countersChanged = true;
-        }
-      }
-    }
-  });
+  // I contatori del monitor NON vengono toccati — sono cumulativi.
+  // vendute e pronto salgono e basta, da_cucinare = vendute - pronto (calcolato lato client)
 
   if (io) {
     io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
-    // Aggiorna il monitor cuochi se i contatori sono cambiati
-    if (countersChanged) {
-      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
-    }
   }
 
   res.json({ success: true, order_number: orderId, table: order.table });
