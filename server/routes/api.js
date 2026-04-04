@@ -214,15 +214,17 @@ router.post('/orders/:id/fulfill', (req, res) => {
   order.status = 'completed';
   order.completed_at = Date.now();
 
-  // Scala i pezzi "pronto" dal monitor cuochi — il cibo è stato consegnato al tavolo,
-  // quindi non è più nello scaldavivande
+  // Scala i pezzi da ENTRAMBI i contatori — il cibo è stato consegnato al tavolo,
+  // non è più nello scaldavivande (pronto) e non serve più cucinarlo (vendute)
   let countersChanged = false;
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
-          counters[piece].pronto = Math.max(0, counters[piece].pronto - count * item.qty);
+          const qty = count * item.qty;
+          counters[piece].pronto = Math.max(0, counters[piece].pronto - qty);
+          counters[piece].vendute = Math.max(0, counters[piece].vendute - qty);
           countersChanged = true;
         }
       }
