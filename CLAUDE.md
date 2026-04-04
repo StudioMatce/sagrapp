@@ -49,7 +49,7 @@ public/
 | 6 | 192.168.1.208 | Fuhuihe — Casetta aperitivi |
 
 ## Flusso di stampa
-Il server cloud NON raggiunge le stampanti direttamente. Un **print-proxy** locale gira su un PC alla sagra, si connette al server via Socket.IO, e inoltra i comandi ESC/POS alle stampanti via TCP.
+Il server cloud NON raggiunge le stampanti direttamente. Un **print-proxy** gira su un **Raspberry Pi** dedicato alla sagra (avvio automatico via PM2), si connette al server via Socket.IO, e inoltra i comandi ESC/POS alle stampanti via TCP.
 
 ## Menu e composizione piatti
 - Il menu reale è in `config.js` → `MENU` (42 piatti)
