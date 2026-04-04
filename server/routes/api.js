@@ -178,8 +178,27 @@ router.post('/orders/:id/fulfill', (req, res) => {
   order.status = 'completed';
   order.completed_at = Date.now();
 
+  // Scala i pezzi "pronto" dal monitor cuochi — il cibo è stato consegnato al tavolo,
+  // quindi non è più nello scaldavivande
+  let countersChanged = false;
+  order.items.forEach(item => {
+    const menuItem = findMenuItem(item.id);
+    if (menuItem && menuItem.composition) {
+      for (const [piece, count] of Object.entries(menuItem.composition)) {
+        if (counters[piece] !== undefined) {
+          counters[piece].pronto = Math.max(0, counters[piece].pronto - count * item.qty);
+          countersChanged = true;
+        }
+      }
+    }
+  });
+
   if (io) {
     io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
+    // Aggiorna il monitor cuochi se i contatori sono cambiati
+    if (countersChanged) {
+      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    }
   }
 
   res.json({ success: true, order_number: orderId, table: order.table });
