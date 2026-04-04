@@ -42,8 +42,18 @@ const adminSessions = new Map();
 // Riferimento a io
 let io = null;
 
+// ID del proxy attivo — solo uno alla volta per evitare stampe duplicate
+let activeProxyId = null;
+
 function setIO(socketIO) {
   io = socketIO;
+}
+
+// Invia comando stampa a UN SOLO proxy (evita duplicati se più connessioni aperte)
+function emitToProxy(event, data) {
+  if (!io || !activeProxyId) return false;
+  io.to(activeProxyId).emit(event, data);
+  return true;
 }
 
 // --- Helper: verifica token admin ---
@@ -148,7 +158,7 @@ router.post('/printers/:id/test', (req, res) => {
   const data = printer.buildTestPage(printerId);
   const jobId = `test-${printerId}-${Date.now()}`;
 
-  io.to('proxy').emit('print', {
+  emitToProxy('print', {
     printer_id: printerId,
     printer_ip: printerConfig.ip,
     data: Array.from(data),
@@ -342,7 +352,7 @@ router.post('/orders', (req, res) => {
   const receiptData = printer.buildReceipt(order);
   const receiptPrinter = config.PRINTERS.find(p => p.id === 1);
   if (io && receiptPrinter) {
-    io.to('proxy').emit('print', {
+    emitToProxy('print', {
       printer_id: 1,
       printer_ip: receiptPrinter.ip,
       data: Array.from(receiptData),
@@ -357,7 +367,7 @@ router.post('/orders', (req, res) => {
     const foodData = printer.buildFoodOrder(order);
     const foodPrinter = config.PRINTERS.find(p => p.id === 3);
     if (io && foodData && foodPrinter) {
-      io.to('proxy').emit('print', {
+      emitToProxy('print', {
         printer_id: 3,
         printer_ip: foodPrinter.ip,
         data: Array.from(foodData),
@@ -372,7 +382,7 @@ router.post('/orders', (req, res) => {
     const drinkData = printer.buildDrinkOrder(order);
     const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
     if (io && drinkData && drinkPrinter) {
-      io.to('proxy').emit('print', {
+      emitToProxy('print', {
         printer_id: 2,
         printer_ip: drinkPrinter.ip,
         data: Array.from(drinkData),
@@ -389,7 +399,7 @@ router.post('/orders', (req, res) => {
     const specialData = printer.buildSpecialOrder(order);
     const specialPrinter = config.PRINTERS.find(p => p.id === 5);
     if (io && specialData && specialPrinter) {
-      io.to('proxy').emit('print', {
+      emitToProxy('print', {
         printer_id: 5,
         printer_ip: specialPrinter.ip,
         data: Array.from(specialData),
@@ -713,4 +723,4 @@ router.post('/orders/test', (req, res) => {
   res.json({ success: true, order });
 });
 
-module.exports = { router, setIO, counters, inventory, orders };
+module.exports = { router, setIO, counters, inventory, orders, setActiveProxyId: (id) => { activeProxyId = id; } };

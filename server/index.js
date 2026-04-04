@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, counters, inventory } = require('./routes/api');
+const { router: apiRouter, setIO, counters, inventory, setActiveProxyId } = require('./routes/api');
 
 const app = express();
 const server = http.createServer(app);
@@ -98,8 +98,11 @@ io.on('connection', (socket) => {
     // Invia lo stato aggiornato dei dispositivi a tutte le dashboard
     broadcastDeviceStatus();
 
-    // Se è il proxy, inviagli la config stampanti
+    // Se è il proxy, registra come proxy attivo e invia config stampanti
+    // Solo UN proxy alla volta riceve i comandi di stampa (evita duplicati)
     if (role === 'proxy') {
+      setActiveProxyId(socket.id);
+      console.log(`[Proxy] Proxy attivo impostato: ${socket.id}`);
       socket.emit('printer_config', config.PRINTERS);
     }
 
@@ -156,6 +159,18 @@ io.on('connection', (socket) => {
     console.log(`[Socket] Disconnesso: ${socket.id} (${deviceRole || 'sconosciuto'})`);
     if (deviceRole && connectedDevices[deviceRole]) {
       connectedDevices[deviceRole].delete(socket.id);
+    }
+    // Se si disconnette il proxy attivo, prova a usarne un altro dalla room
+    if (deviceRole === 'proxy') {
+      const remaining = connectedDevices.proxy;
+      if (remaining.size > 0) {
+        const nextProxy = remaining.values().next().value;
+        setActiveProxyId(nextProxy);
+        console.log(`[Proxy] Proxy attivo cambiato a: ${nextProxy}`);
+      } else {
+        setActiveProxyId(null);
+        console.log('[Proxy] Nessun proxy attivo');
+      }
     }
     broadcastDeviceStatus();
   });
