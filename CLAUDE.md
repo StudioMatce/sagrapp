@@ -28,9 +28,9 @@ public/
   cassa.html        # Cassa ordini — layout 2 colonne come foglio cartaceo
   cassa-bar.html    # Cassa bar (solo bevande)
   cassa-casetta.html # Cassa casetta aperitivi
-  monitor.html      # Monitor TV cuochi (3 colonne: da cucinare/pronto/vendute)
+  monitor.html      # Monitor TV cuochi (2 colonne: da cucinare/nello scaldavivande)
   scaldavivande.html # Tablet scaldavivande (+10/+20/+30/+40/+50)
-  controllo.html    # Tablet zona controllo (tastierino evasione ordini)
+  controllo.html    # Tablet operatore fisso (lista ordini aperti + tastierino evasione + annullamento)
   admin.html        # Dashboard admin LIVE
   admin-login.html  # Login admin PIN
   admin-recap.html  # Report post-serata (con omaggi e sconti)
@@ -76,9 +76,34 @@ Il server cloud NON raggiunge le stampanti direttamente. Un **print-proxy** gira
 - Quando un flag gratis è attivo: totale = €0, ma ordine registrato, stampato, scorte scalate normalmente
 - Il piatto speciale del giorno è visibile solo se `available_date` corrisponde alla data corrente
 
-## Monitor cuochi
+## Monitor cuochi (2 colonne)
 Traccia 6 articoli in pezzi singoli: costicine, salsicce, sovracoscia, pastin, polenta, patate.
-3 colonne: **Da cucinare** (vendute − pronto) | **Pronto** (dallo scaldavivande) | **Vendute** (dagli ordini).
+2 colonne visibili sulla TV:
+- **Da cucinare** = vendute − pronto (cosa il cuoco deve ancora cucinare)
+- **Nello scaldavivande** = pronto − evasi (pezzi fisicamente presenti ora)
+
+Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi totale.
+- "Da cucinare" SALE con nuovi ordini, SCENDE quando il cuoco deposita pezzi
+- "Nello scaldavivande" SALE quando il cuoco deposita, SCENDE quando l'operatore evade
+
+## Evasione ordini (regole)
+L'operatore fisso chiude gli ordini dal suo tablet. Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:
+
+| Situazione | Comportamento |
+|---|---|
+| Pezzi griglia sufficienti | Evade, scala pezzi dallo scaldavivande |
+| Pezzi griglia insufficienti | BLOCCA, mostra dettaglio mancanze |
+| Ordine già evaso | Feedback giallo "Già evaso" |
+| Ordine non trovato | Feedback rosso "Non trovato" |
+| Solo bevande/pasta (no griglia) | Evade senza controllo scaldavivande |
+| Evasione parziale | NON permessa — tutto o niente |
+
+## Annullamento ordini
+L'operatore può annullare un ordine aperto (con conferma):
+- Scorte magazzino **ripristinate** (come se l'ordine non fosse mai stato fatto)
+- "Vendute" sul monitor scala (da cucinare scende)
+- Se già evaso: pezzi scaldavivande **ripristinati**
+- Ordine marcato "ANNULLATO" (visibile nei report)
 
 ## Logica stampa ordini
 | Contenuto | Ricevuta (.203) | Cibo (.205) | Bevande (.204) | Speciali (.207) |
@@ -107,7 +132,7 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Il design usa font Outfit + JetBrains Mono, sfondo scuro (#060a12), accento verde (#4ecca3)
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v3.md`
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.md`
 
 ## Comandi
 ```bash
@@ -122,10 +147,10 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/cassa-casetta` — Cassa casetta aperitivi
 - `/monitor` — Monitor cuochi (TV)
 - `/scaldavivande` — Tablet scaldavivande
-- `/controllo` — Zona controllo evasione ordini
+- `/controllo` — Tablet operatore fisso (ordini aperti + evasione + annullamento)
 - `/test` — Dashboard test hardware
 - `/setup` — Wizard setup inizio turno
-- `/admin/login` — Login admin (PIN: 1234)
+- `/admin/login` — Login admin (PIN: env `ADMIN_PIN`, default 1234, prod 0000)
 - `/admin` — Dashboard admin LIVE
 - `/admin/recap` — Report post-serata
 - `/admin/magazzino` — Gestione scorte
