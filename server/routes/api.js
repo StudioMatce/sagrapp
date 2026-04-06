@@ -637,6 +637,39 @@ router.post('/inventory/reset', requireAdmin, (req, res) => {
 });
 
 // =============================================
+// RESET COMPLETO (per test — azzera ordini, contatori e scorte)
+// =============================================
+
+router.post('/admin/reset', requireAdmin, (req, res) => {
+  // Azzera ordini
+  orders.length = 0;
+  orderCounter = 0;
+
+  // Azzera contatori monitor cuochi
+  config.MONITOR_ITEMS.forEach(item => {
+    counters[item].pronto = 0;
+    counters[item].vendute = 0;
+  });
+
+  // Resetta scorte ai valori iniziali
+  config.MENU.forEach(menuItem => {
+    const item = inventory[menuItem.id];
+    if (item) {
+      item.stock = menuItem.initial_stock || 999;
+      item.status = 'available';
+    }
+  });
+
+  if (io) {
+    io.emit('counters_changed', { counters });
+    io.emit('inventory_reset', Object.values(inventory));
+  }
+
+  console.log('[Admin] Reset completo eseguito');
+  res.json({ success: true });
+});
+
+// =============================================
 // ORDINI DI TEST (per generare dati nelle dashboard admin)
 // =============================================
 

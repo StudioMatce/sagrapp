@@ -655,6 +655,7 @@
     </div>
     <div class="topbar-right">
       <button class="btn-test" id="btnTest">Genera ordine test</button>
+      <button class="btn-test" id="btnReset" style="color:#e94560;background:rgba(233,69,96,0.08);border-color:rgba(233,69,96,0.25)">Reset tutto</button>
       <a class="topbar-link" href="/admin/magazzino">Magazzino</a>
       <a class="topbar-link" href="/admin/recap">Recap</a>
       <a class="topbar-link" href="/">Test Hardware</a>
@@ -1061,6 +1062,17 @@
     // PULSANTE TEST
     // =============================================
     document.getElementById('btnTest').addEventListener('click', generateTestOrder);
+
+    document.getElementById('btnReset').addEventListener('click', async () => {
+      if (!confirm('Sei sicuro? Questo azzera TUTTI gli ordini, contatori e scorte.')) return;
+      try {
+        await fetch('/api/admin/reset', {
+          method: 'POST',
+          headers: { 'X-Admin-Token': TOKEN },
+        });
+        fetchStats();
+      } catch (err) {}
+    });
 
     // =============================================
     // POLLING — recupera i dati ogni 5 secondi
