@@ -8,12 +8,15 @@ const router = express.Router();
 // --- Stato in-memory (per la piattaforma di test) ---
 
 // Contatori monitor cuochi — pezzi singoli dalla griglia/scaldavivande
-// pronto = pezzi nello scaldavivande (dal tablet)
-// vendute = totale pezzi calcolato dagli ordini (via composizione piatti)
-// da_cucinare = vendute - pronto (calcolato lato client)
+// vendute = totale pezzi ordinati dalla cassa (solo cresce)
+// pronto = totale pezzi depositati dal cuoco nello scaldavivande (solo cresce)
+// evasi = totale pezzi rimossi alla chiusura ordini (solo cresce)
+// Colonne visibili sul monitor TV (calcolate lato client):
+//   "Da cucinare" = vendute - pronto
+//   "Nello scaldavivande" = pronto - evasi
 const counters = {};
 config.MONITOR_ITEMS.forEach(item => {
-  counters[item] = { pronto: 0, vendute: 0 };
+  counters[item] = { pronto: 0, vendute: 0, evasi: 0 };
 });
 
 // Inventario / scorte — un record per ogni piatto del menu
@@ -185,17 +188,19 @@ router.post('/orders/:id/fulfill', (req, res) => {
     return res.json({ success: false, already_fulfilled: true, order_number: orderId, table: order.table });
   }
 
-  // Controlla che la griglia abbia cucinato abbastanza pezzi (da_cucinare == 0)
-  // per ogni tipo di pezzo presente nell'ordine
+  // Controlla che ci siano abbastanza pezzi NELLO SCALDAVIVANDE (pronto - evasi)
+  // per tutti i piatti griglia dell'ordine.
+  // Piatti senza composition (pasta, bevande, ecc.) passano senza controllo.
   const missingPieces = [];
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
-      for (const [piece] of Object.entries(menuItem.composition)) {
+      for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
-          const daCucinare = Math.max(0, counters[piece].vendute - counters[piece].pronto);
-          if (daCucinare > 0) {
-            missingPieces.push({ piece, da_cucinare: daCucinare });
+          const needed = count * item.qty;
+          const nelloScaldavivande = Math.max(0, counters[piece].pronto - counters[piece].evasi);
+          if (nelloScaldavivande < needed) {
+            missingPieces.push({ piece, needed, available: nelloScaldavivande });
           }
         }
       }
@@ -215,11 +220,22 @@ router.post('/orders/:id/fulfill', (req, res) => {
   order.status = 'completed';
   order.completed_at = Date.now();
 
-  // I contatori del monitor NON vengono toccati — sono cumulativi.
-  // vendute e pronto salgono e basta, da_cucinare = vendute - pronto (calcolato lato client)
+  // Incrementa "evasi" — i pezzi escono dallo scaldavivande
+  // Questo fa scendere "nello scaldavivande" (pronto - evasi) sul monitor
+  order.items.forEach(item => {
+    const menuItem = findMenuItem(item.id);
+    if (menuItem && menuItem.composition) {
+      for (const [piece, count] of Object.entries(menuItem.composition)) {
+        if (counters[piece] !== undefined) {
+          counters[piece].evasi += count * item.qty;
+        }
+      }
+    }
+  });
 
   if (io) {
     io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
   }
 
   res.json({ success: true, order_number: orderId, table: order.table });
@@ -649,6 +665,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   config.MONITOR_ITEMS.forEach(item => {
     counters[item].pronto = 0;
     counters[item].vendute = 0;
+    counters[item].evasi = 0;
   });
 
   // Resetta scorte ai valori iniziali

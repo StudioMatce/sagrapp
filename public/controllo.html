@@ -412,9 +412,9 @@
           showFeedback('success', `#${data.order_number}` + (data.table ? ` — Tavolo ${data.table}` : ''));
           socket.emit('order_fulfilled', { order_number: orderNumber });
         } else if (data.not_ready) {
-          // La griglia non ha ancora cucinato abbastanza pezzi
+          // Pezzi insufficienti nello scaldavivande
           const details = data.missing.map(m =>
-            `${m.piece}: mancano ${m.da_cucinare}`
+            `${m.piece}: ${m.available}/${m.needed}`
           ).join(', ');
           showFeedback('warning', details, 'NON PRONTO');
         } else if (data.already_fulfilled) {
