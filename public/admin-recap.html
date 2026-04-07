@@ -104,6 +104,133 @@
       letter-spacing: 0.03em;
     }
 
+    /* ===== SESSION SELECTOR ===== */
+    .session-selector {
+      position: relative;
+    }
+
+    .session-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-mid);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .session-btn:hover { border-color: rgba(78, 204, 163, 0.3); color: var(--text); }
+    .session-btn.active { border-color: var(--green); color: var(--green); }
+
+    .session-btn .arrow {
+      font-size: 8px;
+      transition: transform 150ms ease;
+    }
+
+    .session-btn.active .arrow { transform: rotate(180deg); }
+
+    .session-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 280px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-4px);
+      transition: all 150ms ease;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .session-dropdown.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 150ms ease;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+    }
+
+    .session-item:last-child { border-bottom: none; }
+    .session-item:hover { background: rgba(255, 255, 255, 0.03); }
+    .session-item.selected { background: rgba(78, 204, 163, 0.06); }
+
+    .session-item-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .session-item-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .session-item-label {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .session-item-revenue {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .session-item-orders {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    .session-item-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .session-empty {
+      padding: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .session-current-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--cyan);
+      background: rgba(34, 211, 238, 0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
     /* ===== SEZIONE ===== */
     .section {
       margin-bottom: 32px;
@@ -619,6 +746,13 @@
     </div>
     <div class="header-right">
       <div class="header-date" id="reportDate"></div>
+      <div class="session-selector">
+        <button class="session-btn" id="sessionBtn">
+          <span id="sessionLabel">Serata corrente</span>
+          <span class="arrow">&#9660;</span>
+        </button>
+        <div class="session-dropdown" id="sessionDropdown"></div>
+      </div>
     </div>
   </header>
 
@@ -764,9 +898,13 @@
           return;
         }
         // Token valido, carica i dati
+        setupSessionSelector();
+        loadSessions();
         loadRecap();
       } catch {
         // Se il server non risponde, prova comunque
+        setupSessionSelector();
+        loadSessions();
         loadRecap();
       }
     })();
@@ -813,10 +951,128 @@
     // CARICAMENTO DATI
     // ===================================================
     let recapData = null; // Salva i dati per l'export CSV
+    let currentSessionId = null; // null = serata corrente
+
+    // ===================================================
+    // SESSION SELECTOR: carica lista serate e gestisce selezione
+    // ===================================================
+    async function loadSessions() {
+      try {
+        const res = await fetch('/api/admin/sessions', {
+          headers: { 'X-Admin-Token': TOKEN },
+        });
+        if (!res.ok) return;
+        const sessions = await res.json();
+        populateSessionDropdown(sessions);
+      } catch (e) {
+        // Se fallisce, il selettore resta su "Serata corrente"
+      }
+    }
+
+    function populateSessionDropdown(sessions) {
+      var dropdown = document.getElementById('sessionDropdown');
+
+      // "Serata corrente" sempre primo
+      var html = '<div class="session-item selected" data-id="">' +
+        '<div class="session-item-left">' +
+          '<div class="session-item-date">Serata corrente</div>' +
+          '<div class="session-item-label">Dati live</div>' +
+        '</div>' +
+        '</div>';
+
+      // Serate archiviate (dalla piu' recente)
+      sessions.sort(function(a, b) { return b.closed_at - a.closed_at; });
+      sessions.forEach(function(s) {
+        var d = new Date(s.date + 'T12:00:00');
+        var dateStr = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+        var revenue = s.totalRevenue != null
+          ? '\u20AC ' + s.totalRevenue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : '';
+        html += '<div class="session-item" data-id="' + s.id + '">' +
+          '<div class="session-item-left">' +
+            '<div class="session-item-date">' + dateStr + '</div>' +
+            '<div class="session-item-label">' + s.totalOrders + ' ordini</div>' +
+          '</div>' +
+          (revenue ? '<div class="session-item-revenue">' + revenue + '</div>' : '') +
+          '</div>';
+      });
+
+      dropdown.innerHTML = html;
+
+      // Click handler per ogni voce
+      dropdown.querySelectorAll('.session-item').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = el.getAttribute('data-id');
+          selectSession(id, el);
+        });
+      });
+    }
+
+    function selectSession(sessionId, itemEl) {
+      currentSessionId = sessionId || null;
+
+      // Aggiorna stile selezionato nel dropdown
+      var dropdown = document.getElementById('sessionDropdown');
+      dropdown.querySelectorAll('.session-item').forEach(function(el) {
+        el.classList.remove('selected');
+      });
+      if (itemEl) itemEl.classList.add('selected');
+
+      // Aggiorna label del bottone
+      var label = document.getElementById('sessionLabel');
+      if (!currentSessionId) {
+        label.textContent = 'Serata corrente';
+      } else {
+        var dateEl = itemEl.querySelector('.session-item-date');
+        label.textContent = dateEl ? dateEl.textContent : sessionId;
+      }
+
+      // Chiudi dropdown
+      closeDropdown();
+
+      // Ricarica i dati
+      document.getElementById('loadingWrap').style.display = 'flex';
+      document.getElementById('reportHeader').style.display = 'none';
+      document.getElementById('reportWrap').style.display = 'none';
+      loadRecap();
+    }
+
+    // Toggle dropdown apertura/chiusura
+    function setupSessionSelector() {
+      var btn = document.getElementById('sessionBtn');
+      var dropdown = document.getElementById('sessionDropdown');
+
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isOpen = dropdown.classList.contains('open');
+        if (isOpen) {
+          closeDropdown();
+        } else {
+          dropdown.classList.add('open');
+          btn.classList.add('active');
+        }
+      });
+
+      // Chiudi cliccando fuori
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.session-selector')) {
+          closeDropdown();
+        }
+      });
+    }
+
+    function closeDropdown() {
+      document.getElementById('sessionDropdown').classList.remove('open');
+      document.getElementById('sessionBtn').classList.remove('active');
+    }
 
     async function loadRecap() {
       try {
-        const res = await fetch('/api/admin/stats/recap', {
+        var url = currentSessionId
+          ? '/api/admin/sessions/' + encodeURIComponent(currentSessionId) + '/recap'
+          : '/api/admin/stats/recap';
+
+        const res = await fetch(url, {
           headers: { 'X-Admin-Token': TOKEN },
         });
 
@@ -844,8 +1100,15 @@
       document.getElementById('reportHeader').style.display = 'flex';
       document.getElementById('reportWrap').style.display = 'block';
 
-      // Data nell'header
-      document.getElementById('reportDate').textContent = formatDate();
+      // Data nell'header: mostra la data della serata selezionata o quella corrente
+      if (currentSessionId && data._sessionDate) {
+        var sd = new Date(data._sessionDate + 'T12:00:00');
+        document.getElementById('reportDate').textContent = sd.toLocaleDateString('it-IT', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        });
+      } else {
+        document.getElementById('reportDate').textContent = formatDate();
+      }
 
       // --- KPI ---
       document.getElementById('kpiOrders').textContent = data.totalOrders.toLocaleString('it-IT');
@@ -874,10 +1137,10 @@
       // --- Anomalie ---
       renderAnomalies(data.incompleteOrders, data.incompleteDetails);
 
-      // --- Export ---
-      document.getElementById('btnExport').addEventListener('click', function () {
+      // --- Export (usa onclick per evitare listener multipli al cambio serata) ---
+      document.getElementById('btnExport').onclick = function () {
         exportCSV(data);
-      });
+      };
     }
 
     // ===================================================

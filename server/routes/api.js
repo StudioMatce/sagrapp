@@ -48,6 +48,9 @@ config.MENU.forEach(item => {
 const orders = [];
 let orderCounter = 0;
 
+// Archivio serate chiuse — ogni elemento contiene il recap completo
+const archivedSessions = [];
+
 // Sessioni admin attive
 const adminSessions = new Map();
 
@@ -760,7 +763,8 @@ router.get('/admin/stats/live', requireAdmin, (req, res) => {
 // ADMIN — RECAP (post-serata)
 // =============================================
 
-router.get('/admin/stats/recap', requireAdmin, (req, res) => {
+// Calcola il recap della serata corrente (usato dall'endpoint e dal salvataggio archivio)
+function computeRecap() {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
 
@@ -810,7 +814,6 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
 
   const incomplete = orders.filter(o => o.status !== 'completed');
 
-  // Omaggi per tipo (sponsor, don_pierino, amici)
   const courtesyTypes = ['sponsor', 'don_pierino', 'amici'];
   const courtesy = {};
   courtesyTypes.forEach(type => {
@@ -825,10 +828,9 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
     realValue: courtesyTypes.reduce((sum, t) => sum + courtesy[t].realValue, 0),
   };
 
-  // Totale sconti applicati
   const discountTotal = orders.reduce((sum, o) => sum + (o.discount || 0), 0);
 
-  res.json({
+  return {
     totalOrders,
     totalRevenue,
     salesRanking,
@@ -841,7 +843,34 @@ router.get('/admin/stats/recap', requireAdmin, (req, res) => {
     incompleteDetails: incomplete,
     courtesy,
     discountTotal,
-  });
+  };
+}
+
+router.get('/admin/stats/recap', requireAdmin, (req, res) => {
+  res.json(computeRecap());
+});
+
+// Lista serate archiviate (per il selettore nel recap)
+router.get('/admin/sessions', requireAdmin, (req, res) => {
+  const list = archivedSessions.map(s => ({
+    id: s.id,
+    date: s.date,
+    closed_at: s.closed_at,
+    totalOrders: s.recap.totalOrders,
+    totalRevenue: s.recap.totalRevenue,
+  }));
+  // Ordina dalla piu' recente alla piu' vecchia
+  list.sort((a, b) => b.closed_at - a.closed_at);
+  res.json(list);
+});
+
+// Recap di una serata archiviata specifica
+router.get('/admin/sessions/:id/recap', requireAdmin, (req, res) => {
+  const session = archivedSessions.find(s => s.id === req.params.id);
+  if (!session) {
+    return res.status(404).json({ error: 'Serata non trovata' });
+  }
+  res.json({ ...session.recap, _sessionDate: session.date });
 });
 
 // =============================================
@@ -962,6 +991,24 @@ router.delete('/inventory/presets/:name', requireAdmin, (req, res) => {
 // =============================================
 
 router.post('/admin/reset', requireAdmin, (req, res) => {
+  // Salva snapshot della serata corrente nell'archivio (solo se ci sono ordini)
+  if (orders.length > 0) {
+    const recap = computeRecap();
+    const now = new Date();
+    // Usa la data del primo ordine come data della serata (piu' accurato)
+    const sessionDate = orders.length > 0
+      ? new Date(orders[0].created_at).toISOString().slice(0, 10)
+      : now.toISOString().slice(0, 10);
+
+    archivedSessions.push({
+      id: 'session_' + now.getTime(),
+      date: sessionDate,
+      closed_at: now.getTime(),
+      recap,
+    });
+    console.log(`[Admin] Serata ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
+  }
+
   // Azzera ordini
   orders.length = 0;
   orderCounter = 0;
