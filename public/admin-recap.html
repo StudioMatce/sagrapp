@@ -47,15 +47,18 @@
     }
 
     /* ===== HEADER ===== */
-    .report-header {
+    .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding-bottom: 20px;
+      padding: 14px 20px;
+      background: rgba(6, 10, 18, 0.92);
       border-bottom: 1px solid var(--border);
-      margin-bottom: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .header-left {
@@ -81,7 +84,6 @@
     .header-title {
       font-weight: 700;
       font-size: 18px;
-      letter-spacing: -0.01em;
     }
 
     .header-title span {
@@ -89,40 +91,17 @@
       font-weight: 400;
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .header-date {
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
       color: var(--text-dim);
       letter-spacing: 0.03em;
-    }
-
-    .header-nav {
-      display: flex;
-      gap: 8px;
-    }
-
-    .nav-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-mid);
-      font-family: 'Outfit', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      text-decoration: none;
-      cursor: pointer;
-      transition: all 150ms ease;
-    }
-
-    .nav-link:hover {
-      border-color: rgba(78, 204, 163, 0.3);
-      color: var(--green);
     }
 
     /* ===== SEZIONE ===== */
@@ -615,7 +594,7 @@
       .kpi-row { grid-template-columns: 1fr; }
       .grid-2 { grid-template-columns: 1fr; }
       .kpi-value { font-size: 28px; }
-      .report-header { flex-direction: column; align-items: flex-start; }
+      .page-header { flex-direction: column; align-items: flex-start; }
       .ranking-item { grid-template-columns: 30px 1fr auto; }
       .ranking-revenue { display: none; }
       .bar-chart { height: 140px; }
@@ -633,23 +612,19 @@
     </div>
   </div>
 
+  <!-- HEADER -->
+  <header class="page-header" id="reportHeader" style="display: none;">
+    <div class="header-left">
+      <div class="logo-mark">S</div>
+      <div class="header-title">SagrApp <span>— Report Serata</span></div>
+    </div>
+    <div class="header-right">
+      <div class="header-date" id="reportDate"></div>
+    </div>
+  </header>
+
   <!-- Contenuto report (nascosto finche' i dati non arrivano) -->
   <div class="report-wrap" id="reportWrap" style="display: none;">
-
-    <!-- HEADER -->
-    <header class="report-header">
-      <div>
-        <div class="header-left">
-          <div class="logo-mark">S</div>
-          <div class="header-title">SagrApp <span>— Report Serata</span></div>
-        </div>
-        <div class="header-date" id="reportDate"></div>
-      </div>
-      <nav class="header-nav">
-        <a href="/admin" class="nav-link">Admin LIVE</a>
-        <a href="/" class="nav-link">Test Hardware</a>
-      </nav>
-    </header>
 
     <!-- 1. KPI -->
     <section class="section">
@@ -865,8 +840,9 @@
     // RENDERING COMPLETO
     // ===================================================
     function renderReport(data) {
-      // Mostra il report, nasconde il loading
+      // Mostra il report e l'header, nasconde il loading
       document.getElementById('loadingWrap').style.display = 'none';
+      document.getElementById('reportHeader').style.display = 'flex';
       document.getElementById('reportWrap').style.display = 'block';
 
       // Data nell'header

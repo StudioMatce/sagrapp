@@ -33,39 +33,55 @@
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-    /* ===== TOP BAR ===== */
-    .topbar {
+    /* ===== HEADER ===== */
+    .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 24px;
-      background: rgba(255, 255, 255, 0.02);
+      padding: 14px 20px;
+      background: rgba(6, 10, 18, 0.92);
       border-bottom: 1px solid #1e293b;
       position: sticky;
       top: 0;
       z-index: 50;
-      /* Sfocatura industriale */
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
 
-    .topbar-left {
+    .header-left {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
-    .topbar-brand {
-      font-weight: 700;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgba(226, 232, 240, 0.5);
-    }
-
-    .topbar-brand span {
-      color: #4ecca3;
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: #4ecca3;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 800;
+      font-size: 16px;
+      color: #060a12;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .header-title span {
+      color: rgba(226, 232, 240, 0.45);
+      font-weight: 400;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .conn-badge {
@@ -116,30 +132,6 @@
     @keyframes led-pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .topbar-link {
-      padding: 5px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      color: rgba(226, 232, 240, 0.45);
-      text-decoration: none;
-      border: 1px solid transparent;
-      transition: all 150ms ease;
-    }
-
-    .topbar-link:hover {
-      color: #e2e8f0;
-      border-color: #1e293b;
-      background: rgba(255, 255, 255, 0.03);
     }
 
     .btn-test {
@@ -590,18 +582,9 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-      .topbar {
+      .page-header {
         padding: 12px 16px;
-        flex-wrap: wrap;
-        gap: 10px;
       }
-
-      .topbar-right {
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-
-      .topbar-link { font-size: 11px; padding: 4px 8px; }
 
       .main { padding: 16px; gap: 14px; }
 
@@ -644,28 +627,27 @@
 </head>
 <body>
 
-  <!-- ===== TOP BAR ===== -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <span class="topbar-brand">SagrApp Admin — <span>LIVE</span></span>
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="logo-mark">S</div>
+      <div class="header-title">SagrApp <span>— Admin LIVE</span></div>
+    </div>
+    <div class="header-right">
       <div class="conn-badge offline" id="connBadge">
         <span class="conn-led" id="connLed"></span>
         <span id="connText">Offline</span>
       </div>
     </div>
-    <div class="topbar-right">
-      <button class="btn-test" id="btnTest">Genera ordine test</button>
-      <button class="btn-test" id="btnReset" style="color:#e94560;background:rgba(233,69,96,0.08);border-color:rgba(233,69,96,0.25)">Reset tutto</button>
-      <a class="topbar-link" href="/admin/magazzino">Magazzino</a>
-      <a class="topbar-link" href="/admin/recap">Recap</a>
-      <a class="topbar-link" href="/admin/hardware">Hardware</a>
-      <a class="topbar-link" href="/admin/chiusura">Chiusura</a>
-      <a class="topbar-link" href="/">Test Hardware</a>
-    </div>
   </header>
 
   <!-- ===== CONTENUTO PRINCIPALE ===== -->
   <main class="main">
+
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <button class="btn-test" id="btnTest">Genera ordine test</button>
+      <button class="btn-test" id="btnReset" style="color:#e94560;background:rgba(233,69,96,0.08);border-color:rgba(233,69,96,0.25)">Reset tutto</button>
+    </div>
 
     <!-- KPI Row -->
     <section class="kpi-row">

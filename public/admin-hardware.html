@@ -50,11 +50,14 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding-bottom: 20px;
+      padding: 14px 20px;
+      background: rgba(6, 10, 18, 0.92);
       border-bottom: 1px solid var(--border);
-      margin-bottom: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .header-left {
@@ -84,27 +87,11 @@
 
     .header-title span { color: var(--text-dim); font-weight: 400; }
 
-    .header-nav {
+    .header-right {
       display: flex;
+      align-items: center;
       gap: 8px;
     }
-
-    .nav-link {
-      padding: 6px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-mid);
-      font-family: 'Outfit', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      text-decoration: none;
-      transition: all 150ms ease;
-    }
-
-    .nav-link:hover { border-color: rgba(78, 204, 163, 0.3); color: var(--green); }
 
     /* ===== SEZIONE ===== */
     .section {
@@ -397,22 +384,16 @@
 </head>
 <body>
 
-  <div class="page-wrap">
+  <!-- HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="logo-mark">S</div>
+      <div class="header-title">SagrApp <span>— Pannello Hardware</span></div>
+    </div>
+    <div class="header-right"></div>
+  </header>
 
-    <!-- HEADER -->
-    <header class="page-header">
-      <div>
-        <div class="header-left">
-          <div class="logo-mark">S</div>
-          <div class="header-title">SagrApp <span>— Pannello Hardware</span></div>
-        </div>
-      </div>
-      <nav class="header-nav">
-        <a href="/admin" class="nav-link">Admin LIVE</a>
-        <a href="/admin/recap" class="nav-link">Recap</a>
-        <a href="/setup" class="nav-link">Setup</a>
-      </nav>
-    </header>
+  <div class="page-wrap">
 
     <!-- PROXY -->
     <section class="section">

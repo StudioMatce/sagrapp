@@ -27,61 +27,54 @@
     }
 
     /* ===== HEADER ===== */
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: rgba(6, 10, 18, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid #1e293b;
-      padding: 16px 20px;
+    .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(6, 10, 18, 0.92);
+      border-bottom: 1px solid #1e293b;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 14px;
-      min-width: 0;
+      gap: 12px;
     }
 
-    .back-link {
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: #4ecca3;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      border: 1px solid #1e293b;
-      background: rgba(255, 255, 255, 0.03);
-      color: #6c7a89;
-      text-decoration: none;
-      font-size: 18px;
+      font-weight: 800;
+      font-size: 16px;
+      color: #060a12;
       flex-shrink: 0;
-      transition: all 150ms ease;
-    }
-
-    .back-link:hover {
-      border-color: #4ecca3;
-      color: #4ecca3;
     }
 
     .header-title {
       font-weight: 700;
-      font-size: clamp(16px, 3.5vw, 20px);
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 18px;
     }
 
     .header-title span {
-      color: #6c7a89;
+      color: rgba(226, 232, 240, 0.45);
       font-weight: 400;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     /* Indicatore connessione nel header */
@@ -574,7 +567,7 @@
     @media (min-width: 768px) {
       .inventory-list { max-width: 900px; margin: 0 auto; }
       .action-bar { max-width: 900px; margin: 0 auto; padding: 16px 0; border-bottom: none; }
-      .header { padding: 16px 32px; }
+      .page-header { padding: 14px 32px; }
       .inv-row { padding: 18px 12px; }
       .inv-name { font-size: 17px; }
       .act-btn { min-width: 48px; height: 40px; }
@@ -584,16 +577,18 @@
 <body>
 
   <!-- Header -->
-  <div class="header">
+  <header class="page-header">
     <div class="header-left">
-      <a href="/admin" class="back-link" aria-label="Torna alla dashboard admin">&larr;</a>
-      <div class="header-title">Magazzino <span>— Gestione Scorte</span></div>
+      <div class="logo-mark">S</div>
+      <div class="header-title">SagrApp <span>— Magazzino</span></div>
     </div>
-    <div class="conn-indicator">
-      <div class="conn-dot" id="connDot"></div>
-      <span class="conn-label" id="connLabel">Offline</span>
+    <div class="header-right">
+      <div class="conn-indicator">
+        <div class="conn-dot" id="connDot"></div>
+        <span class="conn-label" id="connLabel">Offline</span>
+      </div>
     </div>
-  </div>
+  </header>
 
   <!-- Action Bar -->
   <div class="action-bar">
