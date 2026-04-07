@@ -45,7 +45,7 @@
     }
 
     .col-label {
-      width: clamp(80px, 14vw, 200px);
+      width: clamp(120px, 18vw, 280px);
       flex-shrink: 0;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
@@ -83,14 +83,14 @@
       text-transform: uppercase;
     }
 
-    /* Numeri — 3 colonne a destra */
+    /* Numeri — 2 colonne a destra, font ≥120px per leggibilità a 3 metri */
     .dish-count {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(48px, 7vw, 100px);
+      font-size: clamp(80px, 10vw, 140px);
       line-height: 1;
       color: #ffffff;
-      width: clamp(80px, 14vw, 200px);
+      width: clamp(120px, 18vw, 280px);
       flex-shrink: 0;
       text-align: center;
       transition: color 200ms ease, text-shadow 200ms ease;
@@ -101,10 +101,15 @@
       text-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
     }
 
-    /* Colori per "da cucinare" */
+    /* Colori per "da cucinare": verde=0, giallo=1-10, rosso=>10 */
     .dish-count.cook-green { color: #4ecca3; }
     .dish-count.cook-yellow { color: #ffd93d; }
     .dish-count.cook-red { color: #e94560; }
+
+    /* Colori per "nello scaldavivande": verde=>10, giallo=1-10, rosso=0 */
+    .dish-count.warm-green { color: #4ecca3; }
+    .dish-count.warm-yellow { color: #ffd93d; }
+    .dish-count.warm-red { color: #e94560; }
 
     /* Indicatore connessione — angolo in basso a destra, minimo */
     .conn-dot {
@@ -300,6 +305,12 @@
         if (newCook === 0) cookEl.classList.add('cook-green');
         else if (newCook <= 10) cookEl.classList.add('cook-yellow');
         else cookEl.classList.add('cook-red');
+
+        // Colore "nello scaldavivande": verde=>10, giallo=1-10, rosso=0
+        warmEl.classList.remove('warm-green', 'warm-yellow', 'warm-red');
+        if (newWarm === 0) warmEl.classList.add('warm-red');
+        else if (newWarm <= 10) warmEl.classList.add('warm-yellow');
+        else warmEl.classList.add('warm-green');
 
         // Flash se qualcosa è cambiato
         if (newCook !== oldCook || newWarm !== oldWarm) {

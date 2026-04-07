@@ -263,8 +263,11 @@
           <span class="dish-name">${item.label}</span>
         </div>
         <div class="dish-controls">
-          <button class="btn-counter btn-minus" ontouchstart=""
-                  onclick="handleTap('${item.id}', -1, this)">&minus;</button>
+          <button class="btn-counter btn-minus" ontouchstart="startLongPress('${item.id}', this)"
+                  ontouchend="endLongPress('${item.id}')" ontouchcancel="endLongPress('${item.id}')"
+                  onmousedown="startLongPress('${item.id}', this)" onmouseup="endLongPress('${item.id}')"
+                  onmouseleave="endLongPress('${item.id}')"
+                  onclick="if(longPressTimers['${item.id}'] !== 'fired') handleTap('${item.id}', -1, this)">&minus;</button>
           <span class="dish-count" id="count-${item.id}">0</span>
           ${DELTAS.map(d => `
             <button class="btn-counter btn-plus" ontouchstart=""
@@ -344,6 +347,40 @@
 
       // Invia al server
       socket.emit('counter_update', { item: itemId, delta });
+    }
+
+    // Long press sul pulsante meno → apre input numerico per impostare valore esatto
+    const longPressTimers = {};
+
+    function startLongPress(itemId, btnEl) {
+      longPressTimers[itemId] = setTimeout(() => {
+        // Cancella il tap normale
+        longPressTimers[itemId] = 'fired';
+        const current = counters[itemId].pronto;
+        const newVal = prompt(
+          `Imposta valore "pronto" per ${ITEMS.find(i => i.id === itemId).label}\n(attuale: ${current})`,
+          String(current)
+        );
+        if (newVal === null) return;
+        const parsed = parseInt(newVal, 10);
+        if (isNaN(parsed) || parsed < 0) return;
+
+        // Calcola il delta necessario per raggiungere il valore desiderato
+        const delta = parsed - counters[itemId].pronto;
+        if (delta === 0) return;
+
+        counters[itemId].pronto = parsed;
+        const countEl = document.getElementById(`count-${itemId}`);
+        countEl.textContent = parsed;
+        socket.emit('counter_update', { item: itemId, delta });
+      }, 600);
+    }
+
+    function endLongPress(itemId) {
+      if (longPressTimers[itemId] && longPressTimers[itemId] !== 'fired') {
+        clearTimeout(longPressTimers[itemId]);
+      }
+      delete longPressTimers[itemId];
     }
 
     function setRowsEnabled(enabled) {

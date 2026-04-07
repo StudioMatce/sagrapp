@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Setup Wizard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060a12;
+      --card: #111827;
+      --border: #1e293b;
+      --green: #4ecca3;
+      --red: #e94560;
+      --yellow: #ffd93d;
+      --gray: #6c7a89;
+      --text: #e2e8f0;
+      --text-dim: rgba(226, 232, 240, 0.45);
+      --text-mid: rgba(226, 232, 240, 0.65);
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.04) 0%, transparent 50%),
+        var(--bg);
+    }
+
+    .wizard {
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .wizard-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-mark {
+      width: 48px;
+      height: 48px;
+      background: var(--green);
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--bg);
+      margin-bottom: 12px;
+    }
+
+    .wizard-title {
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+    }
+
+    .wizard-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* ===== CHECK LIST ===== */
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .check-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      transition: border-color 300ms ease;
+    }
+
+    .check-item.ok { border-color: rgba(78, 204, 163, 0.3); }
+    .check-item.fail { border-color: rgba(233, 69, 96, 0.3); }
+
+    .check-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .check-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+      font-weight: 800;
+      transition: all 300ms ease;
+    }
+
+    .check-icon.waiting {
+      background: rgba(108, 122, 137, 0.15);
+      color: var(--gray);
+    }
+
+    .check-icon.running {
+      background: rgba(78, 204, 163, 0.1);
+      border: 2px solid var(--green);
+      animation: spin 800ms linear infinite;
+    }
+
+    .check-icon.ok {
+      background: rgba(78, 204, 163, 0.15);
+      color: var(--green);
+    }
+
+    .check-icon.fail {
+      background: rgba(233, 69, 96, 0.15);
+      color: var(--red);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .check-label {
+      font-weight: 600;
+      font-size: 15px;
+      flex: 1;
+    }
+
+    .check-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .check-status.waiting { color: var(--gray); }
+    .check-status.running { color: var(--green); }
+    .check-status.ok { color: var(--green); }
+    .check-status.fail { color: var(--red); }
+
+    /* Dettagli espandibili (es. lista stampanti) */
+    .check-details {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+
+    .check-details.visible { display: block; }
+
+    .printer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+
+    .printer-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .printer-led.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .printer-led.off { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    .printer-led.unknown { background: var(--gray); }
+
+    .printer-name { font-weight: 500; color: var(--text-mid); flex: 1; }
+
+    .printer-ip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Retry button inline */
+    .btn-retry {
+      margin-top: 10px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      background: rgba(233, 69, 96, 0.08);
+      color: var(--red);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-retry:hover {
+      background: rgba(233, 69, 96, 0.2);
+      border-color: var(--red);
+    }
+
+    /* ===== RESULT BANNER ===== */
+    .result-banner {
+      text-align: center;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .result-banner.visible { display: block; }
+
+    .result-banner.all-ok {
+      background: rgba(78, 204, 163, 0.1);
+      border: 1px solid rgba(78, 204, 163, 0.25);
+    }
+
+    .result-banner.has-errors {
+      background: rgba(233, 69, 96, 0.08);
+      border: 1px solid rgba(233, 69, 96, 0.2);
+    }
+
+    .result-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .result-text {
+      font-weight: 700;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .result-banner.all-ok .result-text { color: var(--green); }
+    .result-banner.has-errors .result-text { color: var(--red); }
+
+    /* ===== BUTTONS ===== */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      border: none;
+      color: var(--bg);
+    }
+
+    .btn-primary:hover { box-shadow: 0 0 20px rgba(78, 204, 163, 0.3); }
+
+    .btn-primary.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(78, 204, 163, 0.3);
+      color: var(--green);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wizard">
+    <div class="wizard-header">
+      <div class="logo-mark">S</div>
+      <div class="wizard-title">Pre-flight Check</div>
+      <div class="wizard-sub">Verifica automatica prima di iniziare il turno</div>
+    </div>
+
+    <div class="check-list" id="checkList">
+      <!-- Check 1: Server -->
+      <div class="check-item" id="check-server">
+        <div class="check-top">
+          <div class="check-icon waiting" id="icon-server">&bull;</div>
+          <span class="check-label">Server connesso</span>
+          <span class="check-status waiting" id="status-server">In attesa</span>
+        </div>
+      </div>
+
+      <!-- Check 2: Socket.IO -->
+      <div class="check-item" id="check-socket">
+        <div class="check-top">
+          <div class="check-icon waiting" id="icon-socket">&bull;</div>
+          <span class="check-label">Socket.IO connesso</span>
+          <span class="check-status waiting" id="status-socket">In attesa</span>
+        </div>
+      </div>
+
+      <!-- Check 3: Print proxy -->
+      <div class="check-item" id="check-proxy">
+        <div class="check-top">
+          <div class="check-icon waiting" id="icon-proxy">&bull;</div>
+          <span class="check-label">Print proxy online</span>
+          <span class="check-status waiting" id="status-proxy">In attesa</span>
+        </div>
+      </div>
+
+      <!-- Check 4: Stampanti -->
+      <div class="check-item" id="check-printers">
+        <div class="check-top">
+          <div class="check-icon waiting" id="icon-printers">&bull;</div>
+          <span class="check-label">Stampanti raggiungibili</span>
+          <span class="check-status waiting" id="status-printers">In attesa</span>
+        </div>
+        <div class="check-details" id="printerDetails">
+          <!-- Popolato da JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Risultato -->
+    <div class="result-banner" id="resultBanner">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-text" id="resultText"></div>
+    </div>
+
+    <!-- Pulsanti -->
+    <div class="btn-row">
+      <a href="/" class="btn btn-primary disabled" id="btnStart">Vai alla dashboard</a>
+      <button class="btn btn-secondary" id="btnRestart" onclick="runAllChecks()">Riavvia check</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket = null;
+    let deviceStatus = null;
+
+    // Stato dei check
+    const checks = {
+      server: 'waiting',
+      socket: 'waiting',
+      proxy: 'waiting',
+      printers: 'waiting',
+    };
+
+    function setCheckState(id, state, label) {
+      checks[id] = state;
+      const icon = document.getElementById('icon-' + id);
+      const status = document.getElementById('status-' + id);
+      const item = document.getElementById('check-' + id);
+
+      icon.className = 'check-icon ' + state;
+      status.className = 'check-status ' + state;
+
+      if (state === 'waiting') { icon.innerHTML = '&bull;'; status.textContent = 'In attesa'; }
+      else if (state === 'running') { icon.innerHTML = ''; status.textContent = 'Verifica...'; }
+      else if (state === 'ok') { icon.innerHTML = '&#10003;'; status.textContent = label || 'OK'; }
+      else if (state === 'fail') { icon.innerHTML = '&#10007;'; status.textContent = label || 'Errore'; }
+
+      item.className = 'check-item' + (state === 'ok' ? ' ok' : state === 'fail' ? ' fail' : '');
+    }
+
+    function showResult() {
+      const allOk = Object.values(checks).every(s => s === 'ok');
+      const hasError = Object.values(checks).some(s => s === 'fail');
+
+      if (!allOk && !hasError) return; // ancora in corso
+
+      const banner = document.getElementById('resultBanner');
+      const icon = document.getElementById('resultIcon');
+      const text = document.getElementById('resultText');
+      const btn = document.getElementById('btnStart');
+
+      banner.classList.add('visible');
+
+      if (allOk) {
+        banner.className = 'result-banner visible all-ok';
+        icon.textContent = '✓';
+        text.textContent = 'Tutto OK — Pronto';
+        btn.classList.remove('disabled');
+      } else {
+        banner.className = 'result-banner visible has-errors';
+        icon.textContent = '!';
+        text.textContent = 'Problemi rilevati';
+        btn.classList.add('disabled');
+      }
+    }
+
+    // === CHECK 1: Server HTTP ===
+    async function checkServer() {
+      setCheckState('server', 'running');
+      try {
+        const res = await fetch('/api/menu');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        setCheckState('server', 'ok', data.length + ' piatti');
+        return true;
+      } catch (err) {
+        setCheckState('server', 'fail', err.message);
+        return false;
+      }
+    }
+
+    // === CHECK 2: Socket.IO ===
+    function checkSocket() {
+      return new Promise((resolve) => {
+        setCheckState('socket', 'running');
+
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+
+        socket = io(window.location.origin, {
+          reconnection: false,
+          timeout: 5000,
+        });
+
+        const timeout = setTimeout(() => {
+          setCheckState('socket', 'fail', 'Timeout');
+          socket.disconnect();
+          resolve(false);
+        }, 6000);
+
+        socket.on('connect', () => {
+          clearTimeout(timeout);
+          socket.emit('register', { role: 'dashboard' });
+          setCheckState('socket', 'ok');
+          resolve(true);
+        });
+
+        socket.on('connect_error', (err) => {
+          clearTimeout(timeout);
+          setCheckState('socket', 'fail', 'Errore connessione');
+          resolve(false);
+        });
+      });
+    }
+
+    // === CHECK 3: Print proxy ===
+    function checkProxy() {
+      return new Promise((resolve) => {
+        setCheckState('proxy', 'running');
+
+        if (!socket || !socket.connected) {
+          setCheckState('proxy', 'fail', 'Socket non connesso');
+          resolve(false);
+          return;
+        }
+
+        const timeout = setTimeout(() => {
+          setCheckState('proxy', 'fail', 'Nessun proxy rilevato');
+          resolve(false);
+        }, 5000);
+
+        // Ascolta l'evento device_status che arriva dopo register
+        socket.on('device_status', function handler(data) {
+          deviceStatus = data.devices;
+          clearTimeout(timeout);
+          socket.off('device_status', handler);
+
+          if (deviceStatus.proxy >= 1) {
+            setCheckState('proxy', 'ok', deviceStatus.proxy + ' proxy connesso');
+            resolve(true);
+          } else {
+            setCheckState('proxy', 'fail', 'Proxy offline');
+            resolve(false);
+          }
+        });
+      });
+    }
+
+    // === CHECK 4: Stampanti ===
+    function checkPrinters() {
+      return new Promise((resolve) => {
+        setCheckState('printers', 'running');
+
+        if (!socket || !socket.connected) {
+          setCheckState('printers', 'fail', 'Socket non connesso');
+          resolve(false);
+          return;
+        }
+
+        const timeout = setTimeout(() => {
+          setCheckState('printers', 'fail', 'Timeout ping');
+          resolve(false);
+        }, 10000);
+
+        socket.on('printers_status_update', function handler(statuses) {
+          clearTimeout(timeout);
+          socket.off('printers_status_update', handler);
+
+          const details = document.getElementById('printerDetails');
+          details.classList.add('visible');
+
+          details.innerHTML = statuses.map(p =>
+            '<div class="printer-row">' +
+              '<div class="printer-led ' + (p.online ? 'on' : 'off') + '"></div>' +
+              '<span class="printer-name">' + (p.name || p.id) + '</span>' +
+              '<span class="printer-ip">' + (p.ip || '') + '</span>' +
+            '</div>'
+          ).join('');
+
+          const allOnline = statuses.every(s => s.online);
+          const onlineCount = statuses.filter(s => s.online).length;
+
+          if (allOnline) {
+            setCheckState('printers', 'ok', onlineCount + '/' + statuses.length);
+          } else {
+            setCheckState('printers', 'fail', onlineCount + '/' + statuses.length + ' online');
+          }
+          resolve(allOnline);
+        });
+
+        socket.emit('request_printer_check');
+      });
+    }
+
+    // === ESEGUI TUTTI I CHECK ===
+    async function runAllChecks() {
+      // Reset
+      document.getElementById('resultBanner').classList.remove('visible');
+      document.getElementById('btnStart').classList.add('disabled');
+      document.getElementById('printerDetails').classList.remove('visible');
+
+      ['server', 'socket', 'proxy', 'printers'].forEach(id => setCheckState(id, 'waiting'));
+
+      // Sequenza
+      const serverOk = await checkServer();
+      if (!serverOk) { showResult(); return; }
+
+      const socketOk = await checkSocket();
+      if (!socketOk) { showResult(); return; }
+
+      const proxyOk = await checkProxy();
+      if (!proxyOk) { showResult(); return; }
+
+      await checkPrinters();
+      showResult();
+    }
+
+    // Auto-start
+    runAllChecks();
+  </script>
+</body>
+</html>

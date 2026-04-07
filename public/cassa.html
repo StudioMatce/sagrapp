@@ -402,6 +402,36 @@
 
     .offline-banner.visible { transform: translateY(0); }
 
+    /* ===== BANNER STAMPANTE OFFLINE ===== */
+    .printer-alert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 10px 20px;
+      background: #ffd93d;
+      color: #1a1a2e;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 190;
+      transform: translateY(-100%);
+      transition: transform 300ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .printer-alert.visible { transform: translateY(0); }
+
+    .printer-alert .alert-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
     /* ===== RIGA SUPERIORE ORDER BAR ===== */
     .order-top {
       display: flex;
@@ -555,6 +585,10 @@
 
   <!-- Banner disconnessione -->
   <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA</div>
+  <div class="printer-alert" id="printerAlert">
+    <span class="alert-icon">&#9888;</span>
+    <span id="printerAlertText">Stampante offline</span>
+  </div>
 
   <!-- Header -->
   <header class="header">
@@ -983,6 +1017,43 @@
       headerStatus.classList.remove('online');
       headerStatus.classList.add('offline');
       statusText.textContent = 'Offline';
+    });
+
+    // --- Stampante offline: alert + beep ---
+    const printerAlert = document.getElementById('printerAlert');
+    const printerAlertText = document.getElementById('printerAlertText');
+
+    // Beep audio per alert stampante (usa Web Audio API, senza file esterni)
+    function beepAlert() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 800;
+        gain.gain.value = 0.3;
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } catch (e) { /* Audio non supportato */ }
+    }
+
+    // Ascolta lo stato delle stampanti dal proxy
+    socket.on('printers_status_update', (statuses) => {
+      const offlinePrinters = statuses.filter(s => !s.online);
+      if (offlinePrinters.length > 0) {
+        const names = offlinePrinters.map(p => p.id).join(', ');
+        printerAlertText.textContent = 'Stampante offline: ' + names;
+        printerAlert.classList.add('visible');
+        beepAlert();
+      } else {
+        printerAlert.classList.remove('visible');
+      }
+    });
+
+    // Richiedi controllo stampanti dopo connessione
+    socket.on('connect', () => {
+      setTimeout(() => socket.emit('request_printer_check'), 2000);
     });
 
     document.getElementById('tableInput').addEventListener('input', updateOrderBar);

@@ -723,7 +723,29 @@
       </div>
     </section>
 
-    <!-- 6. ANOMALIE -->
+    <!-- 6. OMAGGI E SCONTI -->
+    <section class="section">
+      <div class="section-label">Omaggi e sconti</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Omaggi per tipo</div>
+          <table class="summary-table" id="tableCourtesy"><tbody></tbody></table>
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; font-weight: 600; color: var(--text-mid);">Totale omaggi</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: var(--yellow);" id="courtesyTotal">—</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Sconti applicati</div>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; gap: 6px;">
+            <div class="kpi-value" id="discountTotal" style="color: var(--yellow);">—</div>
+            <div style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Totale sconti</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. ANOMALIE -->
     <section class="section">
       <div class="section-label">Anomalie</div>
       <div class="card" id="anomalyCard">
@@ -731,7 +753,7 @@
       </div>
     </section>
 
-    <!-- 7. EXPORT -->
+    <!-- 8. EXPORT -->
     <section class="section">
       <div class="export-row">
         <button class="btn-export" id="btnExport" title="Scarica il report completo in formato CSV">
@@ -871,6 +893,9 @@
       // --- Magazzino ---
       renderInventory(data.inventoryReport);
 
+      // --- Omaggi e sconti ---
+      renderCourtesy(data.courtesy, data.discountTotal);
+
       // --- Anomalie ---
       renderAnomalies(data.incompleteOrders, data.incompleteDetails);
 
@@ -993,6 +1018,32 @@
     }
 
     // ===================================================
+    // RENDER: omaggi e sconti
+    // ===================================================
+    function renderCourtesy(courtesy, discountTotal) {
+      var tbody = document.querySelector('#tableCourtesy tbody');
+      var typeLabels = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+
+      if (!courtesy) {
+        tbody.innerHTML = '<tr><td colspan="2" class="empty-msg">Nessun dato</td></tr>';
+      } else {
+        var types = ['sponsor', 'don_pierino', 'amici'];
+        tbody.innerHTML = types.map(function(type) {
+          var data = courtesy[type] || { count: 0, realValue: 0 };
+          return '<tr><td>' + typeLabels[type] + ' (' + data.count + ')</td>' +
+            '<td>&euro; ' + formatCurrency(data.realValue) + '</td></tr>';
+        }).join('');
+
+        var total = courtesy.total || { count: 0, realValue: 0 };
+        document.getElementById('courtesyTotal').innerHTML =
+          total.count + ' ordini &mdash; &euro; ' + formatCurrency(total.realValue);
+      }
+
+      document.getElementById('discountTotal').innerHTML =
+        '<span class="kpi-unit">&euro;</span>' + formatCurrency(discountTotal || 0);
+    }
+
+    // ===================================================
     // RENDER: anomalie (ordini incompleti)
     // ===================================================
     function renderAnomalies(count, details) {
@@ -1075,6 +1126,24 @@
       (data.inventoryReport || []).forEach(function (item) {
         lines.push(item.name + ',' + item.initial_stock + ',' + item.sold + ',' + item.remaining + ',' + statusLabel(item.status));
       });
+
+      // Sezione 7: Omaggi
+      lines.push('');
+      lines.push('=== OMAGGI ===');
+      lines.push('Tipo,Conteggio,Valore Reale');
+      var typeLabels = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+      ['sponsor', 'don_pierino', 'amici'].forEach(function(type) {
+        var c = (data.courtesy && data.courtesy[type]) || { count: 0, realValue: 0 };
+        lines.push(typeLabels[type] + ',' + c.count + ',"' + formatCurrency(c.realValue) + '"');
+      });
+      if (data.courtesy && data.courtesy.total) {
+        lines.push('TOTALE,' + data.courtesy.total.count + ',"' + formatCurrency(data.courtesy.total.realValue) + '"');
+      }
+
+      // Sezione 8: Sconti
+      lines.push('');
+      lines.push('=== SCONTI ===');
+      lines.push('Totale Sconti,"' + formatCurrency(data.discountTotal || 0) + '"');
 
       // Genera e scarica il file
       var csvContent = lines.join('\n');

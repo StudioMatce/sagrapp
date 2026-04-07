@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId } = require('./routes/api');
+const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId, flushPrintQueue } = require('./routes/api');
 
 const app = express();
 const server = http.createServer(app);
@@ -68,6 +68,18 @@ app.get('/admin/login', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-login.html'));
 });
 
+app.get('/admin/hardware', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-hardware.html'));
+});
+
+app.get('/admin/chiusura', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-chiusura.html'));
+});
+
+app.get('/setup', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'setup.html'));
+});
+
 // --- Socket.IO: gestione connessioni ---
 
 // Tiene traccia dei dispositivi connessi per tipo
@@ -104,6 +116,8 @@ io.on('connection', (socket) => {
       setActiveProxyId(socket.id);
       console.log(`[Proxy] Proxy attivo impostato: ${socket.id}`);
       socket.emit('printer_config', config.PRINTERS);
+      // Svuota la coda stampa se c'erano job in attesa
+      flushPrintQueue();
     }
 
     // Invia i contatori attuali ai nuovi monitor/scaldavivande
@@ -238,9 +252,12 @@ server.listen(config.PORT, '0.0.0.0', () => {
   console.log(`    Scaldavivande:    http://localhost:${config.PORT}/scaldavivande`);
   console.log(`    Zona controllo:   http://localhost:${config.PORT}/controllo`);
   console.log(`    Cassa test:       http://localhost:${config.PORT}/cassa`);
+  console.log(`    Setup wizard:     http://localhost:${config.PORT}/setup`);
   console.log(`    Admin login:      http://localhost:${config.PORT}/admin/login`);
   console.log(`    Admin live:       http://localhost:${config.PORT}/admin`);
   console.log(`    Admin recap:      http://localhost:${config.PORT}/admin/recap`);
   console.log(`    Magazzino:        http://localhost:${config.PORT}/admin/magazzino`);
+  console.log(`    Hardware:         http://localhost:${config.PORT}/admin/hardware`);
+  console.log(`    Chiusura turno:   http://localhost:${config.PORT}/admin/chiusura`);
   console.log('');
 });

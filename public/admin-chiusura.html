@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Chiusura Turno</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060a12;
+      --card: #111827;
+      --border: #1e293b;
+      --green: #4ecca3;
+      --red: #e94560;
+      --yellow: #ffd93d;
+      --gray: #6c7a89;
+      --cyan: #22d3ee;
+      --text: #e2e8f0;
+      --text-dim: rgba(226, 232, 240, 0.45);
+      --text-mid: rgba(226, 232, 240, 0.65);
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 60px;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
+        var(--bg);
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    /* ===== HEADER ===== */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--green);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .header-title span { color: var(--text-dim); font-weight: 400; }
+
+    .header-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 150ms ease;
+    }
+
+    .nav-link:hover { border-color: rgba(78, 204, 163, 0.3); color: var(--green); }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 28px;
+    }
+
+    .progress-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+      transition: all 300ms ease;
+    }
+
+    .progress-dot.pending {
+      background: rgba(108, 122, 137, 0.15);
+      color: var(--gray);
+      border: 2px solid transparent;
+    }
+
+    .progress-dot.active {
+      background: rgba(78, 204, 163, 0.1);
+      color: var(--green);
+      border: 2px solid var(--green);
+      box-shadow: 0 0 12px rgba(78, 204, 163, 0.2);
+    }
+
+    .progress-dot.done {
+      background: var(--green);
+      color: var(--bg);
+      border: 2px solid var(--green);
+    }
+
+    .progress-line {
+      width: 40px;
+      height: 2px;
+      background: var(--border);
+      transition: background 300ms ease;
+    }
+
+    .progress-line.done { background: var(--green); }
+
+    /* ===== STEP CARD ===== */
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 300ms ease;
+    }
+
+    .step.active { border-color: rgba(78, 204, 163, 0.3); }
+    .step.done { border-color: rgba(78, 204, 163, 0.15); }
+
+    .step-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: default;
+    }
+
+    .step-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step.pending .step-number { background: rgba(108, 122, 137, 0.1); color: var(--gray); }
+    .step.active .step-number { background: rgba(78, 204, 163, 0.15); color: var(--green); }
+    .step.done .step-number { background: var(--green); color: var(--bg); }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 15px;
+      flex: 1;
+    }
+
+    .step.pending .step-title { color: var(--gray); }
+
+    .step-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .step-badge.done { background: rgba(78, 204, 163, 0.1); color: var(--green); }
+    .step-badge.warning { background: rgba(255, 217, 61, 0.1); color: var(--yellow); }
+
+    .step-body {
+      padding: 0 20px 20px;
+      display: none;
+    }
+
+    .step.active .step-body { display: block; }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== INFO BOX ===== */
+    .info-box {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .info-box.success {
+      background: rgba(78, 204, 163, 0.08);
+      border: 1px solid rgba(78, 204, 163, 0.2);
+      color: var(--green);
+    }
+
+    .info-box.warning {
+      background: rgba(255, 217, 61, 0.06);
+      border: 1px solid rgba(255, 217, 61, 0.15);
+      color: var(--yellow);
+    }
+
+    .info-box.error {
+      background: rgba(233, 69, 96, 0.06);
+      border: 1px solid rgba(233, 69, 96, 0.15);
+      color: var(--red);
+    }
+
+    /* ===== INVENTORY LIST ===== */
+    .inv-list {
+      max-height: 250px;
+      overflow-y: auto;
+      margin-bottom: 14px;
+    }
+
+    .inv-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+      font-size: 13px;
+    }
+
+    .inv-row:last-child { border-bottom: none; }
+
+    .inv-name { flex: 1; font-weight: 500; }
+
+    .inv-stock {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .inv-stock.ok { color: var(--green); }
+    .inv-stock.low { color: var(--yellow); }
+    .inv-stock.out { color: var(--red); }
+
+    .inv-list::-webkit-scrollbar { width: 4px; }
+    .inv-list::-webkit-scrollbar-track { background: transparent; }
+    .inv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-next {
+      background: var(--green);
+      color: var(--bg);
+    }
+
+    .btn-next:hover { box-shadow: 0 0 16px rgba(78, 204, 163, 0.3); }
+
+    .btn-next:disabled { opacity: 0.3; pointer-events: none; }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+    }
+
+    .btn-secondary:hover { border-color: rgba(78, 204, 163, 0.3); color: var(--green); }
+
+    .btn-danger {
+      width: 100%;
+      padding: 16px;
+      background: rgba(233, 69, 96, 0.1);
+      border: 2px solid rgba(233, 69, 96, 0.3);
+      color: var(--red);
+      font-size: 15px;
+    }
+
+    .btn-danger:hover {
+      background: rgba(233, 69, 96, 0.2);
+      border-color: var(--red);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ===== FINAL ===== */
+    .final-check {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .final-icon {
+      font-size: 48px;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+
+    .final-text {
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .final-sub {
+      font-size: 14px;
+      color: var(--text-mid);
+      margin-bottom: 16px;
+    }
+
+    .final-link {
+      display: inline-flex;
+      padding: 10px 24px;
+      border-radius: 8px;
+      background: var(--green);
+      color: var(--bg);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: all 150ms ease;
+    }
+
+    .final-link:hover { box-shadow: 0 0 20px rgba(78, 204, 163, 0.3); }
+
+    /* Open orders list */
+    .open-orders-list {
+      max-height: 150px;
+      overflow-y: auto;
+      margin: 10px 0;
+    }
+
+    .oo-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.3);
+      font-size: 12px;
+    }
+
+    .oo-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--yellow);
+    }
+
+    .oo-info { color: var(--text-dim); flex: 1; }
+
+    @media (max-width: 640px) {
+      .page-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-wrap">
+
+    <!-- HEADER -->
+    <header class="page-header">
+      <div>
+        <div class="header-left">
+          <div class="logo-mark">S</div>
+          <div class="header-title">SagrApp <span>— Chiusura Turno</span></div>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <a href="/admin" class="nav-link">Admin LIVE</a>
+        <a href="/admin/recap" class="nav-link">Recap</a>
+      </nav>
+    </header>
+
+    <!-- PROGRESS -->
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-dot active" id="pdot-1">1</div>
+      <div class="progress-line" id="pline-1"></div>
+      <div class="progress-dot pending" id="pdot-2">2</div>
+      <div class="progress-line" id="pline-2"></div>
+      <div class="progress-dot pending" id="pdot-3">3</div>
+      <div class="progress-line" id="pline-3"></div>
+      <div class="progress-dot pending" id="pdot-4">4</div>
+      <div class="progress-line" id="pline-4"></div>
+      <div class="progress-dot pending" id="pdot-5">5</div>
+    </div>
+
+    <!-- STEP 1: Ordini aperti -->
+    <div class="step active" id="step-1">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title">Verifica ordini aperti</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Controlla che non ci siano ordini ancora da evadere.</div>
+        <div id="step1Content">
+          <div style="color: var(--text-dim); font-size: 13px;">Caricamento...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Report -->
+    <div class="step pending" id="step-2">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title">Stampa report serata</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Apri il report della serata per stamparlo o esportarlo in CSV.</div>
+        <a href="/admin/recap" target="_blank" class="btn btn-secondary" style="margin-bottom: 14px; text-decoration: none;">
+          Apri report serata
+        </a>
+        <br>
+        <button class="btn btn-next" onclick="completeStep(2)">Passo successivo</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Scorte -->
+    <div class="step pending" id="step-3">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title">Annota scorte finali</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Verifica le scorte rimanenti prima di procedere al reset.</div>
+        <div id="step3Content">
+          <div style="color: var(--text-dim); font-size: 13px;">Caricamento...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Reset -->
+    <div class="step pending" id="step-4">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title">Reset dati</div>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Azzera ordini, contatori e scorte per preparare il prossimo turno. Questa azione non è reversibile.</div>
+        <button class="btn btn-danger" id="btnReset" onclick="handleReset()">Reset tutto per domani</button>
+        <div id="resetResult" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+
+    <!-- STEP 5: Fine -->
+    <div class="step pending" id="step-5">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <div class="step-title">Chiusura completata</div>
+      </div>
+      <div class="step-body">
+        <div class="final-check">
+          <div class="final-icon">&#10003;</div>
+          <div class="final-text">Turno chiuso con successo</div>
+          <div class="final-sub">Buona serata!</div>
+          <a href="/admin" class="final-link">Torna all'admin</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Auth
+    var TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) window.location.href = '/admin/login';
+
+    (async function checkAuth() {
+      try {
+        var res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        var data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+          return;
+        }
+        // Avvia step 1
+        loadStep1();
+      } catch (e) {
+        loadStep1();
+      }
+    })();
+
+    var currentStep = 1;
+
+    function setStepState(n, state) {
+      var step = document.getElementById('step-' + n);
+      var dot = document.getElementById('pdot-' + n);
+
+      step.className = 'step ' + state;
+      dot.className = 'progress-dot ' + state;
+
+      if (state === 'done') {
+        dot.innerHTML = '&#10003;';
+        var line = document.getElementById('pline-' + n);
+        if (line) line.className = 'progress-line done';
+      }
+    }
+
+    function completeStep(n) {
+      setStepState(n, 'done');
+      var next = n + 1;
+      if (next <= 5) {
+        currentStep = next;
+        setStepState(next, 'active');
+
+        // Carica dati per lo step attivo
+        if (next === 3) loadStep3();
+      }
+    }
+
+    // === STEP 1: Ordini aperti ===
+    async function loadStep1() {
+      var content = document.getElementById('step1Content');
+      try {
+        var res = await fetch('/api/orders/open');
+        var data = await res.json();
+        var orders = data.orders || data;
+        var count = Array.isArray(orders) ? orders.length : 0;
+
+        if (count === 0) {
+          content.innerHTML =
+            '<div class="info-box success">Nessun ordine aperto. Tutto evaso!</div>' +
+            '<button class="btn btn-next" onclick="completeStep(1)">Passo successivo</button>';
+        } else {
+          var list = orders.map(function(o) {
+            return '<div class="oo-row">' +
+              '<span class="oo-id">#' + o.id + '</span>' +
+              '<span class="oo-info">Tav. ' + o.table + ' — ' + (o.items_summary || '') + '</span>' +
+            '</div>';
+          }).join('');
+
+          content.innerHTML =
+            '<div class="info-box warning">Ci sono ' + count + ' ordini ancora aperti</div>' +
+            '<div class="open-orders-list">' + list + '</div>' +
+            '<div class="btn-row">' +
+              '<button class="btn btn-secondary" onclick="loadStep1()">Ricontrolla</button>' +
+              '<button class="btn btn-next" onclick="completeStep(1)">Procedi comunque</button>' +
+            '</div>';
+        }
+      } catch (e) {
+        content.innerHTML =
+          '<div class="info-box error">Errore: ' + e.message + '</div>' +
+          '<button class="btn btn-secondary" onclick="loadStep1()">Riprova</button>';
+      }
+    }
+
+    // === STEP 3: Scorte finali ===
+    async function loadStep3() {
+      var content = document.getElementById('step3Content');
+      try {
+        var res = await fetch('/api/inventory');
+        var items = await res.json();
+
+        // Ordina: esauriti prima, poi in esaurimento, poi disponibili
+        var order = { exhausted: 0, low: 1, available: 2 };
+        items.sort(function(a, b) {
+          return (order[a.status] || 2) - (order[b.status] || 2);
+        });
+
+        var rows = items.map(function(item) {
+          var stockClass = item.status === 'exhausted' ? 'out' :
+                          item.status === 'low' ? 'low' : 'ok';
+          return '<div class="inv-row">' +
+            '<span class="inv-name">' + item.name + '</span>' +
+            '<span class="inv-stock ' + stockClass + '">' + item.stock + '</span>' +
+          '</div>';
+        }).join('');
+
+        content.innerHTML =
+          '<div class="inv-list">' + rows + '</div>' +
+          '<button class="btn btn-next" onclick="completeStep(3)">Passo successivo</button>';
+      } catch (e) {
+        content.innerHTML =
+          '<div class="info-box error">Errore: ' + e.message + '</div>' +
+          '<button class="btn btn-secondary" onclick="loadStep3()">Riprova</button>';
+      }
+    }
+
+    // === STEP 4: Reset ===
+    async function handleReset() {
+      // Doppia conferma
+      if (!confirm('Sei sicuro di voler resettare TUTTI i dati?\nOrdini, contatori e scorte verranno azzerati.')) return;
+
+      var check = prompt('Scrivi "RESET" per confermare:');
+      if (check !== 'RESET') {
+        document.getElementById('resetResult').innerHTML =
+          '<div class="info-box warning">Reset annullato — scrivi esattamente "RESET"</div>';
+        return;
+      }
+
+      var btn = document.getElementById('btnReset');
+      btn.disabled = true;
+      btn.textContent = 'Reset in corso...';
+
+      try {
+        var res = await fetch('/api/admin/reset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': TOKEN,
+          },
+        });
+        var data = await res.json();
+
+        if (data.success) {
+          document.getElementById('resetResult').innerHTML =
+            '<div class="info-box success">Reset completato!</div>';
+          setTimeout(function() { completeStep(4); }, 1000);
+        } else {
+          throw new Error(data.error || 'Errore sconosciuto');
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Reset tutto per domani';
+        document.getElementById('resetResult').innerHTML =
+          '<div class="info-box error">Errore: ' + e.message + '</div>';
+      }
+    }
+  </script>
+</body>
+</html>

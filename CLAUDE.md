@@ -53,6 +53,12 @@ public/
 ## Flusso di stampa
 Il server cloud NON raggiunge le stampanti direttamente. Un **print-proxy** gira su un **Raspberry Pi** dedicato alla sagra (avvio automatico via PM2), si connette al server via Socket.IO, e inoltra i comandi ESC/POS alle stampanti via TCP.
 
+### Coda stampa
+Se il proxy è offline al momento dell'ordine, i job vengono **accodati in memoria** sul server. Quando il proxy si riconnette, la coda viene svuotata automaticamente (`flushPrintQueue`).
+
+### Alert stampante offline (cassa)
+La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta offline, appare un **banner giallo** + **beep audio** per avvisare il cassiere.
+
 ## Menu e composizione piatti
 - Il menu reale è in `config.js` → `MENU` (42 piatti)
 - Categorie: primo, secondo, speciale, contorno, condimento, bevanda
@@ -85,6 +91,15 @@ Traccia 6 articoli in pezzi singoli: costicine, salsicce, sovracoscia, pastin, p
 Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi totale.
 - "Da cucinare" SALE con nuovi ordini, SCENDE quando il cuoco deposita pezzi
 - "Nello scaldavivande" SALE quando il cuoco deposita, SCENDE quando l'operatore evade
+
+### Codifica colori monitor
+- **Da cucinare**: verde (0), giallo (1-10), rosso (>10)
+- **Nello scaldavivande**: verde (>10), giallo (1-10), rosso (0)
+- Font ≥120px per leggibilità a 3 metri
+
+### Scaldavivande
+- Pulsanti +10/+20/+30/+40/+50 e -1 per ogni articolo
+- **Long press** sul pulsante meno (600ms) apre input numerico per impostare valore esatto
 
 ## Evasione ordini (regole)
 L'operatore fisso chiude gli ordini dal suo tablet. Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:

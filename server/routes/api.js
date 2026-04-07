@@ -48,15 +48,34 @@ let io = null;
 // ID del proxy attivo — solo uno alla volta per evitare stampe duplicate
 let activeProxyId = null;
 
+// Coda stampa — se il proxy è offline, i job vengono accodati e inviati alla riconnessione
+const printQueue = [];
+
 function setIO(socketIO) {
   io = socketIO;
 }
 
 // Invia comando stampa a UN SOLO proxy (evita duplicati se più connessioni aperte)
+// Se il proxy è offline, accoda il job e lo invia alla riconnessione
 function emitToProxy(event, data) {
-  if (!io || !activeProxyId) return false;
+  if (!io || !activeProxyId) {
+    // Proxy offline: accoda il job
+    printQueue.push({ event, data, queued_at: Date.now() });
+    console.log(`[Stampa] Proxy offline — job accodato (coda: ${printQueue.length})`);
+    return false;
+  }
   io.to(activeProxyId).emit(event, data);
   return true;
+}
+
+// Svuota la coda stampa quando il proxy si riconnette
+function flushPrintQueue() {
+  if (!io || !activeProxyId || printQueue.length === 0) return;
+  console.log(`[Stampa] Proxy riconnesso — invio ${printQueue.length} job in coda`);
+  while (printQueue.length > 0) {
+    const job = printQueue.shift();
+    io.to(activeProxyId).emit(job.event, job.data);
+  }
 }
 
 // --- Helper: broadcast lista ordini aperti al tablet operatore ---
@@ -147,6 +166,21 @@ router.get('/menu', (req, res) => {
     status: inventory[item.id] ? inventory[item.id].status : 'available',
   }));
   res.json(menuWithStock);
+});
+
+// Modifica un piatto del menu (disponibilità, prezzo, ecc.)
+router.put('/menu/:id', requireAdmin, (req, res) => {
+  const menuItem = config.MENU.find(m => m.id === req.params.id);
+  if (!menuItem) {
+    return res.status(404).json({ error: 'Piatto non trovato' });
+  }
+
+  const { price, available, available_date } = req.body;
+  if (price !== undefined) menuItem.price = parseFloat(price);
+  if (available !== undefined) menuItem.available = !!available;
+  if (available_date !== undefined) menuItem.available_date = available_date;
+
+  res.json(menuItem);
 });
 
 router.get('/printers/status', (req, res) => {
@@ -742,6 +776,64 @@ router.post('/inventory/reset', requireAdmin, (req, res) => {
 });
 
 // =============================================
+// INVENTARIO — PRESET (salva/carica configurazioni scorte)
+// =============================================
+
+// Preset in memoria (in produzione: salvare su file/DB)
+const inventoryPresets = {};
+
+// Salva preset: snapshot delle scorte attuali con un nome
+router.post('/inventory/presets', requireAdmin, (req, res) => {
+  const { name } = req.body;
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Specificare un nome per il preset' });
+  }
+
+  const snapshot = {};
+  Object.values(inventory).forEach(item => {
+    snapshot[item.id] = item.stock;
+  });
+
+  inventoryPresets[name] = { name, stocks: snapshot, saved_at: Date.now() };
+  res.json({ success: true, preset: inventoryPresets[name] });
+});
+
+// Lista preset salvati
+router.get('/inventory/presets', requireAdmin, (req, res) => {
+  res.json(Object.values(inventoryPresets));
+});
+
+// Carica preset: ripristina le scorte dal preset salvato
+router.post('/inventory/presets/:name/load', requireAdmin, (req, res) => {
+  const preset = inventoryPresets[req.params.name];
+  if (!preset) {
+    return res.status(404).json({ error: 'Preset non trovato' });
+  }
+
+  Object.entries(preset.stocks).forEach(([id, stock]) => {
+    if (inventory[id]) {
+      inventory[id].stock = stock;
+      updateInventoryStatus(id);
+    }
+  });
+
+  if (io) {
+    io.emit('inventory_reset', Object.values(inventory));
+  }
+
+  res.json({ success: true, inventory: Object.values(inventory) });
+});
+
+// Elimina preset
+router.delete('/inventory/presets/:name', requireAdmin, (req, res) => {
+  if (!inventoryPresets[req.params.name]) {
+    return res.status(404).json({ error: 'Preset non trovato' });
+  }
+  delete inventoryPresets[req.params.name];
+  res.json({ success: true });
+});
+
+// =============================================
 // RESET COMPLETO (per test — azzera ordini, contatori e scorte)
 // =============================================
 
@@ -847,4 +939,8 @@ router.post('/orders/test', (req, res) => {
   res.json({ success: true, order });
 });
 
-module.exports = { router, setIO, counters, inventory, orders, setActiveProxyId: (id) => { activeProxyId = id; } };
+module.exports = {
+  router, setIO, counters, inventory, orders,
+  setActiveProxyId: (id) => { activeProxyId = id; },
+  flushPrintQueue,
+};

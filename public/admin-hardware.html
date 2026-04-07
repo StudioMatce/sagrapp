@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Pannello Hardware</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060a12;
+      --card: #111827;
+      --border: #1e293b;
+      --green: #4ecca3;
+      --red: #e94560;
+      --yellow: #ffd93d;
+      --gray: #6c7a89;
+      --cyan: #22d3ee;
+      --text: #e2e8f0;
+      --text-dim: rgba(226, 232, 240, 0.45);
+      --text-mid: rgba(226, 232, 240, 0.65);
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
+        var(--bg);
+      padding: 0;
+    }
+
+    .page-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ===== HEADER ===== */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--green);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .header-title span { color: var(--text-dim); font-weight: 400; }
+
+    .header-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 150ms ease;
+    }
+
+    .nav-link:hover { border-color: rgba(78, 204, 163, 0.3); color: var(--green); }
+
+    /* ===== SEZIONE ===== */
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== PROXY CARD ===== */
+    .proxy-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .proxy-led {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: all 300ms ease;
+    }
+
+    .proxy-led.on { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .proxy-led.off { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .proxy-led.unknown { background: var(--gray); }
+
+    .proxy-info { flex: 1; }
+
+    .proxy-title {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .proxy-detail {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* ===== PRINTER GRID ===== */
+    .printer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .printer-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      transition: border-color 300ms ease;
+    }
+
+    .printer-card.online { border-color: rgba(78, 204, 163, 0.2); }
+    .printer-card.offline { border-color: rgba(233, 69, 96, 0.2); }
+
+    .printer-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .printer-led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .printer-led.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .printer-led.off { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    .printer-led.unknown { background: var(--gray); }
+
+    .printer-name {
+      font-weight: 700;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .printer-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .printer-status.on { color: var(--green); }
+    .printer-status.off { color: var(--red); }
+    .printer-status.unknown { color: var(--gray); }
+
+    .printer-meta {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .printer-meta span {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-mid);
+    }
+
+    .btn-test {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-test:hover {
+      border-color: rgba(78, 204, 163, 0.3);
+      color: var(--green);
+    }
+
+    .btn-test:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* ===== REFRESH BUTTON ===== */
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--green);
+      background: transparent;
+      color: var(--green);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-refresh:hover {
+      background: rgba(78, 204, 163, 0.1);
+    }
+
+    /* ===== LOG ===== */
+    .log-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .log-entry {
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.4);
+    }
+
+    .log-entry:last-child { border-bottom: none; }
+
+    .log-time { color: var(--text-dim); }
+    .log-ok { color: var(--green); }
+    .log-err { color: var(--red); }
+    .log-info { color: var(--cyan); }
+
+    .log-empty {
+      color: var(--text-dim);
+      font-style: italic;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+    }
+
+    .log-box::-webkit-scrollbar { width: 4px; }
+    .log-box::-webkit-scrollbar-track { background: transparent; }
+    .log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .last-check {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    @media (max-width: 640px) {
+      .page-wrap { padding: 16px 12px 48px; }
+      .printer-grid { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-wrap">
+
+    <!-- HEADER -->
+    <header class="page-header">
+      <div>
+        <div class="header-left">
+          <div class="logo-mark">S</div>
+          <div class="header-title">SagrApp <span>— Pannello Hardware</span></div>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <a href="/admin" class="nav-link">Admin LIVE</a>
+        <a href="/admin/recap" class="nav-link">Recap</a>
+        <a href="/setup" class="nav-link">Setup</a>
+      </nav>
+    </header>
+
+    <!-- PROXY -->
+    <section class="section">
+      <div class="section-label">Print proxy</div>
+      <div class="proxy-card">
+        <div class="proxy-led unknown" id="proxyLed"></div>
+        <div class="proxy-info">
+          <div class="proxy-title">Raspberry Pi (PM2)</div>
+          <div class="proxy-detail" id="proxyDetail">Verifica in corso...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAMPANTI -->
+    <section class="section">
+      <div class="section-label">Stampanti</div>
+      <div class="printer-grid" id="printerGrid">
+        <!-- Popolato via JS -->
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+        <button class="btn-refresh" id="btnRefresh" onclick="refreshPrinters()">Aggiorna stato</button>
+        <span class="last-check" id="lastCheck"></span>
+      </div>
+    </section>
+
+    <!-- LOG -->
+    <section class="section">
+      <div class="section-label">Log stampa (real-time)</div>
+      <div class="log-box" id="logBox">
+        <div class="log-empty">In attesa di eventi...</div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Auth check
+    var TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) {
+      window.location.href = '/admin/login';
+    }
+
+    (async function checkAuth() {
+      try {
+        var res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        var data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+        }
+      } catch (e) { /* procedi comunque */ }
+    })();
+
+    var printers = [];
+    var logEntries = [];
+
+    // Carica lista stampanti
+    async function loadPrinters() {
+      try {
+        var res = await fetch('/api/printers/status');
+        printers = await res.json();
+        renderPrinters();
+      } catch (e) {
+        document.getElementById('printerGrid').innerHTML =
+          '<div style="color: var(--red); padding: 20px;">Errore caricamento stampanti</div>';
+      }
+    }
+
+    function renderPrinters() {
+      var grid = document.getElementById('printerGrid');
+      grid.innerHTML = printers.map(function(p) {
+        var online = p.online === true;
+        var unknown = p.online === undefined || p.online === null;
+        var statusClass = unknown ? 'unknown' : (online ? 'on' : 'off');
+        var cardClass = unknown ? '' : (online ? 'online' : 'offline');
+
+        return '<div class="printer-card ' + cardClass + '" id="pcard-' + p.id + '">' +
+          '<div class="printer-top">' +
+            '<div class="printer-led ' + statusClass + '" id="pled-' + p.id + '"></div>' +
+            '<span class="printer-name">' + (p.name || 'Stampante ' + p.id) + '</span>' +
+            '<span class="printer-status ' + statusClass + '" id="pstatus-' + p.id + '">' +
+              (unknown ? '...' : (online ? 'Online' : 'Offline')) +
+            '</span>' +
+          '</div>' +
+          '<div class="printer-meta">' +
+            'IP: <span>' + (p.ip || '—') + ':9100</span>' +
+            (p.model ? ' &mdash; ' + p.model : '') +
+          '</div>' +
+          '<button class="btn-test" onclick="testPrint(\'' + p.id + '\')" ' +
+            (online ? '' : 'disabled') + '>Test stampa</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    // Test print
+    async function testPrint(printerId) {
+      try {
+        var res = await fetch('/api/test-print', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': TOKEN,
+          },
+          body: JSON.stringify({ printer_id: printerId }),
+        });
+        var data = await res.json();
+        addLog(data.success ? 'ok' : 'err',
+          'Test stampa ' + printerId + ': ' + (data.success ? 'Inviato' : (data.error || 'Errore')));
+      } catch (e) {
+        addLog('err', 'Test stampa ' + printerId + ': Errore di rete');
+      }
+    }
+
+    // Refresh
+    function refreshPrinters() {
+      addLog('info', 'Ping stampanti richiesto...');
+      socket.emit('request_printer_check');
+    }
+
+    // Log
+    function addLog(type, msg) {
+      var time = new Date().toLocaleTimeString('it-IT');
+      logEntries.unshift({ type: type, msg: msg, time: time });
+      if (logEntries.length > 50) logEntries.pop();
+      renderLog();
+    }
+
+    function renderLog() {
+      var box = document.getElementById('logBox');
+      if (logEntries.length === 0) {
+        box.innerHTML = '<div class="log-empty">In attesa di eventi...</div>';
+        return;
+      }
+      box.innerHTML = logEntries.map(function(e) {
+        var cls = e.type === 'ok' ? 'log-ok' : e.type === 'err' ? 'log-err' : 'log-info';
+        return '<div class="log-entry">' +
+          '<span class="log-time">' + e.time + '</span> ' +
+          '<span class="' + cls + '">' + e.msg + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // Socket.IO
+    var socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    socket.on('connect', function() {
+      socket.emit('register', { role: 'admin' });
+      addLog('info', 'Connesso al server');
+    });
+
+    socket.on('disconnect', function() {
+      addLog('err', 'Disconnesso dal server');
+    });
+
+    // Stato dispositivi (proxy)
+    socket.on('device_status', function(data) {
+      var proxyCount = data.devices.proxy || 0;
+      var led = document.getElementById('proxyLed');
+      var detail = document.getElementById('proxyDetail');
+
+      if (proxyCount > 0) {
+        led.className = 'proxy-led on';
+        detail.textContent = proxyCount + ' proxy connesso — attivo';
+      } else {
+        led.className = 'proxy-led off';
+        detail.textContent = 'Nessun proxy connesso';
+      }
+    });
+
+    // Stato stampanti
+    socket.on('printers_status_update', function(statuses) {
+      statuses.forEach(function(s) {
+        var p = printers.find(function(pr) { return pr.id === s.id; });
+        if (p) p.online = s.online;
+      });
+      renderPrinters();
+      document.getElementById('lastCheck').textContent =
+        'Ultimo check: ' + new Date().toLocaleTimeString('it-IT');
+
+      var onlineCount = statuses.filter(function(s) { return s.online; }).length;
+      addLog(onlineCount === statuses.length ? 'ok' : 'err',
+        'Stampanti: ' + onlineCount + '/' + statuses.length + ' online');
+    });
+
+    // Risultati stampa
+    socket.on('print_result', function(data) {
+      addLog(data.success ? 'ok' : 'err',
+        'Job ' + data.job_id + ': ' + (data.success ? 'OK' : 'ERRORE — ' + (data.error || '')));
+    });
+
+    // Auto-refresh ogni 30 secondi
+    setInterval(function() {
+      if (socket.connected) {
+        socket.emit('request_printer_check');
+      }
+    }, 30000);
+
+    // Carica stampanti all'avvio
+    loadPrinters();
+  </script>
+</body>
+</html>
