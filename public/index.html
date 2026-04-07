@@ -353,62 +353,6 @@
       box-shadow: 0 0 6px var(--red-glow);
     }
 
-    /* ===== REDIRECT BANNER ===== */
-    .redirect-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      padding: 0.6rem 1rem;
-      background: rgba(78, 204, 163, 0.06);
-      border-bottom: 1px solid rgba(78, 204, 163, 0.15);
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      z-index: 100;
-      animation: slide-down 300ms ease;
-    }
-
-    .redirect-bar.visible { display: flex; }
-
-    .redirect-bar .role-tag {
-      font-weight: 700;
-      color: var(--green);
-    }
-
-    .redirect-bar .timer {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 0.75rem;
-      color: var(--green);
-    }
-
-    .redirect-bar .cancel {
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
-      border: 1px solid rgba(233, 69, 96, 0.3);
-      background: rgba(233, 69, 96, 0.08);
-      color: var(--red);
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.7rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 150ms ease;
-    }
-
-    .redirect-bar .cancel:hover {
-      background: rgba(233, 69, 96, 0.15);
-      border-color: var(--red);
-    }
-
-    @keyframes slide-down {
-      from { transform: translateY(-100%); }
-      to { transform: translateY(0); }
-    }
-
     /* ===== MOBILE ===== */
     @media (max-width: 400px) {
       .login-box { gap: 1.5rem; }
@@ -422,14 +366,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Redirect banner (se ruolo salvato) -->
-  <div class="redirect-bar" id="redirectBar">
-    <span class="role-tag" id="redirectRole">—</span>
-    <span>redirect in</span>
-    <span class="timer" id="redirectTimer">3</span>s
-    <button class="cancel" id="redirectCancel">Annulla</button>
-  </div>
 
   <!-- ===== SCREEN 1: PIN KEYPAD ===== -->
   <div class="screen" id="screenPin">
@@ -495,57 +431,6 @@
     var locked = false; // blocca input durante animazione
     var loginToken = null;
     var loginData = null;
-
-    // Mappa nomi leggibili per redirect banner
-    var DEST_NAMES = {
-      '/cassa': 'Cassa Generale',
-      '/cassa-bar': 'Cassa Bar',
-      '/cassa-casetta': 'Cassa Casetta',
-      '/admin': 'Admin',
-      '/scaldavivande': 'Scaldavivande',
-      '/controllo': 'Zona Controllo',
-      '/admin/recap': 'Admin Recap',
-      '/admin/magazzino': 'Magazzino',
-      '/admin/hardware': 'Hardware',
-      '/admin/chiusura': 'Chiusura',
-      '/setup': 'Setup',
-    };
-
-    // =============================================
-    // AUTO-REDIRECT (ruolo salvato in localStorage)
-    // =============================================
-    var redirectInterval = null;
-
-    function checkAutoRedirect() {
-      var savedRole = localStorage.getItem('sagrapp_role');
-      var savedToken = sessionStorage.getItem('sagrapp_token');
-      if (!savedRole || !savedToken) return;
-
-      var bar = document.getElementById('redirectBar');
-      var roleEl = document.getElementById('redirectRole');
-      var timerEl = document.getElementById('redirectTimer');
-
-      roleEl.textContent = DEST_NAMES[savedRole] || savedRole;
-      var count = 3;
-      timerEl.textContent = count;
-      bar.classList.add('visible');
-
-      redirectInterval = setInterval(function() {
-        count--;
-        timerEl.textContent = count;
-        if (count <= 0) {
-          clearInterval(redirectInterval);
-          window.location.href = savedRole;
-        }
-      }, 1000);
-    }
-
-    document.getElementById('redirectCancel').addEventListener('click', function() {
-      if (redirectInterval) clearInterval(redirectInterval);
-      localStorage.removeItem('sagrapp_role');
-      sessionStorage.removeItem('sagrapp_token');
-      document.getElementById('redirectBar').classList.remove('visible');
-    });
 
     // =============================================
     // PIN INPUT
@@ -721,7 +606,6 @@
     // =============================================
     // INIT
     // =============================================
-    checkAutoRedirect();
   </script>
 </body>
 </html>
