@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SagrApp — Operatore Linea Cibo</title>
+  <title>SagrApp v4.1 — Zona Controllo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
@@ -41,12 +41,28 @@
       flex-shrink: 0;
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .header-title {
       font-weight: 700;
       font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: rgba(240, 244, 248, 0.5);
+    }
+
+    .header-version {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #4ecca3;
+      background: rgba(78, 204, 163, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
     }
 
     .header-status {
@@ -78,9 +94,15 @@
     .status-led.off {
       background: #e94560;
       box-shadow: 0 0 6px #e94560;
+      animation: blink-led 1.2s ease infinite;
     }
 
-    /* ===== LAYOUT A DUE SEZIONI ===== */
+    @keyframes blink-led {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ===== LAYOUT: due sezioni verticali ===== */
     .content {
       flex: 1;
       display: flex;
@@ -88,21 +110,22 @@
       overflow: hidden;
     }
 
-    /* ===== SEZIONE ORDINI APERTI (sopra) ===== */
+    /* ===== SEZIONE ORDINI APERTI (meta' superiore) ===== */
     .orders-section {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-height: 0;
-      border-bottom: 2px solid rgba(78, 204, 163, 0.15);
+      border-bottom: 2px solid rgba(78, 204, 163, 0.12);
     }
 
-    .orders-header {
+    .orders-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 8px 16px;
       flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.015);
     }
 
     .orders-label {
@@ -113,34 +136,50 @@
       color: #6c7a89;
     }
 
-    .orders-count {
+    .orders-count-badge {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 700;
       color: #4ecca3;
-      padding: 2px 8px;
+      padding: 2px 10px;
       background: rgba(78, 204, 163, 0.1);
+      border: 1px solid rgba(78, 204, 163, 0.15);
       border-radius: 4px;
+      min-width: 32px;
+      text-align: center;
     }
 
     .orders-list {
       flex: 1;
       overflow-y: auto;
-      padding: 0 12px 10px;
+      padding: 0 10px 10px;
       display: flex;
       flex-direction: column;
       gap: 6px;
       -webkit-overflow-scrolling: touch;
     }
 
+    /* Stato vuoto */
     .orders-empty {
       flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #6c7a89;
-      font-size: 14px;
-      font-weight: 500;
+      gap: 8px;
+      color: #3a4555;
+      padding: 24px;
+    }
+
+    .orders-empty-icon {
+      font-size: 32px;
+      opacity: 0.4;
+    }
+
+    .orders-empty-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: #4a5568;
     }
 
     /* ===== RIGA ORDINE ===== */
@@ -151,14 +190,15 @@
       padding: 10px 12px;
       background: rgba(255, 255, 255, 0.025);
       border: 1px solid rgba(255, 255, 255, 0.04);
-      border-radius: 8px;
+      border-left: 3px solid rgba(78, 204, 163, 0.3);
+      border-radius: 6px;
       flex-shrink: 0;
-      animation: slide-in 200ms ease;
+      animation: row-in 200ms ease;
     }
 
-    @keyframes slide-in {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes row-in {
+      from { opacity: 0; transform: translateX(-12px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .order-info {
@@ -166,24 +206,31 @@
       min-width: 0;
     }
 
-    .order-top {
+    .order-meta {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 8px;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .order-id {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 15px;
+      font-size: 16px;
       color: #ffffff;
     }
 
     .order-table {
       font-weight: 600;
       font-size: 13px;
-      color: rgba(240, 244, 248, 0.5);
+      color: #4ecca3;
+    }
+
+    .order-name {
+      font-weight: 500;
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.4);
+      margin-left: auto;
     }
 
     .order-items {
@@ -193,19 +240,21 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: calc(100vw - 130px);
     }
 
     .btn-cancel {
       flex-shrink: 0;
-      padding: 8px 14px;
+      padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid rgba(233, 69, 96, 0.3);
-      background: rgba(233, 69, 96, 0.08);
+      border: 1px solid rgba(233, 69, 96, 0.25);
+      background: rgba(233, 69, 96, 0.06);
       color: #e94560;
       font-family: 'Outfit', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.04em;
+      text-transform: uppercase;
       cursor: pointer;
       touch-action: manipulation;
       transition: all 120ms ease;
@@ -214,178 +263,179 @@
     .btn-cancel:active {
       background: rgba(233, 69, 96, 0.3);
       border-color: #e94560;
-      transform: scale(0.95);
+      transform: scale(0.93);
     }
 
-    /* ===== SEZIONE TASTIERINO (sotto) ===== */
+    /* ===== SEZIONE TASTIERINO (meta' inferiore) ===== */
     .keypad-section {
       flex-shrink: 0;
-      padding: 12px;
+      padding: 10px 12px 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.01);
     }
 
-    /* Display numero ordine — compatto */
-    .display {
+    /* Display numero ordine */
+    .display-bar {
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 8px 16px;
+      padding: 6px 16px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 10px;
     }
 
     .display-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(240, 244, 248, 0.35);
+      letter-spacing: 0.06em;
+      color: rgba(240, 244, 248, 0.3);
       white-space: nowrap;
     }
 
-    .display-number {
+    .display-value {
       flex: 1;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(32px, 8vw, 48px);
+      font-size: clamp(34px, 8vw, 50px);
       color: #ffffff;
-      line-height: 1;
+      line-height: 1.1;
       text-align: right;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
-    .display-number.empty {
-      color: rgba(255, 255, 255, 0.15);
+    .display-value.placeholder {
+      color: rgba(255, 255, 255, 0.12);
     }
 
-    /* Ultimo evaso */
-    .last-fulfilled {
-      font-size: 12px;
-      font-weight: 600;
-      color: rgba(78, 204, 163, 0.6);
-      text-align: center;
-      min-height: 18px;
-    }
-
-    /* ===== TASTIERINO NUMERICO ===== */
-    .keypad {
+    /* Griglia tastierino */
+    .keypad-grid {
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 6px;
     }
 
     .key {
-      height: clamp(52px, 10vw, 64px);
+      height: clamp(56px, 10vh, 72px);
       border-radius: 10px;
       border: 2px solid rgba(255, 255, 255, 0.08);
       background: rgba(255, 255, 255, 0.03);
       color: #f0f4f8;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(22px, 5vw, 30px);
+      font-size: clamp(24px, 5vw, 32px);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 120ms ease;
+      transition: all 100ms ease;
       touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .key:active { transform: scale(0.93); }
+    .key:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.08);
+    }
 
-    .key-clear {
-      background: rgba(233, 69, 96, 0.1);
-      border-color: rgba(233, 69, 96, 0.25);
+    /* Tasto C — cancella */
+    .key-c {
+      background: rgba(233, 69, 96, 0.08);
+      border-color: rgba(233, 69, 96, 0.2);
       color: #e94560;
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(16px, 4vw, 20px);
-      font-weight: 700;
-      letter-spacing: 0.05em;
+      font-size: clamp(18px, 4vw, 24px);
+      font-weight: 800;
+      letter-spacing: 0.04em;
     }
 
-    .key-clear:active {
-      background: rgba(233, 69, 96, 0.35);
+    .key-c:active {
+      background: rgba(233, 69, 96, 0.3);
       border-color: #e94560;
     }
 
-    .key-submit {
+    /* Tasto EVADI — invio */
+    .key-evadi {
       background: rgba(78, 204, 163, 0.1);
       border-color: rgba(78, 204, 163, 0.25);
       color: #4ecca3;
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(13px, 3vw, 18px);
-      font-weight: 700;
-      letter-spacing: 0.05em;
+      font-size: clamp(14px, 3.5vw, 19px);
+      font-weight: 800;
+      letter-spacing: 0.06em;
     }
 
-    .key-submit:active {
+    .key-evadi:active {
       background: rgba(78, 204, 163, 0.35);
       border-color: #4ecca3;
     }
 
-    .key-submit.disabled {
-      opacity: 0.3;
+    .key-evadi.disabled {
+      opacity: 0.25;
       pointer-events: none;
     }
 
-    /* ===== FEEDBACK OVERLAY ===== */
-    .feedback {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 200ms ease;
-    }
-
-    .feedback.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .feedback-success { background: rgba(78, 204, 163, 0.92); }
-    .feedback-error { background: rgba(233, 69, 96, 0.92); }
-    .feedback-warning { background: rgba(255, 217, 61, 0.92); }
-
-    .feedback-icon {
-      font-size: clamp(60px, 18vw, 100px);
-      line-height: 1;
-      margin-bottom: 12px;
-    }
-
-    .feedback-text {
-      font-weight: 700;
-      font-size: clamp(22px, 5vw, 36px);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+    /* Ultimo evaso */
+    .last-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(78, 204, 163, 0.5);
       text-align: center;
+      min-height: 16px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===== FEEDBACK TOAST (barra in basso) ===== */
+    .toast {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 20px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+      z-index: 150;
+      transform: translateY(100%);
+      transition: transform 250ms ease;
       color: #fff;
     }
 
-    .feedback-warning .feedback-text { color: #1a1a2e; }
-    .feedback-warning .feedback-icon { color: #1a1a2e; }
+    .toast.visible {
+      transform: translateY(0);
+    }
 
-    .feedback-sub {
-      font-size: clamp(14px, 3vw, 20px);
+    .toast-success {
+      background: #4ecca3;
+      color: #060a12;
+    }
+
+    .toast-error {
+      background: #e94560;
+    }
+
+    .toast-warning {
+      background: #f0a500;
+      color: #1a1a2e;
+    }
+
+    .toast-detail {
+      display: block;
+      font-size: 12px;
       font-weight: 500;
-      margin-top: 6px;
+      margin-top: 2px;
       opacity: 0.8;
-      color: #fff;
     }
-
-    .feedback-warning .feedback-sub { color: #1a1a2e; }
 
     /* ===== BANNER DISCONNESSIONE ===== */
     .offline-banner {
@@ -393,12 +443,12 @@
       top: 0;
       left: 0;
       right: 0;
-      padding: 14px 20px;
+      padding: 12px 20px;
       background: #e94560;
       color: #fff;
       text-align: center;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       z-index: 200;
@@ -414,46 +464,61 @@
     .orders-list::-webkit-scrollbar { width: 4px; }
     .orders-list::-webkit-scrollbar-track { background: transparent; }
     .orders-list::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+
+    /* ===== ANIMAZIONE uscita ordine ===== */
+    .order-row.removing {
+      animation: row-out 300ms ease forwards;
+    }
+
+    @keyframes row-out {
+      to { opacity: 0; transform: translateX(40px); height: 0; padding: 0 12px; margin: 0; border-width: 0; overflow: hidden; }
+    }
   </style>
 </head>
 <body>
 
   <!-- Banner disconnessione -->
-  <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA &mdash; disabilitato</div>
+  <div class="offline-banner" id="offlineBanner">Connessione persa &mdash; funzioni disabilitate</div>
 
   <!-- Header -->
   <header class="header">
-    <span class="header-title">Operatore Linea Cibo</span>
+    <div class="header-left">
+      <span class="header-title">Zona Controllo</span>
+      <span class="header-version">v4.1</span>
+    </div>
     <span class="header-status" id="headerStatus">
       <span class="status-led" id="statusLed"></span>
       <span id="statusText">...</span>
     </span>
   </header>
 
-  <!-- Contenuto principale -->
+  <!-- Contenuto principale: ordini sopra, tastierino sotto -->
   <div class="content">
 
-    <!-- Sezione ordini aperti (sopra) -->
+    <!-- Meta' superiore: lista ordini aperti -->
     <section class="orders-section">
-      <div class="orders-header">
+      <div class="orders-toolbar">
         <span class="orders-label">Ordini aperti</span>
-        <span class="orders-count" id="ordersCount">0</span>
+        <span class="orders-count-badge" id="ordersCount">0</span>
       </div>
       <div class="orders-list" id="ordersList">
-        <div class="orders-empty">Nessun ordine aperto</div>
+        <div class="orders-empty">
+          <div class="orders-empty-icon">&#9744;</div>
+          <div class="orders-empty-text">Nessun ordine aperto</div>
+        </div>
       </div>
     </section>
 
-    <!-- Sezione tastierino (sotto) -->
+    <!-- Meta' inferiore: tastierino numerico -->
     <section class="keypad-section">
-      <!-- Display compatto -->
-      <div class="display">
+      <!-- Display input -->
+      <div class="display-bar">
         <span class="display-label">Evadi #</span>
-        <span class="display-number empty" id="displayNumber">&mdash;</span>
+        <span class="display-value placeholder" id="displayValue">&mdash;</span>
       </div>
 
-      <!-- Tastierino -->
-      <div class="keypad" id="keypad">
+      <!-- Griglia 4 righe x 3 colonne -->
+      <div class="keypad-grid">
         <button class="key" onclick="pressKey('1')">1</button>
         <button class="key" onclick="pressKey('2')">2</button>
         <button class="key" onclick="pressKey('3')">3</button>
@@ -463,108 +528,118 @@
         <button class="key" onclick="pressKey('7')">7</button>
         <button class="key" onclick="pressKey('8')">8</button>
         <button class="key" onclick="pressKey('9')">9</button>
-        <button class="key key-clear" onclick="pressClear()">C</button>
+        <button class="key key-c" onclick="pressClear()">C</button>
         <button class="key" onclick="pressKey('0')">0</button>
-        <button class="key key-submit disabled" id="btnSubmit" onclick="pressSubmit()">EVADI</button>
+        <button class="key key-evadi disabled" id="btnEvadi" onclick="pressEvadi()">EVADI &#10003;</button>
       </div>
 
       <!-- Ultimo evaso -->
-      <div class="last-fulfilled" id="lastFulfilled"></div>
+      <div class="last-line" id="lastFulfilled"></div>
     </section>
 
   </div>
 
-  <!-- Feedback overlays -->
-  <div class="feedback feedback-success" id="feedbackSuccess">
-    <div class="feedback-icon">&#10003;</div>
-    <div class="feedback-text">Ordine evaso</div>
-    <div class="feedback-sub" id="successDetail"></div>
-  </div>
-
-  <div class="feedback feedback-error" id="feedbackError">
-    <div class="feedback-icon">&#10007;</div>
-    <div class="feedback-text" id="errorText">Ordine non trovato</div>
-    <div class="feedback-sub" id="errorDetail"></div>
-  </div>
-
-  <div class="feedback feedback-warning" id="feedbackWarning">
-    <div class="feedback-icon">!</div>
-    <div class="feedback-text">Già evaso</div>
-    <div class="feedback-sub" id="warningDetail"></div>
+  <!-- Toast feedback (singolo, riusato) -->
+  <div class="toast" id="toast">
+    <span id="toastMsg"></span>
+    <span class="toast-detail" id="toastDetail"></span>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/sidebar.js"></script>
   <script>
+    // === STATO ===
     let inputBuffer = '';
     let connected = false;
     let submitting = false;
+    let toastTimer = null;
 
-    const displayNumber = document.getElementById('displayNumber');
-    const btnSubmit = document.getElementById('btnSubmit');
+    // === RIFERIMENTI DOM ===
+    const displayValue = document.getElementById('displayValue');
+    const btnEvadi = document.getElementById('btnEvadi');
     const ordersList = document.getElementById('ordersList');
     const ordersCount = document.getElementById('ordersCount');
     const lastFulfilled = document.getElementById('lastFulfilled');
+    const offlineBanner = document.getElementById('offlineBanner');
+    const statusLed = document.getElementById('statusLed');
+    const statusText = document.getElementById('statusText');
+    const headerStatus = document.getElementById('headerStatus');
+    const toastEl = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastDetail = document.getElementById('toastDetail');
 
-    // Socket.IO
+    // === SOCKET.IO ===
     const socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    const offlineBanner = document.getElementById('offlineBanner');
-    const statusLed = document.getElementById('statusLed');
-    const statusText = document.getElementById('statusText');
-    const headerStatus = document.getElementById('headerStatus');
-
-    socket.on('connect', () => {
+    socket.on('connect', function () {
       connected = true;
       socket.emit('register', { role: 'controllo' });
       offlineBanner.classList.remove('visible');
-      statusLed.classList.add('on');
-      statusLed.classList.remove('off');
-      headerStatus.classList.add('online');
-      headerStatus.classList.remove('offline');
+      statusLed.className = 'status-led on';
+      headerStatus.className = 'header-status online';
       statusText.textContent = 'Connesso';
       setKeypadEnabled(true);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', function () {
       connected = false;
       offlineBanner.classList.add('visible');
-      statusLed.classList.remove('on');
-      statusLed.classList.add('off');
-      headerStatus.classList.remove('online');
-      headerStatus.classList.add('offline');
+      statusLed.className = 'status-led off';
+      headerStatus.className = 'header-status offline';
       statusText.textContent = 'Offline';
       setKeypadEnabled(false);
     });
 
-    // === LISTA ORDINI APERTI (aggiornamento real-time) ===
-    socket.on('open_orders_update', ({ orders }) => {
-      renderOpenOrders(orders);
+    // === LISTA ORDINI APERTI — aggiornamento real-time ===
+    socket.on('open_orders_update', function (data) {
+      renderOpenOrders(data.orders);
     });
 
     function renderOpenOrders(orders) {
       ordersCount.textContent = orders.length;
 
       if (orders.length === 0) {
-        ordersList.innerHTML = '<div class="orders-empty">Nessun ordine aperto</div>';
+        ordersList.innerHTML =
+          '<div class="orders-empty">' +
+            '<div class="orders-empty-icon">&#9744;</div>' +
+            '<div class="orders-empty-text">Nessun ordine aperto</div>' +
+          '</div>';
         return;
       }
 
-      ordersList.innerHTML = orders.map(o => `
-        <div class="order-row">
-          <div class="order-info">
-            <div class="order-top">
-              <span class="order-id">#${o.id}</span>
-              <span class="order-table">Tav. ${o.table}${o.customer_name ? ' — ' + o.customer_name : ''}</span>
-            </div>
-            <div class="order-items">${o.items_summary}</div>
-          </div>
-          <button class="btn-cancel" onclick="cancelOrder(${o.id})">Annulla</button>
-        </div>
-      `).join('');
+      // Ordini dal piu' vecchio (primo da evadere) al piu' recente
+      var sorted = orders.slice().sort(function (a, b) {
+        return (a.created_at || a.id) - (b.created_at || b.id);
+      });
+
+      ordersList.innerHTML = sorted.map(function (o) {
+        // Abbrevia il sommario piatti se troppo lungo
+        var summary = o.items_summary || '';
+        var nameTag = o.customer_name ? '<span class="order-name">' + escHTML(o.customer_name) + '</span>' : '';
+
+        return '<div class="order-row" data-id="' + o.id + '">' +
+          '<div class="order-info">' +
+            '<div class="order-meta">' +
+              '<span class="order-id">#' + o.id + '</span>' +
+              '<span class="order-table">Tav.' + o.table + '</span>' +
+              nameTag +
+            '</div>' +
+            '<div class="order-items">' + escHTML(summary) + '</div>' +
+          '</div>' +
+          '<button class="btn-cancel" onclick="cancelOrder(' + o.id + ')">Annulla</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    // Helper per evitare injection HTML
+    function escHTML(str) {
+      var d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
     }
 
     // === ANNULLAMENTO ORDINE ===
@@ -573,34 +648,37 @@
       if (!confirm('Annullare l\'ordine #' + orderId + '?')) return;
 
       try {
-        const res = await fetch('/api/orders/' + orderId + '/cancel', {
+        var res = await fetch('/api/orders/' + orderId + '/cancel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
-        const data = await res.json();
+        var data = await res.json();
 
         if (data.success) {
-          showFeedback('success', '#' + data.order_number + (data.table ? ' — Tavolo ' + data.table : ''), 'ANNULLATO');
+          // Animazione uscita prima che il socket aggiorni la lista
+          var row = document.querySelector('.order-row[data-id="' + orderId + '"]');
+          if (row) row.classList.add('removing');
+          showToast('success', 'Ordine #' + data.order_number + ' annullato', data.table ? 'Tav.' + data.table : '');
         } else if (data.already_cancelled) {
-          showFeedback('warning', '#' + orderId + ' già annullato');
+          showToast('warning', 'Ordine #' + orderId + ' gia\u0300 annullato');
         } else {
-          showFeedback('error', '#' + orderId + ' — ' + (data.error || 'Errore'));
+          showToast('error', data.error || 'Errore annullamento');
         }
       } catch (err) {
-        showFeedback('error', 'Errore di rete');
+        showToast('error', 'Errore di rete');
       }
     }
 
     // === DISPLAY E TASTIERINO ===
     function updateDisplay() {
       if (inputBuffer.length === 0) {
-        displayNumber.textContent = '\u2014';
-        displayNumber.classList.add('empty');
-        btnSubmit.classList.add('disabled');
+        displayValue.textContent = '\u2014';
+        displayValue.classList.add('placeholder');
+        btnEvadi.classList.add('disabled');
       } else {
-        displayNumber.textContent = inputBuffer;
-        displayNumber.classList.remove('empty');
-        btnSubmit.classList.remove('disabled');
+        displayValue.textContent = inputBuffer;
+        displayValue.classList.remove('placeholder');
+        btnEvadi.classList.remove('disabled');
       }
     }
 
@@ -618,85 +696,93 @@
     }
 
     // === EVASIONE ORDINE ===
-    async function pressSubmit() {
+    async function pressEvadi() {
       if (!connected || submitting || inputBuffer.length === 0) return;
 
-      const orderNumber = parseInt(inputBuffer, 10);
+      var orderNumber = parseInt(inputBuffer, 10);
       submitting = true;
 
       try {
-        const res = await fetch('/api/orders/' + orderNumber + '/fulfill', {
+        var res = await fetch('/api/orders/' + orderNumber + '/fulfill', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
-        const data = await res.json();
+        var data = await res.json();
 
         if (data.success) {
-          showFeedback('success', '#' + data.order_number + (data.table ? ' — Tavolo ' + data.table : ''));
-          socket.emit('order_fulfilled', { order_number: orderNumber });
-          lastFulfilled.textContent = 'Ultimo evaso: #' + data.order_number + (data.table ? ' — Tav. ' + data.table : '');
+          // Successo — feedback verde
+          var tableInfo = data.table ? ' \u2014 Tav.' + data.table : '';
+          showToast('success', 'Ordine #' + data.order_number + ' evaso' + tableInfo);
+          lastFulfilled.textContent = 'Ultimo evaso: #' + data.order_number + tableInfo + ' \u2713';
         } else if (data.not_ready) {
-          const details = data.missing.map(function(m) {
-            return m.piece + ': ' + m.available + '/' + m.needed;
+          // Scorte insufficienti — feedback rosso con dettaglio pezzi mancanti
+          var details = data.missing.map(function (m) {
+            return m.piece + ' (servono ' + m.needed + ', disponibili ' + m.available + ')';
           }).join(', ');
-          showFeedback('warning', details, 'NON PRONTO');
+          showToast('error', 'Non abbastanza scorte', details);
         } else if (data.already_fulfilled) {
-          showFeedback('warning', '#' + data.order_number + (data.table ? ' — Tavolo ' + data.table : ''));
+          // Gia' evaso — feedback giallo
+          var tblInfo = data.table ? ' \u2014 Tav.' + data.table : '';
+          showToast('warning', 'Ordine #' + data.order_number + ' gia\u0300 evaso' + tblInfo);
         } else {
-          showFeedback('error', '#' + orderNumber + ' non trovato');
+          // Non trovato
+          showToast('error', 'Ordine non trovato');
         }
       } catch (err) {
-        showFeedback('error', 'Errore di rete');
+        showToast('error', 'Errore di rete');
       }
 
+      // Reset input dopo ogni operazione
       inputBuffer = '';
       updateDisplay();
       submitting = false;
     }
 
-    // === FEEDBACK OVERLAY ===
-    function showFeedback(type, detail, customTitle) {
-      const el = document.getElementById(
-        type === 'success' ? 'feedbackSuccess' :
-        type === 'warning' ? 'feedbackWarning' : 'feedbackError'
-      );
-      const titleEl = el.querySelector('.feedback-text');
-      if (titleEl && customTitle) titleEl.textContent = customTitle;
-      const detailEl = el.querySelector('.feedback-sub');
-      if (detailEl) detailEl.textContent = detail || '';
+    // === TOAST FEEDBACK ===
+    function showToast(type, message, detail) {
+      // Cancella timer precedente
+      if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+      }
 
-      el.classList.add('visible');
-      setTimeout(function() {
-        el.classList.remove('visible');
-        if (titleEl && customTitle) {
-          if (type === 'success') titleEl.textContent = 'Ordine evaso';
-          else if (type === 'warning') titleEl.textContent = 'Già evaso';
-          else if (type === 'error') titleEl.textContent = 'Ordine non trovato';
-        }
-      }, 2000);
+      // Rimuovi classi tipo precedenti
+      toastEl.className = 'toast toast-' + type + ' visible';
+      toastMsg.textContent = message;
+      toastDetail.textContent = detail || '';
+      toastDetail.style.display = detail ? 'block' : 'none';
+
+      toastTimer = setTimeout(function () {
+        toastEl.classList.remove('visible');
+        toastTimer = null;
+      }, 3000);
     }
 
-    // === ABILITAZIONE TASTIERINO ===
+    // === ABILITA/DISABILITA TASTIERINO ===
     function setKeypadEnabled(enabled) {
-      document.querySelectorAll('.key').forEach(function(k) {
-        k.style.opacity = enabled ? '' : '0.3';
-        k.style.pointerEvents = enabled ? '' : 'none';
-      });
-      document.querySelectorAll('.btn-cancel').forEach(function(b) {
-        b.style.opacity = enabled ? '' : '0.3';
-        b.style.pointerEvents = enabled ? '' : 'none';
-      });
+      var keys = document.querySelectorAll('.key');
+      for (var i = 0; i < keys.length; i++) {
+        keys[i].style.opacity = enabled ? '' : '0.25';
+        keys[i].style.pointerEvents = enabled ? '' : 'none';
+      }
+      var cancels = document.querySelectorAll('.btn-cancel');
+      for (var j = 0; j < cancels.length; j++) {
+        cancels[j].style.opacity = enabled ? '' : '0.25';
+        cancels[j].style.pointerEvents = enabled ? '' : 'none';
+      }
     }
 
-    // === TASTIERA FISICA (per test desktop) ===
-    document.addEventListener('keydown', function(e) {
+    // === TASTIERA FISICA (utile per test desktop) ===
+    document.addEventListener('keydown', function (e) {
       if (!connected || submitting) return;
       if (e.key >= '0' && e.key <= '9') {
         pressKey(e.key);
       } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Escape') {
+        e.preventDefault();
         pressClear();
       } else if (e.key === 'Enter') {
-        pressSubmit();
+        e.preventDefault();
+        pressEvadi();
       }
     });
   </script>

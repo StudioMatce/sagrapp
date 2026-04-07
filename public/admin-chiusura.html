@@ -387,6 +387,79 @@
 
     .final-link:hover { box-shadow: 0 0 20px rgba(78, 204, 163, 0.3); }
 
+    /* ===== FLASH SUMMARY ===== */
+    .flash-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .flash-card {
+      background: rgba(78, 204, 163, 0.04);
+      border: 1px solid rgba(78, 204, 163, 0.12);
+      border-radius: 8px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .flash-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 24px;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .flash-value.warning { color: var(--yellow); }
+
+    .flash-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 400px) {
+      .flash-summary { grid-template-columns: 1fr; }
+    }
+
+    /* ===== PIN INPUT ===== */
+    .pin-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .pin-input {
+      width: 120px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-align: center;
+      outline: none;
+      transition: border-color 150ms ease;
+    }
+
+    .pin-input:focus { border-color: var(--green); }
+
+    .pin-input.error { border-color: var(--red); animation: shake 0.3s ease; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
     /* Open orders list */
     .open-orders-list {
       max-height: 150px;
@@ -461,16 +534,18 @@
       </div>
     </div>
 
-    <!-- STEP 2: Report -->
+    <!-- STEP 2: Report + Flash Summary -->
     <div class="step pending" id="step-2">
       <div class="step-header">
         <div class="step-number">2</div>
-        <div class="step-title">Stampa report serata</div>
+        <div class="step-title">Riepilogo e report serata</div>
       </div>
       <div class="step-body">
-        <div class="step-desc">Apri il report della serata per stamparlo o esportarlo in CSV.</div>
+        <div class="step-desc">Riepilogo rapido della serata e link al report completo.</div>
+        <!-- Flash summary: numeri chiave della serata -->
+        <div id="flashSummary" style="color: var(--text-dim); font-size: 13px; margin-bottom: 14px;">Caricamento riepilogo...</div>
         <a href="/admin/recap" target="_blank" class="btn btn-secondary" style="margin-bottom: 14px; text-decoration: none;">
-          Apri report serata
+          Apri report completo
         </a>
         <br>
         <button class="btn btn-next" onclick="completeStep(2)">Passo successivo</button>
@@ -491,15 +566,25 @@
       </div>
     </div>
 
-    <!-- STEP 4: Reset -->
+    <!-- STEP 4: PIN + Reset -->
     <div class="step pending" id="step-4">
       <div class="step-header">
         <div class="step-number">4</div>
-        <div class="step-title">Reset dati</div>
+        <div class="step-title">Conferma PIN e Reset</div>
       </div>
       <div class="step-body">
-        <div class="step-desc">Azzera ordini, contatori e scorte per preparare il prossimo turno. Questa azione non è reversibile.</div>
-        <button class="btn btn-danger" id="btnReset" onclick="handleReset()">Reset tutto per domani</button>
+        <div class="step-desc">Reinserisci il PIN admin per confermare il reset. Ordini, contatori e scorte verranno azzerati. Questa azione non è reversibile.</div>
+        <!-- PIN re-entry: verifica identità prima del reset -->
+        <div class="pin-group">
+          <input type="password" id="pinInput" class="pin-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="----">
+          <button class="btn btn-next" id="btnVerifyPin" onclick="verifyPin()">Verifica PIN</button>
+        </div>
+        <div id="pinResult"></div>
+        <!-- Il bottone reset appare solo dopo il PIN corretto -->
+        <div id="resetSection" style="display: none;">
+          <div class="info-box success" style="margin-bottom: 14px;">PIN verificato. Puoi procedere con il reset.</div>
+          <button class="btn btn-danger" id="btnReset" onclick="handleReset()">Reset tutto per domani</button>
+        </div>
         <div id="resetResult" style="margin-top: 12px;"></div>
       </div>
     </div>
@@ -522,10 +607,16 @@
 
   </div>
 
+  <!-- Socket.IO per broadcast chiusura servizio -->
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     // Auth
     var TOKEN = sessionStorage.getItem('admin_token');
     if (!TOKEN) window.location.href = '/admin/login';
+
+    // Connessione Socket.IO — serve per il broadcast di chiusura
+    var socket = io();
+    socket.emit('register', { role: 'admin' });
 
     (async function checkAuth() {
       try {
@@ -544,6 +635,8 @@
     })();
 
     var currentStep = 1;
+    // Flag: true quando il PIN è stato verificato nello step 4
+    var pinVerified = false;
 
     function setStepState(n, state) {
       var step = document.getElementById('step-' + n);
@@ -567,6 +660,7 @@
         setStepState(next, 'active');
 
         // Carica dati per lo step attivo
+        if (next === 2) loadFlashSummary();
         if (next === 3) loadStep3();
       }
     }
@@ -607,6 +701,58 @@
       }
     }
 
+    // === STEP 2: Flash summary — numeri chiave della serata ===
+    async function loadFlashSummary() {
+      var container = document.getElementById('flashSummary');
+      try {
+        // Fetch parallelo: stats live + inventario per contare gli esauriti
+        var results = await Promise.all([
+          fetch('/api/admin/stats/live', {
+            headers: { 'X-Admin-Token': TOKEN }
+          }).then(function(r) { return r.json(); }),
+          fetch('/api/inventory').then(function(r) { return r.json(); })
+        ]);
+
+        var stats = results[0];
+        var inv = results[1];
+
+        var totalRevenue = stats.totalRevenue || 0;
+        var totalOrders = stats.totalOrders || 0;
+        // Conta piatti con stock = 0 o status = exhausted
+        var exhaustedCount = 0;
+        if (Array.isArray(inv)) {
+          exhaustedCount = inv.filter(function(i) {
+            return i.status === 'exhausted';
+          }).length;
+        }
+
+        // Formatta incasso con separatore migliaia
+        var revenueFormatted = totalRevenue.toLocaleString('it-IT', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+        container.innerHTML =
+          '<div class="flash-summary">' +
+            '<div class="flash-card">' +
+              '<div class="flash-value">' + revenueFormatted + '</div>' +
+              '<div class="flash-label">Incasso totale</div>' +
+            '</div>' +
+            '<div class="flash-card">' +
+              '<div class="flash-value">' + totalOrders + '</div>' +
+              '<div class="flash-label">Ordini totali</div>' +
+            '</div>' +
+            '<div class="flash-card">' +
+              '<div class="flash-value' + (exhaustedCount > 0 ? ' warning' : '') + '">' + exhaustedCount + '</div>' +
+              '<div class="flash-label">Piatti esauriti</div>' +
+            '</div>' +
+          '</div>';
+      } catch (e) {
+        container.innerHTML =
+          '<div class="info-box error">Impossibile caricare il riepilogo: ' + e.message + '</div>';
+      }
+    }
+
     // === STEP 3: Scorte finali ===
     async function loadStep3() {
       var content = document.getElementById('step3Content');
@@ -639,17 +785,65 @@
       }
     }
 
-    // === STEP 4: Reset ===
-    async function handleReset() {
-      // Doppia conferma
-      if (!confirm('Sei sicuro di voler resettare TUTTI i dati?\nOrdini, contatori e scorte verranno azzerati.')) return;
+    // === STEP 4: Verifica PIN admin ===
+    async function verifyPin() {
+      var pinInput = document.getElementById('pinInput');
+      var pin = pinInput.value.trim();
 
-      var check = prompt('Scrivi "RESET" per confermare:');
-      if (check !== 'RESET') {
-        document.getElementById('resetResult').innerHTML =
-          '<div class="info-box warning">Reset annullato — scrivi esattamente "RESET"</div>';
+      if (pin.length !== 4) {
+        pinInput.classList.add('error');
+        setTimeout(function() { pinInput.classList.remove('error'); }, 400);
         return;
       }
+
+      var btn = document.getElementById('btnVerifyPin');
+      btn.disabled = true;
+      btn.textContent = 'Verifica...';
+
+      try {
+        var res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pin })
+        });
+        var data = await res.json();
+
+        if (data.success) {
+          // PIN corretto: mostra il bottone di reset
+          pinVerified = true;
+          document.getElementById('pinResult').innerHTML = '';
+          document.getElementById('resetSection').style.display = 'block';
+          // Nascondi il gruppo PIN (non serve più)
+          document.querySelector('.pin-group').style.display = 'none';
+        } else {
+          // PIN errato: shake + messaggio
+          pinInput.classList.add('error');
+          setTimeout(function() { pinInput.classList.remove('error'); }, 400);
+          pinInput.value = '';
+          pinInput.focus();
+          document.getElementById('pinResult').innerHTML =
+            '<div class="info-box error" style="margin-bottom: 14px;">PIN errato. Riprova.</div>';
+        }
+      } catch (e) {
+        document.getElementById('pinResult').innerHTML =
+          '<div class="info-box error" style="margin-bottom: 14px;">Errore di connessione: ' + e.message + '</div>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Verifica PIN';
+      }
+    }
+
+    // Permetti di premere Invio nel campo PIN per verificare
+    document.getElementById('pinInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') verifyPin();
+    });
+
+    // === STEP 4: Reset (solo dopo PIN verificato) ===
+    async function handleReset() {
+      if (!pinVerified) return;
+
+      // Conferma finale prima del reset
+      if (!confirm('Sei sicuro di voler resettare TUTTI i dati?\nOrdini, contatori e scorte verranno azzerati.')) return;
 
       var btn = document.getElementById('btnReset');
       btn.disabled = true;
@@ -668,6 +862,10 @@
         if (data.success) {
           document.getElementById('resetResult').innerHTML =
             '<div class="info-box success">Reset completato!</div>';
+
+          // Broadcast chiusura servizio a tutti i client connessi
+          socket.emit('service_closed');
+
           setTimeout(function() { completeStep(4); }, 1000);
         } else {
           throw new Error(data.error || 'Errore sconosciuto');
@@ -680,5 +878,6 @@
       }
     }
   </script>
+<script src="/js/sidebar.js"></script>
 </body>
 </html>

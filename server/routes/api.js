@@ -367,7 +367,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 // CREA ORDINE — con composizione pezzi, stampa multipla, e piatti speciali
 // =============================================
 router.post('/orders', (req, res) => {
-  const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type } = req.body;
+  const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type, source, coperti } = req.body;
 
   if (!table || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
     return res.status(400).json({ error: 'Specificare tavolo e piatti' });
@@ -452,7 +452,8 @@ router.post('/orders', (req, res) => {
     discount_value: discount_value || 0,
     courtesy_type: orderCourtesy,
     customer_name: customer_name || null,
-    cassa: 'principale',
+    cassa: source || 'principale',
+    coperti: parseInt(coperti) || 0,
     payment: payment || 'contanti',
     status: 'in_progress',
     created_at: Date.now(),
@@ -502,7 +503,8 @@ router.post('/orders', (req, res) => {
   }
 
   // 3. Comanda bevande → Fuhuihe .204 (printer #2)
-  if (hasDrinks) {
+  //    STAMPA SEMPRE — anche senza bevande, per il conteggio coperti/posate
+  {
     const drinkData = printer.buildDrinkOrder(order);
     const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
     if (io && drinkData && drinkPrinter) {

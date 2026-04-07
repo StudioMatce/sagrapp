@@ -90,21 +90,24 @@ function printToLAN(ip, port, data) {
 }
 
 // --- TCP Ping: verifica se una stampante LAN è raggiungibile ---
+// Restituisce { online, responseTime } — responseTime in ms (solo se online)
 function tcpPing(ip, port, timeout = 2000) {
   return new Promise((resolve) => {
+    const start = Date.now();
     const client = new net.Socket();
     client.setTimeout(timeout);
     client.connect(port, ip, () => {
+      const responseTime = Date.now() - start;
       client.destroy();
-      resolve(true);
+      resolve({ online: true, responseTime });
     });
     client.on('error', () => {
       client.destroy();
-      resolve(false);
+      resolve({ online: false, responseTime: null });
     });
     client.on('timeout', () => {
       client.destroy();
-      resolve(false);
+      resolve({ online: false, responseTime: null });
     });
   });
 }
@@ -118,9 +121,15 @@ async function checkAllPrinters() {
   const statuses = [];
 
   for (const printer of printerConfig) {
-    const online = await tcpPing(printer.ip, printer.port);
-    statuses.push({ id: printer.id, online });
-    const status = online ? '● Online' : '○ Offline';
+    const { online, responseTime } = await tcpPing(printer.ip, printer.port);
+    statuses.push({
+      id: printer.id,
+      name: printer.name,
+      ip: printer.ip,
+      online,
+      responseTime,  // ms se online, null se offline
+    });
+    const status = online ? `● Online (${responseTime}ms)` : '○ Offline';
     console.log(`[Check] #${printer.id} ${printer.name} (${printer.ip}:${printer.port}): ${status}`);
   }
 

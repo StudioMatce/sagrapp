@@ -52,6 +52,14 @@ app.get('/cassa', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'cassa.html'));
 });
 
+app.get('/cassa-bar', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'cassa-bar.html'));
+});
+
+app.get('/cassa-casetta', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'cassa-casetta.html'));
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
 });
@@ -159,6 +167,12 @@ io.on('connection', (socket) => {
     broadcastOpenOrders();
   });
 
+  // --- Chiusura servizio: broadcast a tutti i client ---
+  socket.on('service_closed', () => {
+    console.log('[Admin] Servizio chiuso — broadcast a tutti i client');
+    io.emit('service_closed', { timestamp: Date.now() });
+  });
+
   // --- Print proxy: risultato stampa ---
   socket.on('print_result', ({ job_id, success, error }) => {
     console.log(`[Stampa] Job ${job_id}: ${success ? 'OK' : 'ERRORE'} ${error || ''}`);
@@ -247,11 +261,13 @@ server.listen(config.PORT, '0.0.0.0', () => {
   console.log('  ==============================');
   console.log('');
   console.log('  Pagine disponibili:');
-  console.log(`    Dashboard test:   http://localhost:${config.PORT}/`);
+  console.log(`    Landing page:     http://localhost:${config.PORT}/`);
+  console.log(`    Cassa generale:   http://localhost:${config.PORT}/cassa`);
+  console.log(`    Cassa bar:        http://localhost:${config.PORT}/cassa-bar`);
+  console.log(`    Cassa casetta:    http://localhost:${config.PORT}/cassa-casetta`);
   console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor`);
   console.log(`    Scaldavivande:    http://localhost:${config.PORT}/scaldavivande`);
   console.log(`    Zona controllo:   http://localhost:${config.PORT}/controllo`);
-  console.log(`    Cassa test:       http://localhost:${config.PORT}/cassa`);
   console.log(`    Setup wizard:     http://localhost:${config.PORT}/setup`);
   console.log(`    Admin login:      http://localhost:${config.PORT}/admin/login`);
   console.log(`    Admin live:       http://localhost:${config.PORT}/admin`);

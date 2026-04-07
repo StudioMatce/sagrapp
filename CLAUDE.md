@@ -8,9 +8,8 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 - **Database:** In-memory (SQLite previsto per produzione)
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
-- **Deploy:** Railway (auto-deploy da GitHub `main`)
-- **URL produzione:** https://web-production-4fa18.up.railway.app
-- **Dev locale:** `node server/index.js` → http://localhost:3000
+- **Navigazione:** Sidebar globale (js/sidebar.js) inclusa in tutte le pagine
+- **Deploy:** VPS con PM2 (attualmente test su localhost:3000)
 
 ## Struttura file
 ```
@@ -24,10 +23,10 @@ print-proxy/
   index.js          # Proxy locale che inoltra stampe alle stampanti LAN
 
 public/
-  index.html        # Landing page selezione ruolo
-  cassa.html        # Cassa ordini — layout 2 colonne come foglio cartaceo
-  cassa-bar.html    # Cassa bar (solo bevande)
-  cassa-casetta.html # Cassa casetta aperitivi
+  index.html        # Landing page selezione ruolo (con auto-redirect ultimo ruolo)
+  cassa.html        # Cassa ordini — 70/30 layout con tab CIBO/BEVANDE
+  cassa-bar.html    # Cassa bar (solo bevande, source: 'bar')
+  cassa-casetta.html # Cassa casetta aperitivi (source: 'casetta')
   monitor.html      # Monitor TV cuochi (2 colonne: da cucinare/nello scaldavivande)
   scaldavivande.html # Tablet scaldavivande (+10/+20/+30/+40/+50)
   controllo.html    # Tablet operatore fisso (lista ordini aperti + tastierino evasione + annullamento)
@@ -35,9 +34,10 @@ public/
   admin-login.html  # Login admin PIN
   admin-recap.html  # Report post-serata (con omaggi e sconti)
   admin-magazzino.html # Gestione scorte
-  admin-hardware.html  # Pannello controllo hardware
-  admin-chiusura.html  # Procedura chiusura turno
-  setup.html        # Wizard setup inizio turno
+  admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo)
+  admin-chiusura.html  # Procedura chiusura turno (flash summary + PIN re-entry)
+  setup.html        # Wizard setup inizio turno (progress bar + device checks)
+  js/sidebar.js     # Sidebar navigazione globale (incluso in tutte le pagine)
 ```
 
 ## Stampanti (tutte LAN via Powerline, TCP porta 9100)
@@ -69,10 +69,9 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
 - I piatti speciali hanno `available_date` — uno diverso per ogni serata della sagra
 
 ## Interfaccia cassa (cassa.html)
-- **Layout a due colonne** che replica il foglio cartaceo `2025_sagra_COMANDA.pdf`
-- Colonna SX: primi → secondi → speciale del giorno → condimenti
-- Colonna DX: contorni → bevande (raggruppate)
-- Separatori `---` tra gruppi
+- **Layout 70/30**: area piatti a sinistra (70%) con tab CIBO/BEVANDE, colonna ordine a destra (30%)
+- Tab CIBO: primi → secondi → speciale del giorno → contorni → condimenti
+- Tab BEVANDE: bevande raggruppate con badge contatore
 - Campi ordine:
   - **Nome cliente** (opzionale, testo)
   - **Tavolo** (obbligatorio, numerico)
@@ -123,12 +122,13 @@ L'operatore può annullare un ordine aperto (con conferma):
 ## Logica stampa ordini
 | Contenuto | Ricevuta (.203) | Cibo (.205) | Bevande (.204) | Speciali (.207) |
 |---|---|---|---|---|
-| Solo cibo | si | si | — | — |
+| Solo cibo | si | si | si* | — |
 | Solo bevande | si | — | si | — |
 | Cibo + bevande | si | si | si | — |
-| Con piatto speciale | si | si (con speciale) | se bevande | si (solo speciale) |
+| Con piatto speciale | si | si (con speciale) | si | si (solo speciale) |
 
-- **Coperti** stampati sulla comanda bevande; se non ci sono bevande, sulla comanda cibo
+*La comanda bevande stampa SEMPRE (anche senza bevande) per il conteggio coperti/posate.
+- **Coperti** stampati sulla comanda bevande (sempre)
 - **Ricevuta** mostra: subtotale, sconto, omaggio, totale, nome cliente
 
 ## Admin RECAP
@@ -147,7 +147,8 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Il design usa font Outfit + JetBrains Mono, sfondo scuro (#060a12), accento verde (#4ecca3)
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.md`
+- Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.1.md`
 
 ## Comandi
 ```bash

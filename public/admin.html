@@ -1123,8 +1123,22 @@
     // Allarme scorte: ricarica immediatamente
     socket.on('inventory_alert', () => fetchStats());
     socket.on('inventory_exhausted', () => fetchStats());
+    // Quando cambiano i contatori griglia (scaldavivande/ordini),
+    // aggiorna subito la sezione sprechi senza aspettare il polling
+    socket.on('counters_changed', (data) => {
+      if (data && data.counters) {
+        const ordered = {};
+        const produced = {};
+        Object.keys(data.counters).forEach(id => {
+          ordered[id] = data.counters[id].vendute || 0;
+          produced[id] = data.counters[id].pronto || 0;
+        });
+        renderWaste({ ordered, produced });
+      }
+    });
     // Nuovo ordine: ricarica per aggiornare KPI e tabella
     socket.on('order_created', () => fetchStats());
   </script>
+<script src="/js/sidebar.js"></script>
 </body>
 </html>

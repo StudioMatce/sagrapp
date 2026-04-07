@@ -322,6 +322,72 @@
       margin-top: 8px;
     }
 
+    /* ===== DEVICE GRID ===== */
+    .device-grid {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .device-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background 300ms ease;
+    }
+
+    .device-row:last-child { border-bottom: none; }
+
+    .device-row.offline-pulse {
+      animation: pulse-red 1.5s infinite;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { background: transparent; }
+      50% { background: rgba(233, 69, 96, 0.08); }
+    }
+
+    .device-name {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .device-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .device-status.on { color: var(--green); }
+    .device-status.off { color: var(--red); }
+    .device-status.unknown { color: var(--gray); }
+
+    /* ===== TEST COMPLETO ===== */
+    .btn-test-all {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--green);
+      background: rgba(78, 204, 163, 0.06);
+      color: var(--green);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-test-all:hover { background: rgba(78, 204, 163, 0.12); }
+    .btn-test-all:disabled { opacity: 0.4; pointer-events: none; }
+
     @media (max-width: 640px) {
       .page-wrap { padding: 16px 12px 48px; }
       .printer-grid { grid-template-columns: 1fr; }
@@ -370,6 +436,39 @@
         <button class="btn-refresh" id="btnRefresh" onclick="refreshPrinters()">Aggiorna stato</button>
         <span class="last-check" id="lastCheck"></span>
       </div>
+    </section>
+
+    <!-- DISPOSITIVI CONNESSI -->
+    <section class="section">
+      <div class="section-label">Dispositivi connessi</div>
+      <div class="device-grid" id="deviceGrid">
+        <div class="device-row" id="dev-monitor">
+          <div class="printer-led unknown" id="dled-monitor"></div>
+          <span class="device-name">Monitor cuochi</span>
+          <span class="device-status unknown" id="dstatus-monitor">...</span>
+        </div>
+        <div class="device-row" id="dev-scaldavivande">
+          <div class="printer-led unknown" id="dled-scaldavivande"></div>
+          <span class="device-name">Tablet scaldavivande</span>
+          <span class="device-status unknown" id="dstatus-scaldavivande">...</span>
+        </div>
+        <div class="device-row" id="dev-controllo">
+          <div class="printer-led unknown" id="dled-controllo"></div>
+          <span class="device-name">Tablet operatore</span>
+          <span class="device-status unknown" id="dstatus-controllo">...</span>
+        </div>
+        <div class="device-row" id="dev-cassa">
+          <div class="printer-led unknown" id="dled-cassa"></div>
+          <span class="device-name">Casse</span>
+          <span class="device-status unknown" id="dstatus-cassa">...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEST COMPLETO -->
+    <section class="section">
+      <button class="btn-test-all" id="btnTestAll" onclick="runFullTest()">Test Completo</button>
+      <span class="last-check" id="testAllStatus"></span>
     </section>
 
     <!-- LOG -->
@@ -506,7 +605,7 @@
       addLog('err', 'Disconnesso dal server');
     });
 
-    // Stato dispositivi (proxy)
+    // Stato dispositivi (proxy + altri device)
     socket.on('device_status', function(data) {
       var proxyCount = data.devices.proxy || 0;
       var led = document.getElementById('proxyLed');
@@ -519,7 +618,76 @@
         led.className = 'proxy-led off';
         detail.textContent = 'Nessun proxy connesso';
       }
+
+      // Aggiorna griglia dispositivi connessi
+      updateDeviceRow('monitor', data.devices.monitor || 0, 'Monitor cuochi');
+      updateDeviceRow('scaldavivande', data.devices.scaldavivande || 0, 'Tablet scaldavivande');
+      updateDeviceRow('controllo', data.devices.controllo || 0, 'Tablet operatore');
+      updateDeviceRow('cassa', data.devices.cassa || 0, 'Casse');
     });
+
+    function updateDeviceRow(role, count, label) {
+      var ledEl = document.getElementById('dled-' + role);
+      var statusEl = document.getElementById('dstatus-' + role);
+      var rowEl = document.getElementById('dev-' + role);
+      if (!ledEl || !statusEl || !rowEl) return;
+
+      if (count > 0) {
+        ledEl.className = 'printer-led on';
+        statusEl.className = 'device-status on';
+        statusEl.textContent = count + ' connesso';
+        rowEl.classList.remove('offline-pulse');
+      } else {
+        ledEl.className = 'printer-led off';
+        statusEl.className = 'device-status off';
+        statusEl.textContent = 'Offline';
+        rowEl.classList.add('offline-pulse');
+      }
+    }
+
+    // Test Completo — ping + stampa test su ogni stampante in sequenza
+    async function runFullTest() {
+      var btn = document.getElementById('btnTestAll');
+      var status = document.getElementById('testAllStatus');
+      btn.disabled = true;
+      btn.textContent = 'Test in corso...';
+      addLog('info', 'Test Completo avviato');
+
+      // 1. Ping stampanti
+      socket.emit('request_printer_check');
+      addLog('info', 'Ping stampanti...');
+      await new Promise(function(r) { setTimeout(r, 2000); });
+
+      // 2. Stampa test su ogni stampante online
+      var results = [];
+      for (var i = 0; i < printers.length; i++) {
+        var p = printers[i];
+        try {
+          var res = await fetch('/api/test-print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN },
+            body: JSON.stringify({ printer_id: p.id }),
+          });
+          var data = await res.json();
+          results.push({ id: p.id, name: p.name, ok: data.success });
+          addLog(data.success ? 'ok' : 'err', 'Test ' + (p.name || p.id) + ': ' + (data.success ? 'OK' : data.error || 'Errore'));
+        } catch (e) {
+          results.push({ id: p.id, name: p.name, ok: false });
+          addLog('err', 'Test ' + (p.name || p.id) + ': Errore di rete');
+        }
+        // Breve pausa tra stampe per non sovraccaricare il proxy
+        await new Promise(function(r) { setTimeout(r, 500); });
+      }
+
+      var okCount = results.filter(function(r) { return r.ok; }).length;
+      status.textContent = 'Risultato: ' + okCount + '/' + results.length + ' OK';
+      status.style.color = okCount === results.length ? 'var(--green)' : 'var(--red)';
+      addLog(okCount === results.length ? 'ok' : 'err',
+        'Test Completo: ' + okCount + '/' + results.length + ' stampanti OK');
+
+      btn.disabled = false;
+      btn.textContent = 'Test Completo';
+    }
 
     // Stato stampanti
     socket.on('printers_status_update', function(statuses) {
@@ -542,15 +710,16 @@
         'Job ' + data.job_id + ': ' + (data.success ? 'OK' : 'ERRORE — ' + (data.error || '')));
     });
 
-    // Auto-refresh ogni 30 secondi
+    // Auto-refresh ogni 5 secondi (v4.1: monitoraggio continuo)
     setInterval(function() {
       if (socket.connected) {
         socket.emit('request_printer_check');
       }
-    }, 30000);
+    }, 5000);
 
     // Carica stampanti all'avvio
     loadPrinters();
   </script>
+<script src="/js/sidebar.js"></script>
 </body>
 </html>

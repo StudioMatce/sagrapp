@@ -19,7 +19,7 @@
       font-family: 'Outfit', sans-serif;
       background: #060a12;
       color: #f0f4f8;
-      min-height: 100%;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
@@ -29,43 +29,103 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ===== HEADER ===== */
-    .header {
+    /* ===== LAYOUT PRINCIPALE: 70% piatti + 30% colonna ordine ===== */
+    .app-shell {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== AREA PIATTI (sinistra, 70%) ===== */
+    .menu-area {
+      flex: 7;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* ===== COLONNA ORDINE (destra, 30%) ===== */
+    .order-column {
+      flex: 3;
+      min-width: 320px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    /* ===== TAB BAR (CIBO / BEVANDE) ===== */
+    .tab-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 8px 16px;
+      gap: 4px;
+      padding: 10px 14px;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
-    .header-left {
+    .tab-btn {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .header-title {
-      font-weight: 700;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(240, 244, 248, 0.45);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
       font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgba(240, 244, 248, 0.5);
+      cursor: pointer;
+      transition: all 150ms ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .header-last-order {
+    .tab-btn:active { transform: scale(0.97); }
+
+    .tab-btn.active {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.35);
+      color: #4ecca3;
+    }
+
+    .tab-btn .tab-icon { font-size: 16px; }
+
+    /* Badge contatore sulle tab (es. "BEVANDE (3)") */
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: #4ecca3;
+      color: #060a12;
       font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
       font-size: 11px;
-      font-weight: 700;
-      color: rgba(78, 204, 163, 0.6);
-      opacity: 0;
-      transition: opacity 300ms ease;
+      line-height: 1;
     }
 
-    .header-last-order.visible { opacity: 1; }
+    .tab-badge.hidden { display: none; }
 
-    .header-status {
+    /* Checkmark sulla tab con piatti selezionati */
+    .tab-check {
+      font-size: 14px;
+      margin-left: -2px;
+      display: none;
+    }
+
+    .tab-check.visible { display: inline; }
+
+    /* Separatore tab → status */
+    .tab-spacer { flex: 1; }
+
+    .tab-status {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -75,8 +135,8 @@
       color: #6c7a89;
     }
 
-    .header-status.online { color: #4ecca3; }
-    .header-status.offline { color: #e94560; }
+    .tab-status.online { color: #4ecca3; }
+    .tab-status.offline { color: #e94560; }
 
     .status-led {
       width: 8px;
@@ -89,46 +149,70 @@
     .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
     .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
 
-    /* ===== LAYOUT DUE COLONNE (identico al foglio cartaceo) ===== */
-    .menu-wrapper {
+    /* ===== AREA SCROLLABILE MENU ===== */
+    .menu-scroll {
       flex: 1;
-      display: flex;
-      gap: 12px;
-      padding: 8px 10px 132px;
       overflow-y: auto;
-      align-items: flex-start;
+      overflow-x: hidden;
+      padding: 8px 10px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
     }
 
-    .menu-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+    .menu-scroll::-webkit-scrollbar { width: 6px; }
+    .menu-scroll::-webkit-scrollbar-track { background: transparent; }
+    .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+    /* Tab panel: visibile solo quando attivo */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ===== SEZIONE HEADER (es. PRIMI, SECONDI) ===== */
+    .section-header {
+      padding: 12px 8px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(78, 204, 163, 0.5);
+    }
+
+    .section-header:first-child { padding-top: 4px; }
+
+    /* ===== SEPARATORE tra gruppi ===== */
+    .sep {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.05);
+      margin: 6px 8px;
     }
 
     /* ===== RIGA PIATTO ===== */
     .menu-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
-      border-radius: 6px;
-      transition: background 120ms ease;
-      min-height: 38px;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      transition: all 120ms ease;
+      min-height: 44px;
     }
 
     .menu-row:active {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.03);
     }
 
     .menu-row.active {
       background: rgba(78, 204, 163, 0.06);
+      border-color: rgba(78, 204, 163, 0.2);
     }
 
     .row-name {
       flex: 1;
       font-weight: 500;
-      font-size: 13px;
-      color: rgba(240, 244, 248, 0.8);
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.75);
       line-height: 1.2;
       min-width: 0;
     }
@@ -141,10 +225,10 @@
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 12px;
-      color: rgba(78, 204, 163, 0.6);
+      font-size: 13px;
+      color: rgba(78, 204, 163, 0.5);
       white-space: nowrap;
-      min-width: 46px;
+      min-width: 52px;
       text-align: right;
     }
 
@@ -152,29 +236,30 @@
       color: #4ecca3;
     }
 
-    /* ===== STEPPER COMPATTO ===== */
+    /* ===== STEPPER [-] 0 [+] ===== */
     .row-stepper {
       display: flex;
       align-items: center;
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 34px;
-      height: 32px;
+      width: 40px;
+      height: 38px;
       background: rgba(255, 255, 255, 0.02);
       border: none;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 800;
       cursor: pointer;
       touch-action: manipulation;
       transition: background 80ms ease;
       line-height: 1;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .step-btn:active { background: rgba(255, 255, 255, 0.1); }
@@ -182,57 +267,82 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 28px;
+      width: 32px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 14px;
+      font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 32px;
-      line-height: 32px;
+      height: 38px;
+      line-height: 38px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
 
-    .step-count.zero { color: rgba(255, 255, 255, 0.15); }
+    .step-count.zero { color: rgba(255, 255, 255, 0.12); }
 
-    /* ===== SEPARATORE tra gruppi ===== */
-    .sep {
-      height: 1px;
-      background: rgba(255, 255, 255, 0.06);
-      margin: 4px 8px;
-    }
-
-    /* ===== ORDER BAR ===== */
-    .order-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+    /* ===== COLONNA ORDINE ===== */
+    .order-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      background: rgba(10, 14, 22, 0.96);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 50;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
     }
 
-    .table-field {
+    .order-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 16px;
+      color: rgba(240, 244, 248, 0.5);
+      letter-spacing: 0.02em;
+    }
+
+    .order-last {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(78, 204, 163, 0.5);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+
+    .order-last.visible { opacity: 1; }
+
+    /* ===== FORM ORDINE ===== */
+    .order-form {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-field {
       display: flex;
       align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.04);
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.03);
       border: 1.5px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 6px 8px;
-      flex-shrink: 0;
+      padding: 6px 10px;
       transition: border-color 200ms ease;
     }
 
-    .table-field.error {
+    .form-field:focus-within {
+      border-color: rgba(78, 204, 163, 0.3);
+    }
+
+    .form-field.flex-1 { flex: 1; }
+
+    .form-field.error {
       border-color: #e94560;
       animation: shake 300ms ease;
     }
@@ -243,83 +353,305 @@
       75% { transform: translateX(-2px); }
     }
 
-    .table-label {
+    .field-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      color: rgba(240, 244, 248, 0.35);
+      color: rgba(240, 244, 248, 0.3);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
-    .table-field input {
-      width: 40px;
+    .form-field input[type="text"] {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .form-field input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+    .form-field input[type="number"] {
+      width: 44px;
       background: none;
       border: none;
       outline: none;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       text-align: center;
       -moz-appearance: textfield;
     }
 
-    .table-field input::placeholder { color: rgba(255, 255, 255, 0.15); }
-    .table-field input::-webkit-outer-spin-button,
-    .table-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .form-field input[type="number"]::-webkit-outer-spin-button,
+    .form-field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .form-field input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
 
-    .order-summary {
-      flex: 1;
-      text-align: right;
+    /* ===== FLAG OMAGGIO ===== */
+    .courtesy-section {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-      gap: 1px;
+      gap: 6px;
     }
 
-    .order-total {
+    .courtesy-flags {
+      display: flex;
+      gap: 6px;
+    }
+
+    .flag-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.3);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .flag-btn:active { transform: scale(0.95); }
+
+    .flag-btn.active {
+      border-color: #ffd93d;
+      background: rgba(255, 217, 61, 0.1);
+      color: #ffd93d;
+      box-shadow: 0 0 12px rgba(255, 217, 61, 0.08);
+    }
+
+    /* ===== SCONTO ===== */
+    .discount-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toggle-unit {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(240, 244, 248, 0.5);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms ease;
+      touch-action: manipulation;
+      flex-shrink: 0;
+    }
+
+    .toggle-unit:active { background: rgba(255, 255, 255, 0.1); }
+
+    /* ===== RIEPILOGO ORDINE (scrollabile) ===== */
+    .order-summary-label {
+      padding: 10px 16px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.25);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+    }
+
+    .order-items-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+
+    .order-items-scroll::-webkit-scrollbar { width: 4px; }
+    .order-items-scroll::-webkit-scrollbar-track { background: transparent; }
+    .order-items-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 2px; }
+
+    .order-empty {
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(240, 244, 248, 0.15);
+      font-style: italic;
+    }
+
+    .order-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      transition: background 100ms ease;
+    }
+
+    .order-item-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .order-item-qty {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(20px, 5vw, 28px);
+      font-size: 13px;
       color: #4ecca3;
-      line-height: 1;
-      transition: color 150ms ease;
+      min-width: 26px;
     }
 
-    .order-total.empty { color: rgba(78, 204, 163, 0.25); }
+    .order-item-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(240, 244, 248, 0.7);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    .order-count {
-      font-size: 11px;
-      font-weight: 600;
+    .order-item-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.4);
+      white-space: nowrap;
+    }
+
+    .order-item-remove {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.2);
+      background: rgba(233, 69, 96, 0.06);
+      color: #e94560;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms ease;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .order-item-remove:active {
+      background: rgba(233, 69, 96, 0.2);
+      transform: scale(0.9);
+    }
+
+    /* ===== FOOTER ORDINE: totali + bottone ===== */
+    .order-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+
+    .totals-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .total-label {
+      font-size: 12px;
+      font-weight: 500;
       color: rgba(240, 244, 248, 0.35);
-      line-height: 1;
-      min-height: 13px;
+    }
+
+    .total-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      color: rgba(240, 244, 248, 0.5);
+    }
+
+    .total-row.discount-row-display .total-label { color: rgba(255, 217, 61, 0.6); }
+    .total-row.discount-row-display .total-value { color: rgba(255, 217, 61, 0.7); }
+
+    .total-row.courtesy-row .total-label { color: #ffd93d; }
+    .total-row.courtesy-row .total-value { color: #ffd93d; }
+
+    .total-row.grand-total {
+      padding-top: 8px;
+      margin-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .total-row.grand-total .total-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .total-row.grand-total .total-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #4ecca3;
+    }
+
+    .total-row.grand-total .total-value.empty {
+      color: rgba(78, 204, 163, 0.2);
+    }
+
+    .total-row.grand-total .total-value.courtesy {
+      color: #ffd93d;
     }
 
     .btn-order {
-      padding: 14px 20px;
+      width: 100%;
+      padding: 16px 20px;
       background: rgba(78, 204, 163, 0.12);
       border: 2px solid rgba(78, 204, 163, 0.3);
       border-radius: 10px;
       color: #4ecca3;
       font-family: 'Outfit', sans-serif;
       font-weight: 700;
-      font-size: clamp(14px, 3.5vw, 18px);
-      letter-spacing: 0.06em;
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       cursor: pointer;
       touch-action: manipulation;
       transition: all 120ms ease;
-      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn-order:active:not(.disabled) {
-      transform: scale(0.95);
+      transform: scale(0.97);
       background: rgba(78, 204, 163, 0.3);
       border-color: #4ecca3;
     }
 
-    .btn-order.disabled { opacity: 0.25; pointer-events: none; }
+    .btn-order.disabled {
+      opacity: 0.2;
+      pointer-events: none;
+    }
 
     /* ===== OVERLAYS ===== */
     .overlay {
@@ -329,20 +661,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
+      z-index: 1000;
       opacity: 0;
       pointer-events: none;
       transition: opacity 200ms ease;
     }
 
     .overlay.visible { opacity: 1; pointer-events: auto; }
-    .overlay-success { background: rgba(78, 204, 163, 0.93); }
-    .overlay-error { background: rgba(233, 69, 96, 0.93); }
+    .overlay-success { background: rgba(78, 204, 163, 0.95); }
+    .overlay-error { background: rgba(233, 69, 96, 0.95); }
 
     .overlay-number {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(64px, 20vw, 130px);
+      font-size: clamp(64px, 18vw, 130px);
       line-height: 1;
       color: #fff;
       margin-bottom: 8px;
@@ -350,14 +682,14 @@
 
     .overlay-text {
       font-weight: 700;
-      font-size: clamp(18px, 4.5vw, 30px);
+      font-size: clamp(18px, 4vw, 30px);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #fff;
     }
 
     .overlay-sub {
-      font-size: clamp(14px, 3vw, 20px);
+      font-size: clamp(14px, 2.5vw, 20px);
       font-weight: 500;
       color: rgba(255, 255, 255, 0.8);
       margin-top: 6px;
@@ -372,9 +704,9 @@
     }
 
     .print-badge {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 20px;
       background: rgba(255, 255, 255, 0.2);
       color: #fff;
@@ -395,7 +727,7 @@
       font-size: 15px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      z-index: 200;
+      z-index: 2000;
       transform: translateY(-100%);
       transition: transform 300ms ease;
     }
@@ -416,7 +748,7 @@
       font-size: 13px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      z-index: 190;
+      z-index: 1900;
       transform: translateY(-100%);
       transition: transform 300ms ease;
       display: flex;
@@ -426,220 +758,168 @@
     }
 
     .printer-alert.visible { transform: translateY(0); }
+    .printer-alert .alert-icon { font-size: 16px; line-height: 1; }
 
-    .printer-alert .alert-icon {
-      font-size: 16px;
-      line-height: 1;
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .order-column {
+        min-width: 280px;
+      }
     }
 
-    /* ===== RIGA SUPERIORE ORDER BAR ===== */
-    .order-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      margin-bottom: 6px;
-    }
-
-    .order-bottom {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-    }
-
-    .field-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 4px 8px;
-      flex-shrink: 0;
-    }
-
-    .field-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      font-weight: 700;
-      color: rgba(240, 244, 248, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .field-group input[type="text"] {
-      width: 110px;
-      background: none;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: 'Outfit', sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .field-group input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
-
-    .field-group input[type="number"] {
-      width: 36px;
-      background: none;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
-      font-weight: 700;
-      text-align: center;
-      -moz-appearance: textfield;
-    }
-
-    .field-group input[type="number"]::-webkit-outer-spin-button,
-    .field-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
-
-    .field-group input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
-
-    .toggle-unit {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.04);
-      color: rgba(240, 244, 248, 0.5);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 100ms ease;
-      touch-action: manipulation;
-    }
-
-    .toggle-unit:active { background: rgba(255, 255, 255, 0.1); }
-
-    .courtesy-flags {
-      display: flex;
-      gap: 6px;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
-
-    .flag-btn {
-      padding: 5px 10px;
-      border-radius: 20px;
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.02);
-      color: rgba(255, 255, 255, 0.35);
-      font-family: 'Outfit', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 120ms ease;
-      touch-action: manipulation;
-      white-space: nowrap;
-    }
-
-    .flag-btn:active { transform: scale(0.95); }
-
-    .flag-btn.active {
-      border-color: #ffd93d;
-      background: rgba(255, 217, 61, 0.12);
-      color: #ffd93d;
-      box-shadow: 0 0 10px rgba(255, 217, 61, 0.1);
-    }
-
-    /* Indicatore omaggio sul totale */
-    .order-total.courtesy {
-      color: #ffd93d;
-      font-size: clamp(16px, 4vw, 22px);
-    }
-
-    .courtesy-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: #ffd93d;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .real-value {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(240, 244, 248, 0.25);
-      text-decoration: line-through;
-    }
-
-    .discount-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255, 217, 61, 0.6);
+    @media (max-width: 700px) {
+      /* Su schermi molto piccoli, la colonna ordine va sotto */
+      .app-shell {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+      .menu-area {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        min-height: 50vh;
+      }
+      .order-column {
+        min-width: 100%;
+        max-width: 100%;
+        min-height: 50vh;
+      }
     }
   </style>
 </head>
 <body>
 
   <!-- Banner disconnessione -->
-  <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA</div>
+  <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA — Riconnessione in corso...</div>
   <div class="printer-alert" id="printerAlert">
     <span class="alert-icon">&#9888;</span>
     <span id="printerAlertText">Stampante offline</span>
   </div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-left">
-      <span class="header-title">Cassa</span>
-      <span class="header-last-order" id="lastOrder"></span>
-    </div>
-    <span class="header-status" id="headerStatus">
-      <span class="status-led" id="statusLed"></span>
-      <span id="statusText">...</span>
-    </span>
-  </header>
+  <!-- Layout principale 70/30 -->
+  <div class="app-shell">
 
-  <!-- Due colonne — stessa disposizione del foglio cartaceo -->
-  <div class="menu-wrapper">
-    <div class="menu-col" id="colLeft"></div>
-    <div class="menu-col" id="colRight"></div>
-  </div>
+    <!-- ============================== -->
+    <!-- AREA PIATTI (70%, sinistra) -->
+    <!-- ============================== -->
+    <div class="menu-area">
 
-  <!-- Barra ordine — due righe -->
-  <div class="order-bar">
-    <!-- Riga superiore: nome, sconto, flag omaggio -->
-    <div class="order-top">
-      <div class="field-group">
-        <span class="field-label">Nome</span>
-        <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
+      <!-- Tab bar: CIBO / BEVANDE + status connessione -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabCibo" onclick="switchTab('cibo')">
+          <span class="tab-icon">&#127869;</span>
+          CIBO
+          <span class="tab-check" id="tabCiboCheck">&#10003;</span>
+        </button>
+        <button class="tab-btn" id="tabBevande" onclick="switchTab('bevande')">
+          <span class="tab-icon">&#127866;</span>
+          BEVANDE
+          <span class="tab-badge hidden" id="tabBevandeBadge">0</span>
+        </button>
+        <span class="tab-spacer"></span>
+        <span class="tab-status" id="tabStatus">
+          <span class="status-led" id="statusLed"></span>
+          <span id="statusText">...</span>
+        </span>
       </div>
-      <div class="field-group">
-        <span class="field-label">Sconto</span>
-        <input type="number" id="discountInput" inputmode="decimal" min="0" step="any" placeholder="0">
-        <button class="toggle-unit" id="discountToggle" onclick="toggleDiscountUnit()">&euro;</button>
-      </div>
-      <div class="courtesy-flags">
-        <button class="flag-btn" id="flag-sponsor" onclick="toggleFlag('sponsor')">Sponsor</button>
-        <button class="flag-btn" id="flag-don_pierino" onclick="toggleFlag('don_pierino')">Don Pierino</button>
-        <button class="flag-btn" id="flag-amici" onclick="toggleFlag('amici')">Amici</button>
+
+      <!-- Area scrollabile con i piatti -->
+      <div class="menu-scroll">
+
+        <!-- TAB CIBO: primi, secondi, speciale del giorno, contorni, condimenti -->
+        <div class="tab-panel active" id="panelCibo"></div>
+
+        <!-- TAB BEVANDE: tutte le bevande raggruppate -->
+        <div class="tab-panel" id="panelBevande"></div>
+
       </div>
     </div>
-    <!-- Riga inferiore: tavolo, totale, ordina -->
-    <div class="order-bottom">
-      <div class="table-field" id="tableField">
-        <span class="table-label">Tav</span>
-        <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+
+    <!-- ============================== -->
+    <!-- COLONNA ORDINE (30%, destra) -->
+    <!-- ============================== -->
+    <div class="order-column">
+
+      <!-- Header ordine -->
+      <div class="order-header">
+        <span class="order-number" id="orderNumber">ORDINE</span>
+        <span class="order-last" id="lastOrder"></span>
       </div>
-      <div class="order-summary">
-        <span class="order-count" id="orderCount"></span>
-        <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
+
+      <!-- Form dati ordine -->
+      <div class="order-form">
+        <!-- Nome cliente -->
+        <div class="form-field flex-1">
+          <span class="field-label">Nome</span>
+          <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
+        </div>
+
+        <!-- Tavolo + Coperti -->
+        <div class="form-row">
+          <div class="form-field flex-1" id="tableField">
+            <span class="field-label">Tav</span>
+            <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+          </div>
+          <div class="form-field flex-1" id="copertiField">
+            <span class="field-label">Cop</span>
+            <input type="number" id="copertiInput" inputmode="numeric" min="1" max="50" placeholder="&mdash;">
+          </div>
+        </div>
+
+        <!-- Flag omaggio -->
+        <div class="courtesy-section">
+          <div class="courtesy-flags">
+            <button class="flag-btn" id="flag-sponsor" onclick="toggleFlag('sponsor')">Sponsor</button>
+            <button class="flag-btn" id="flag-don_pierino" onclick="toggleFlag('don_pierino')">Don Pierino</button>
+            <button class="flag-btn" id="flag-amici" onclick="toggleFlag('amici')">Amici</button>
+          </div>
+        </div>
+
+        <!-- Sconto -->
+        <div class="discount-row">
+          <div class="form-field flex-1">
+            <span class="field-label">Sconto</span>
+            <input type="number" id="discountInput" inputmode="decimal" min="0" step="any" placeholder="0">
+          </div>
+          <button class="toggle-unit" id="discountToggle" onclick="toggleDiscountUnit()">&euro;</button>
+        </div>
       </div>
-      <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+
+      <!-- Riepilogo piatti selezionati -->
+      <div class="order-summary-label">Riepilogo</div>
+      <div class="order-items-scroll" id="orderItemsList">
+        <div class="order-empty" id="orderEmpty">Nessun piatto selezionato</div>
+      </div>
+
+      <!-- Totali e bottone ordina -->
+      <div class="order-footer">
+        <div class="totals-block" id="totalsBlock">
+          <!-- Riga subtotale (visibile solo se c'e' sconto o omaggio) -->
+          <div class="total-row" id="subtotalRow" style="display:none">
+            <span class="total-label">Subtotale</span>
+            <span class="total-value" id="subtotalValue">&euro; 0,00</span>
+          </div>
+          <!-- Riga sconto -->
+          <div class="total-row discount-row-display" id="discountRow" style="display:none">
+            <span class="total-label" id="discountLabel">Sconto</span>
+            <span class="total-value" id="discountDisplay">&minus;&euro; 0,00</span>
+          </div>
+          <!-- Riga omaggio -->
+          <div class="total-row courtesy-row" id="courtesyRow" style="display:none">
+            <span class="total-label">OMAGGIO</span>
+            <span class="total-value" id="courtesyLabel"></span>
+          </div>
+          <!-- Totale da pagare -->
+          <div class="total-row grand-total">
+            <span class="total-label">Da Pagare</span>
+            <span class="total-value empty" id="grandTotal">&euro; 0,00</span>
+          </div>
+        </div>
+        <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+      </div>
     </div>
-  </div>
+
+  </div><!-- fine .app-shell -->
 
   <!-- Overlay successo -->
   <div class="overlay overlay-success" id="overlay-success">
@@ -657,40 +937,41 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/sidebar.js"></script>
   <script>
-    // ===== MENU — stessi piatti e stessi dati del server =====
+    // ===== MENU — stessi piatti e stessi dati del server (config.js) =====
     const ITEMS = [
       // PRIMI
-      { id: 'gnocchi_ragu', name: 'Gnocchi al ragù', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
+      { id: 'gnocchi_ragu', name: 'Gnocchi al ragu', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
       { id: 'gnocchi_burro', name: 'Gnocchi burro e salvia', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
-      { id: 'pasta_ragu', name: 'Pasta al ragù', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
+      { id: 'pasta_ragu', name: 'Pasta al ragu', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
       { id: 'pasta_bianco', name: 'Pasta in bianco', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
       // SECONDI
-      { id: 'formaggio_polenta', name: 'Formaggio cotto con polenta*', price: 6.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
+      { id: 'formaggio_polenta', name: 'Formaggio cotto con polenta', price: 6.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
       { id: 'wurstel_patate', name: 'Wurstel con patate fritte', price: 5.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
-      { id: 'pastin_patate', name: 'Pastin patate fritte', price: 7.50, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'salsiccia_polenta', name: 'Salsiccia con polenta*', price: 6.80, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'costicine_polenta', name: 'Costicine con polenta*', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'sovracoscia_polenta', name: 'Sovracoscia di pollo con polenta*', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'grigliata_mista', name: 'Grigliata mista con polenta*', price: 11.00, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      // SPECIALI
-      { id: 'pesce_fritto', name: 'Pesce fritto', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'coniglio', name: 'Coniglio', price: 15.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'costata', name: 'Costata', price: 24.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'galletto_patate', name: 'Galletto con patate', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'trippa', name: 'Trippa', price: 7.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'paella', name: 'Paella', price: 16.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'spiedo', name: 'Spiedo', price: 12.80, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      { id: 'frico', name: 'Frico', price: 8.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true },
-      // CONDIMENTI
-      { id: 'maionese', name: 'Maionese', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
-      { id: 'ketchup', name: 'Ketchup', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
+      { id: 'pastin_patate', name: 'Pastin con patate fritte', price: 7.50, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'salsiccia_polenta', name: 'Salsiccia con polenta', price: 6.80, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'costicine_polenta', name: 'Costicine con polenta', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'sovracoscia_polenta', name: 'Sovracoscia di pollo con polenta', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      { id: 'grigliata_mista', name: 'Grigliata mista con polenta', price: 11.00, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
+      // SPECIALI (doppia stampa: .205 cibo + .207 speciali)
+      { id: 'pesce_fritto', name: 'Pesce fritto', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-10' },
+      { id: 'coniglio', name: 'Coniglio', price: 15.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-11' },
+      { id: 'costata', name: 'Costata', price: 24.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-16' },
+      { id: 'galletto_patate', name: 'Galletto con patate', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-17' },
+      { id: 'trippa', name: 'Trippa', price: 7.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-18' },
+      { id: 'paella', name: 'Paella', price: 16.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-23' },
+      { id: 'spiedo', name: 'Spiedo', price: 12.80, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-24' },
+      { id: 'frico', name: 'Frico', price: 8.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-25' },
       // CONTORNI
       { id: 'patate_fritte', name: 'Patate fritte', price: 2.90, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
       { id: 'fagioli', name: 'Fagioli', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
       { id: 'fagioli_cipolla', name: 'Fagioli con cipolla', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
       { id: 'cappuccio', name: 'Cappuccio', price: 2.00, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
       { id: 'funghi', name: 'Funghi misto bosco', price: 3.20, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
+      // CONDIMENTI
+      { id: 'maionese', name: 'Maionese', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
+      { id: 'ketchup', name: 'Ketchup', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
       // BEVANDE
       { id: 'birra_spina', name: 'Birra alla spina', price: 3.50, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
       { id: 'vino_bianco_ombra', name: 'Vino ombra bianco', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
@@ -710,47 +991,25 @@
       { id: 'fanta', name: 'Fanta', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
     ];
 
-    // ===== DISPOSIZIONE COLONNE — identica al foglio cartaceo =====
-    // '---' = separatore visivo tra gruppi
-
-    const LEFT_COL = [
-      // Primi
-      'gnocchi_ragu', 'gnocchi_burro', 'pasta_ragu', 'pasta_bianco',
-      '---',
-      // Secondi
-      'formaggio_polenta', 'wurstel_patate', 'pastin_patate', 'salsiccia_polenta',
-      'costicine_polenta', 'sovracoscia_polenta', 'grigliata_mista',
-      '---',
-      // Piatti speciali
-      'pesce_fritto', 'coniglio', 'costata', 'galletto_patate',
-      'trippa', 'paella', 'spiedo', 'frico',
-      '---',
-      // Condimenti
-      'maionese', 'ketchup',
+    // ===== DISPOSIZIONE TAB CIBO (sezioni con header) =====
+    const CIBO_SECTIONS = [
+      { label: 'Primi', items: ['gnocchi_ragu', 'gnocchi_burro', 'pasta_ragu', 'pasta_bianco'] },
+      { label: 'Secondi', items: ['formaggio_polenta', 'wurstel_patate', 'pastin_patate', 'salsiccia_polenta', 'costicine_polenta', 'sovracoscia_polenta', 'grigliata_mista'] },
+      { label: 'Speciale del giorno', items: ['pesce_fritto', 'coniglio', 'costata', 'galletto_patate', 'trippa', 'paella', 'spiedo', 'frico'] },
+      { label: 'Contorni', items: ['patate_fritte', 'fagioli', 'fagioli_cipolla', 'cappuccio', 'funghi'] },
+      { label: 'Condimenti', items: ['maionese', 'ketchup'] },
     ];
 
-    const RIGHT_COL = [
-      // Contorni
-      'patate_fritte', 'fagioli', 'fagioli_cipolla', 'cappuccio', 'funghi',
-      '---',
-      // Birra
-      'birra_spina',
-      '---',
-      // Vini sfusi
-      'vino_bianco_ombra', 'vino_rosso_ombra',
-      'vino_bianco_mezzo', 'vino_rosso_mezzo',
-      'vino_bianco_trequarti', 'vino_rosso_trequarti',
-      '---',
-      // Bottiglie
-      'prosecco', 'cabernet',
-      '---',
-      // Acqua
-      'acqua_naturale', 'acqua_frizzante',
-      '---',
-      // Lattine
-      'the_pesca', 'the_limone', 'coca_cola', 'coca_zero', 'fanta',
+    // ===== DISPOSIZIONE TAB BEVANDE (sezioni raggruppate) =====
+    const BEVANDE_SECTIONS = [
+      { label: 'Birra', items: ['birra_spina'] },
+      { label: 'Vini sfusi', items: ['vino_bianco_ombra', 'vino_rosso_ombra', 'vino_bianco_mezzo', 'vino_rosso_mezzo', 'vino_bianco_trequarti', 'vino_rosso_trequarti'] },
+      { label: 'Bottiglie', items: ['prosecco', 'cabernet'] },
+      { label: 'Acqua', items: ['acqua_naturale', 'acqua_frizzante'] },
+      { label: 'Lattine', items: ['the_pesca', 'the_limone', 'coca_cola', 'coca_zero', 'fanta'] },
     ];
 
+    // ===== STATO =====
     const quantities = {};
     ITEMS.forEach(i => { quantities[i.id] = 0; });
 
@@ -758,53 +1017,120 @@
     let submitting = false;
     let activeCourtesy = null; // 'sponsor' | 'don_pierino' | 'amici' | null
     let discountIsPercent = false;
+    let currentTab = 'cibo';
 
-    // --- Genera HTML di una colonna ---
-    function renderCol(entries) {
-      return entries.map(entry => {
-        if (entry === '---') return '<div class="sep"></div>';
-        const item = ITEMS.find(i => i.id === entry);
-        if (!item) return '';
-        return `
-          <div class="menu-row" id="card-${item.id}">
-            <span class="row-name">${item.name}</span>
-            <span class="row-price">\u20AC${item.price.toFixed(2)}</span>
-            <div class="row-stepper">
-              <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
-              <span class="step-count zero" id="qty-${item.id}">0</span>
-              <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
-            </div>
-          </div>`;
-      }).join('');
+    // Mappa rapida id → item per lookup veloci
+    const itemMap = {};
+    ITEMS.forEach(i => { itemMap[i.id] = i; });
+
+    // ===== GENERA HTML per una riga piatto =====
+    function renderItemRow(itemId) {
+      const item = itemMap[itemId];
+      if (!item) return '';
+      // Formatta prezzo con virgola (stile italiano)
+      const priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
+      return `
+        <div class="menu-row" id="card-${item.id}">
+          <span class="row-name">${item.name}</span>
+          <span class="row-price">${priceFormatted}</span>
+          <div class="row-stepper">
+            <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
+            <span class="step-count zero" id="qty-${item.id}">0</span>
+            <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
+          </div>
+        </div>`;
     }
 
-    document.getElementById('colLeft').innerHTML = renderCol(LEFT_COL);
-    document.getElementById('colRight').innerHTML = renderCol(RIGHT_COL);
+    // ===== GENERA HTML per una sezione (header + righe piatti) =====
+    function renderSection(section, isLast) {
+      let html = `<div class="section-header">${section.label}</div>`;
+      section.items.forEach(id => {
+        html += renderItemRow(id);
+      });
+      if (!isLast) html += '<div class="sep"></div>';
+      return html;
+    }
 
-    // --- Flag omaggio: solo uno attivo alla volta ---
+    // ===== RENDER TABS =====
+    function renderPanels() {
+      // Tab CIBO
+      let ciboHtml = '';
+      CIBO_SECTIONS.forEach((sec, i) => {
+        ciboHtml += renderSection(sec, i === CIBO_SECTIONS.length - 1);
+      });
+      document.getElementById('panelCibo').innerHTML = ciboHtml;
+
+      // Tab BEVANDE
+      let bevandeHtml = '';
+      BEVANDE_SECTIONS.forEach((sec, i) => {
+        bevandeHtml += renderSection(sec, i === BEVANDE_SECTIONS.length - 1);
+      });
+      document.getElementById('panelBevande').innerHTML = bevandeHtml;
+    }
+
+    renderPanels();
+
+    // ===== SWITCH TAB =====
+    function switchTab(tab) {
+      currentTab = tab;
+      // Aggiorna pulsanti tab
+      document.getElementById('tabCibo').classList.toggle('active', tab === 'cibo');
+      document.getElementById('tabBevande').classList.toggle('active', tab === 'bevande');
+      // Aggiorna pannelli
+      document.getElementById('panelCibo').classList.toggle('active', tab === 'cibo');
+      document.getElementById('panelBevande').classList.toggle('active', tab === 'bevande');
+    }
+
+    // ===== AGGIORNA BADGE E CHECK SULLE TAB =====
+    function updateTabBadges() {
+      // Conteggio bevande selezionate (per il badge)
+      let drinkCount = 0;
+      ITEMS.forEach(item => {
+        if (item.category === 'bevanda' && quantities[item.id] > 0) {
+          drinkCount += quantities[item.id];
+        }
+      });
+      const badge = document.getElementById('tabBevandeBadge');
+      if (drinkCount > 0) {
+        badge.textContent = drinkCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      // Check sulla tab CIBO se ha piatti selezionati
+      let foodSelected = false;
+      ITEMS.forEach(item => {
+        if (item.category !== 'bevanda' && quantities[item.id] > 0) {
+          foodSelected = true;
+        }
+      });
+      document.getElementById('tabCiboCheck').classList.toggle('visible', foodSelected);
+    }
+
+    // ===== FLAG OMAGGIO: solo uno attivo alla volta =====
     function toggleFlag(type) {
       if (activeCourtesy === type) {
         activeCourtesy = null;
-        document.getElementById(`flag-${type}`).classList.remove('active');
+        document.getElementById('flag-' + type).classList.remove('active');
       } else {
-        // Disattiva il precedente
         if (activeCourtesy) {
-          document.getElementById(`flag-${activeCourtesy}`).classList.remove('active');
+          document.getElementById('flag-' + activeCourtesy).classList.remove('active');
         }
         activeCourtesy = type;
-        document.getElementById(`flag-${type}`).classList.add('active');
+        document.getElementById('flag-' + type).classList.add('active');
       }
-      updateOrderBar();
+      updateOrderColumn();
     }
 
-    // --- Toggle unità sconto: € ↔ % ---
+    // ===== TOGGLE UNITA' SCONTO: € ↔ % =====
     function toggleDiscountUnit() {
       discountIsPercent = !discountIsPercent;
       document.getElementById('discountToggle').textContent = discountIsPercent ? '%' : '\u20AC';
-      updateOrderBar();
+      updateOrderColumn();
     }
 
-    // --- Calcola totale con sconto e omaggio ---
+    // ===== CALCOLA TOTALE CON SCONTO E OMAGGIO =====
     function calcOrder() {
       let totalItems = 0;
       let subtotal = 0;
@@ -813,7 +1139,10 @@
         subtotal += quantities[item.id] * item.price;
       });
 
-      // Se flag omaggio attivo → totale = 0, ma il valore reale resta
+      // Arrotonda il subtotale per evitare errori float
+      subtotal = Math.round(subtotal * 100) / 100;
+
+      // Se flag omaggio attivo → totale = 0
       if (activeCourtesy) {
         return { totalItems, subtotal, discount: 0, total: 0, courtesyType: activeCourtesy };
       }
@@ -831,73 +1160,150 @@
         discount = Math.round(discount * 100) / 100;
       }
 
-      return { totalItems, subtotal, discount, total: subtotal - discount, courtesyType: null };
+      return { totalItems, subtotal, discount, total: Math.round((subtotal - discount) * 100) / 100, courtesyType: null };
     }
 
-    // --- Logica quantità ---
+    // ===== LOGICA QUANTITA' =====
     function changeQty(id, delta) {
       if (!connected || submitting) return;
       quantities[id] = Math.max(0, quantities[id] + delta);
 
-      const countEl = document.getElementById(`qty-${id}`);
+      const countEl = document.getElementById('qty-' + id);
       countEl.textContent = quantities[id];
       countEl.classList.toggle('zero', quantities[id] === 0);
 
-      const card = document.getElementById(`card-${id}`);
+      const card = document.getElementById('card-' + id);
       card.classList.toggle('active', quantities[id] > 0);
 
-      updateOrderBar();
+      updateTabBadges();
+      updateOrderColumn();
     }
 
-    function updateOrderBar() {
-      const { totalItems, subtotal, discount, total, courtesyType } = calcOrder();
+    // ===== RIMUOVI PIATTO DAL RIEPILOGO (click sulla X) =====
+    function removeItem(id) {
+      if (submitting) return;
+      quantities[id] = 0;
 
-      const countEl = document.getElementById('orderCount');
-      const totalEl = document.getElementById('orderTotal');
-      const btnOrder = document.getElementById('btnOrder');
-
-      // Conteggio piatti
-      countEl.innerHTML = '';
-      if (totalItems > 0) {
-        let label = `${totalItems} piatt${totalItems === 1 ? 'o' : 'i'}`;
-        // Mostra info extra sotto il conteggio
-        if (courtesyType) {
-          const names = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
-          label += ` <span class="courtesy-label">OMAGGIO ${names[courtesyType]}</span>`;
-          if (subtotal > 0) label += ` <span class="real-value">\u20AC${subtotal.toFixed(2)}</span>`;
-        } else if (discount > 0) {
-          label += ` <span class="discount-label">-\u20AC${discount.toFixed(2)}</span>`;
-        }
-        countEl.innerHTML = label;
+      const countEl = document.getElementById('qty-' + id);
+      if (countEl) {
+        countEl.textContent = '0';
+        countEl.classList.add('zero');
       }
 
-      // Totale
-      totalEl.textContent = `\u20AC ${total.toFixed(2)}`;
-      totalEl.classList.toggle('empty', totalItems === 0);
-      totalEl.classList.toggle('courtesy', !!courtesyType && totalItems > 0);
+      const card = document.getElementById('card-' + id);
+      if (card) {
+        card.classList.remove('active');
+      }
 
-      const tableValue = document.getElementById('tableInput').value;
-      btnOrder.classList.toggle('disabled', totalItems === 0 || !tableValue);
+      updateTabBadges();
+      updateOrderColumn();
     }
 
-    // --- Invio ordine ---
+    // ===== FORMATTA PREZZO IN STILE ITALIANO =====
+    function formatPrice(value) {
+      return '\u20AC ' + value.toFixed(2).replace('.', ',');
+    }
+
+    // ===== AGGIORNA TUTTA LA COLONNA ORDINE =====
+    function updateOrderColumn() {
+      const { totalItems, subtotal, discount, total, courtesyType } = calcOrder();
+
+      // Riepilogo piatti
+      const listEl = document.getElementById('orderItemsList');
+      const emptyEl = document.getElementById('orderEmpty');
+
+      // Raccogli tutti i piatti selezionati (nell'ordine del menu)
+      const selectedItems = ITEMS.filter(item => quantities[item.id] > 0);
+
+      if (selectedItems.length === 0) {
+        listEl.innerHTML = '<div class="order-empty">Nessun piatto selezionato</div>';
+      } else {
+        let html = '';
+        selectedItems.forEach(item => {
+          const linePrice = item.price * quantities[item.id];
+          html += `
+            <div class="order-item-row">
+              <span class="order-item-qty">${quantities[item.id]}x</span>
+              <span class="order-item-name">${item.name}</span>
+              <span class="order-item-price">${formatPrice(linePrice)}</span>
+              <button class="order-item-remove" onclick="removeItem('${item.id}')">&times;</button>
+            </div>`;
+        });
+        listEl.innerHTML = html;
+      }
+
+      // Totali
+      const subtotalRow = document.getElementById('subtotalRow');
+      const discountRow = document.getElementById('discountRow');
+      const courtesyRow = document.getElementById('courtesyRow');
+      const grandTotal = document.getElementById('grandTotal');
+
+      // Mostra subtotale solo se c'e' sconto o omaggio
+      const hasDiscount = discount > 0 && !courtesyType;
+      const hasCourtesy = !!courtesyType && totalItems > 0;
+
+      subtotalRow.style.display = (hasDiscount || hasCourtesy) ? 'flex' : 'none';
+      document.getElementById('subtotalValue').textContent = formatPrice(subtotal);
+
+      // Riga sconto
+      discountRow.style.display = hasDiscount ? 'flex' : 'none';
+      if (hasDiscount) {
+        const discountInput = parseFloat(document.getElementById('discountInput').value) || 0;
+        const unitLabel = discountIsPercent ? `(${discountInput}%)` : '';
+        document.getElementById('discountLabel').textContent = 'Sconto ' + unitLabel;
+        document.getElementById('discountDisplay').textContent = '\u2212' + formatPrice(discount);
+      }
+
+      // Riga omaggio
+      courtesyRow.style.display = hasCourtesy ? 'flex' : 'none';
+      if (hasCourtesy) {
+        const courtesyNames = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+        document.getElementById('courtesyLabel').textContent = courtesyNames[courtesyType];
+      }
+
+      // Totale finale
+      grandTotal.textContent = formatPrice(total);
+      grandTotal.classList.toggle('empty', totalItems === 0);
+      grandTotal.classList.toggle('courtesy', hasCourtesy);
+
+      // Abilita/disabilita bottone ORDINA
+      // Condizioni: almeno 1 piatto, tavolo compilato, coperti compilati
+      const tableValue = document.getElementById('tableInput').value;
+      const copertiValue = document.getElementById('copertiInput').value;
+      const canOrder = totalItems > 0 && tableValue && copertiValue;
+      document.getElementById('btnOrder').classList.toggle('disabled', !canOrder);
+    }
+
+    // ===== INVIO ORDINE =====
     async function submitOrder() {
       if (!connected || submitting) return;
 
       const tableInput = document.getElementById('tableInput');
+      const copertiInputEl = document.getElementById('copertiInput');
       const table = parseInt(tableInput.value);
+      const coperti = parseInt(copertiInputEl.value);
 
+      // Validazione tavolo
       if (!table || table < 1) {
         const field = document.getElementById('tableField');
         field.classList.add('error');
-        setTimeout(() => field.classList.remove('error'), 400);
+        setTimeout(function() { field.classList.remove('error'); }, 400);
         tableInput.focus();
         return;
       }
 
+      // Validazione coperti
+      if (!coperti || coperti < 1) {
+        const field = document.getElementById('copertiField');
+        field.classList.add('error');
+        setTimeout(function() { field.classList.remove('error'); }, 400);
+        copertiInputEl.focus();
+        return;
+      }
+
       const items = ITEMS
-        .filter(item => quantities[item.id] > 0)
-        .map(item => ({ id: item.id, qty: quantities[item.id] }));
+        .filter(function(item) { return quantities[item.id] > 0; })
+        .map(function(item) { return { id: item.id, qty: quantities[item.id] }; });
 
       if (items.length === 0) return;
 
@@ -906,45 +1312,50 @@
       const discountRaw = parseFloat(document.getElementById('discountInput').value) || 0;
 
       submitting = true;
+      document.getElementById('btnOrder').classList.add('disabled');
 
       try {
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            table,
-            items,
+            table: table,
+            items: items,
             customer_name: customerName,
             discount: discount,
             discount_type: discountIsPercent ? 'percent' : 'euro',
             discount_value: discountRaw,
             courtesy_type: courtesyType,
+            source: 'principale',
+            coperti: coperti,
           }),
         });
         const data = await res.json();
 
         if (data.success) {
-          document.getElementById('successNumber').textContent = `#${data.order_number}`;
-          // Mostra il totale effettivo pagato
-          let subText = `Tavolo ${data.table} \u2014 \u20AC ${data.total.toFixed(2)}`;
+          // Overlay successo
+          document.getElementById('successNumber').textContent = '#' + data.order_number;
+          let subText = 'Tavolo ' + data.table + ' \u2014 ' + formatPrice(data.total);
           if (data.courtesy_type) {
             const names = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
-            subText = `Tavolo ${data.table} \u2014 OMAGGIO ${names[data.courtesy_type]}`;
+            subText = 'Tavolo ' + data.table + ' \u2014 OMAGGIO ' + names[data.courtesy_type];
           }
           document.getElementById('successSub').textContent = subText;
 
+          // Badge stampe
           const printsEl = document.getElementById('successPrints');
           const badges = [];
           if (data.prints.receipt) badges.push('Ricevuta');
           if (data.prints.food) badges.push('Comanda cibo');
           if (data.prints.drinks) badges.push('Comanda bevande');
           if (data.prints.special) badges.push('Piatti speciali');
-          printsEl.innerHTML = badges.map(b => `<span class="print-badge">${b}</span>`).join('');
+          printsEl.innerHTML = badges.map(function(b) { return '<span class="print-badge">' + b + '</span>'; }).join('');
 
           showOverlay('success');
 
+          // Aggiorna "ultimo ordine" nel header
           const lastEl = document.getElementById('lastOrder');
-          lastEl.textContent = `Ultimo: #${data.order_number}`;
+          lastEl.textContent = 'Ultimo: #' + data.order_number;
           lastEl.classList.add('visible');
 
           resetOrder();
@@ -962,73 +1373,94 @@
       submitting = false;
     }
 
+    // ===== RESET ORDINE =====
     function resetOrder() {
-      ITEMS.forEach(item => {
+      ITEMS.forEach(function(item) {
         quantities[item.id] = 0;
-        document.getElementById(`qty-${item.id}`).textContent = '0';
-        document.getElementById(`qty-${item.id}`).classList.add('zero');
-        document.getElementById(`card-${item.id}`).classList.remove('active');
+        var qtyEl = document.getElementById('qty-' + item.id);
+        if (qtyEl) {
+          qtyEl.textContent = '0';
+          qtyEl.classList.add('zero');
+        }
+        var cardEl = document.getElementById('card-' + item.id);
+        if (cardEl) {
+          cardEl.classList.remove('active');
+        }
       });
+
       document.getElementById('tableInput').value = '';
+      document.getElementById('copertiInput').value = '';
       document.getElementById('nameInput').value = '';
       document.getElementById('discountInput').value = '';
+
       // Reset flag omaggio
       if (activeCourtesy) {
-        document.getElementById(`flag-${activeCourtesy}`).classList.remove('active');
+        document.getElementById('flag-' + activeCourtesy).classList.remove('active');
         activeCourtesy = null;
       }
-      updateOrderBar();
+
+      // Reset sconto
+      discountIsPercent = false;
+      document.getElementById('discountToggle').textContent = '\u20AC';
+
+      // Torna alla tab CIBO dopo reset
+      switchTab('cibo');
+      updateTabBadges();
+      updateOrderColumn();
     }
 
+    // ===== OVERLAY =====
     function showOverlay(type) {
-      const el = document.getElementById(`overlay-${type}`);
+      var el = document.getElementById('overlay-' + type);
       el.classList.add('visible');
-      setTimeout(() => el.classList.remove('visible'), 2500);
+      setTimeout(function() { el.classList.remove('visible'); }, 2500);
     }
 
-    // --- Socket.IO ---
-    const socket = io(window.location.origin, {
+    // ===== SOCKET.IO =====
+    var socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    const offlineBanner = document.getElementById('offlineBanner');
-    const statusLed = document.getElementById('statusLed');
-    const statusText = document.getElementById('statusText');
-    const headerStatus = document.getElementById('headerStatus');
+    var offlineBanner = document.getElementById('offlineBanner');
+    var statusLed = document.getElementById('statusLed');
+    var statusText = document.getElementById('statusText');
+    var tabStatus = document.getElementById('tabStatus');
 
-    socket.on('connect', () => {
+    socket.on('connect', function() {
       connected = true;
       socket.emit('register', { role: 'cassa' });
       offlineBanner.classList.remove('visible');
       statusLed.classList.add('on');
       statusLed.classList.remove('off');
-      headerStatus.classList.add('online');
-      headerStatus.classList.remove('offline');
+      tabStatus.classList.add('online');
+      tabStatus.classList.remove('offline');
       statusText.textContent = 'Connesso';
+      // Abilita il pulsante ordina se condizioni soddisfatte
+      updateOrderColumn();
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', function() {
       connected = false;
       offlineBanner.classList.add('visible');
       statusLed.classList.remove('on');
       statusLed.classList.add('off');
-      headerStatus.classList.remove('online');
-      headerStatus.classList.add('offline');
+      tabStatus.classList.remove('online');
+      tabStatus.classList.add('offline');
       statusText.textContent = 'Offline';
     });
 
-    // --- Stampante offline: alert + beep ---
-    const printerAlert = document.getElementById('printerAlert');
-    const printerAlertText = document.getElementById('printerAlertText');
+    // ===== STAMPANTE OFFLINE: alert + beep =====
+    var printerAlert = document.getElementById('printerAlert');
+    var printerAlertText = document.getElementById('printerAlertText');
 
-    // Beep audio per alert stampante (usa Web Audio API, senza file esterni)
+    // Beep audio per alert stampante (Web Audio API, senza file esterni)
     function beepAlert() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.frequency.value = 800;
@@ -1039,10 +1471,10 @@
     }
 
     // Ascolta lo stato delle stampanti dal proxy
-    socket.on('printers_status_update', (statuses) => {
-      const offlinePrinters = statuses.filter(s => !s.online);
+    socket.on('printers_status_update', function(statuses) {
+      var offlinePrinters = statuses.filter(function(s) { return !s.online; });
       if (offlinePrinters.length > 0) {
-        const names = offlinePrinters.map(p => p.id).join(', ');
+        var names = offlinePrinters.map(function(p) { return p.id; }).join(', ');
         printerAlertText.textContent = 'Stampante offline: ' + names;
         printerAlert.classList.add('visible');
         beepAlert();
@@ -1052,12 +1484,27 @@
     });
 
     // Richiedi controllo stampanti dopo connessione
-    socket.on('connect', () => {
-      setTimeout(() => socket.emit('request_printer_check'), 2000);
+    socket.on('connect', function() {
+      setTimeout(function() { socket.emit('request_printer_check'); }, 2000);
     });
 
-    document.getElementById('tableInput').addEventListener('input', updateOrderBar);
-    document.getElementById('discountInput').addEventListener('input', updateOrderBar);
+    // Ascolta aggiornamenti inventario dal server per segnalare piatti esauriti
+    socket.on('inventory_exhausted', function(data) {
+      var card = document.getElementById('card-' + data.item_id);
+      if (card) {
+        card.style.opacity = '0.3';
+        card.style.pointerEvents = 'none';
+      }
+    });
+
+    // ===== INPUT LISTENER per aggiornamento in tempo reale =====
+    document.getElementById('tableInput').addEventListener('input', updateOrderColumn);
+    document.getElementById('copertiInput').addEventListener('input', updateOrderColumn);
+    document.getElementById('discountInput').addEventListener('input', updateOrderColumn);
+
+    // Init
+    updateTabBadges();
+    updateOrderColumn();
   </script>
 </body>
 </html>

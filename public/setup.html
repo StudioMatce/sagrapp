@@ -298,6 +298,128 @@
       border-color: rgba(78, 204, 163, 0.3);
       color: var(--green);
     }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-wrap {
+      margin-bottom: 20px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .progress-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      transition: color 300ms ease;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--green);
+      border-radius: 3px;
+      transition: width 400ms ease, background 300ms ease;
+    }
+
+    .progress-fill.has-errors {
+      background: var(--yellow);
+    }
+
+    /* ===== CHECK ITEM: warn (per dispositivi non critici) ===== */
+    .check-item.warn { border-color: rgba(255, 217, 61, 0.3); }
+    .check-icon.warn {
+      background: rgba(255, 217, 61, 0.15);
+      color: var(--yellow);
+    }
+    .check-status.warn { color: var(--yellow); }
+
+    /* ===== PRINTER: response time e suggerimento ===== */
+    .printer-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--green);
+      margin-left: 4px;
+    }
+
+    .printer-hint {
+      font-size: 11px;
+      color: var(--red);
+      opacity: 0.8;
+      padding: 2px 0 2px 16px;
+    }
+
+    /* ===== DEVICE DETAIL ROWS (monitor, scaldavivande, controllo) ===== */
+    .device-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      font-size: 13px;
+    }
+
+    .device-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .device-led.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .device-led.off { background: var(--yellow); }
+
+    .device-name { font-weight: 500; color: var(--text-mid); flex: 1; }
+
+    .device-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* ===== BUTTON: warn variant (Avvia con limitazioni) ===== */
+    .btn-warn {
+      background: transparent;
+      border: 1px solid rgba(255, 217, 61, 0.4);
+      color: var(--yellow);
+    }
+
+    .btn-warn:hover {
+      background: rgba(255, 217, 61, 0.1);
+      box-shadow: 0 0 16px rgba(255, 217, 61, 0.15);
+    }
+
+    .btn-warn.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* ===== RESULT BANNER: warn ===== */
+    .result-banner.partial-ok {
+      background: rgba(255, 217, 61, 0.08);
+      border: 1px solid rgba(255, 217, 61, 0.2);
+    }
+    .result-banner.partial-ok .result-text { color: var(--yellow); }
   </style>
 </head>
 <body>
@@ -307,6 +429,17 @@
       <div class="logo-mark">S</div>
       <div class="wizard-title">Pre-flight Check</div>
       <div class="wizard-sub">Verifica automatica prima di iniziare il turno</div>
+    </div>
+
+    <!-- Barra di progresso -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-header">
+        <span class="progress-label">Stato verifica</span>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
     </div>
 
     <div class="check-list" id="checkList">
@@ -348,6 +481,18 @@
           <!-- Popolato da JS -->
         </div>
       </div>
+
+      <!-- Check 5: Dispositivi Socket.IO (monitor, scaldavivande, controllo) -->
+      <div class="check-item" id="check-devices">
+        <div class="check-top">
+          <div class="check-icon waiting" id="icon-devices">&bull;</div>
+          <span class="check-label">Dispositivi connessi</span>
+          <span class="check-status waiting" id="status-devices">In attesa</span>
+        </div>
+        <div class="check-details" id="deviceDetails">
+          <!-- Popolato da JS -->
+        </div>
+      </div>
     </div>
 
     <!-- Risultato -->
@@ -358,7 +503,8 @@
 
     <!-- Pulsanti -->
     <div class="btn-row">
-      <a href="/" class="btn btn-primary disabled" id="btnStart">Vai alla dashboard</a>
+      <a href="/" class="btn btn-primary disabled" id="btnStart">Avvia Servizio</a>
+      <button class="btn btn-warn disabled" id="btnStartPartial" style="display:none" onclick="window.location='/'">Avvia con limitazioni</button>
       <button class="btn btn-secondary" id="btnRestart" onclick="runAllChecks()">Riavvia check</button>
     </div>
   </div>
@@ -367,6 +513,8 @@
   <script>
     let socket = null;
     let deviceStatus = null;
+    const TOTAL_CHECKS = 5; // server, socket, proxy, printers, devices
+    let completedChecks = 0;
 
     // Stato dei check
     const checks = {
@@ -374,7 +522,21 @@
       socket: 'waiting',
       proxy: 'waiting',
       printers: 'waiting',
+      devices: 'waiting',
     };
+
+    // Critici: server, proxy, almeno 1 stampante. Non critici: devices
+    const CRITICAL = ['server', 'socket', 'proxy', 'printers'];
+
+    function updateProgress() {
+      completedChecks = Object.values(checks).filter(s => s === 'ok' || s === 'fail' || s === 'warn').length;
+      const pct = Math.round((completedChecks / TOTAL_CHECKS) * 100);
+      document.getElementById('progressPct').textContent = pct + '%';
+      const fill = document.getElementById('progressFill');
+      fill.style.width = pct + '%';
+      const hasErrors = Object.values(checks).some(s => s === 'fail');
+      fill.classList.toggle('has-errors', hasErrors);
+    }
 
     function setCheckState(id, state, label) {
       checks[id] = state;
@@ -389,33 +551,48 @@
       else if (state === 'running') { icon.innerHTML = ''; status.textContent = 'Verifica...'; }
       else if (state === 'ok') { icon.innerHTML = '&#10003;'; status.textContent = label || 'OK'; }
       else if (state === 'fail') { icon.innerHTML = '&#10007;'; status.textContent = label || 'Errore'; }
+      else if (state === 'warn') { icon.innerHTML = '&#9888;'; status.textContent = label || 'Parziale'; }
 
-      item.className = 'check-item' + (state === 'ok' ? ' ok' : state === 'fail' ? ' fail' : '');
+      item.className = 'check-item' + (state === 'ok' ? ' ok' : state === 'fail' ? ' fail' : state === 'warn' ? ' warn' : '');
+      updateProgress();
     }
 
     function showResult() {
-      const allOk = Object.values(checks).every(s => s === 'ok');
+      const allOk = Object.values(checks).every(s => s === 'ok' || s === 'warn');
+      const criticalOk = CRITICAL.every(id => checks[id] === 'ok');
       const hasError = Object.values(checks).some(s => s === 'fail');
+      const allDone = Object.values(checks).every(s => s !== 'waiting' && s !== 'running');
 
-      if (!allOk && !hasError) return; // ancora in corso
+      if (!allDone) return;
 
       const banner = document.getElementById('resultBanner');
       const icon = document.getElementById('resultIcon');
       const text = document.getElementById('resultText');
-      const btn = document.getElementById('btnStart');
+      const btnFull = document.getElementById('btnStart');
+      const btnPartial = document.getElementById('btnStartPartial');
 
       banner.classList.add('visible');
 
-      if (allOk) {
+      if (allOk && !hasError) {
         banner.className = 'result-banner visible all-ok';
-        icon.textContent = '✓';
-        text.textContent = 'Tutto OK — Pronto';
-        btn.classList.remove('disabled');
+        icon.textContent = '\u2713';
+        text.textContent = 'Tutto OK \u2014 Pronto';
+        btnFull.classList.remove('disabled');
+        btnPartial.style.display = 'none';
+      } else if (criticalOk) {
+        // Critici ok ma dispositivi non critici mancano
+        banner.className = 'result-banner visible partial-ok';
+        icon.textContent = '\u26A0';
+        text.textContent = 'Dispositivi non critici mancanti';
+        btnFull.classList.add('disabled');
+        btnPartial.style.display = '';
+        btnPartial.classList.remove('disabled');
       } else {
         banner.className = 'result-banner visible has-errors';
         icon.textContent = '!';
-        text.textContent = 'Problemi rilevati';
-        btn.classList.add('disabled');
+        text.textContent = 'Problemi critici rilevati';
+        btnFull.classList.add('disabled');
+        btnPartial.style.display = 'none';
       }
     }
 
@@ -526,13 +703,18 @@
           const details = document.getElementById('printerDetails');
           details.classList.add('visible');
 
-          details.innerHTML = statuses.map(p =>
-            '<div class="printer-row">' +
+          details.innerHTML = statuses.map(p => {
+            let html = '<div class="printer-row">' +
               '<div class="printer-led ' + (p.online ? 'on' : 'off') + '"></div>' +
               '<span class="printer-name">' + (p.name || p.id) + '</span>' +
               '<span class="printer-ip">' + (p.ip || '') + '</span>' +
-            '</div>'
-          ).join('');
+              (p.online ? '<span class="printer-time">OK</span>' : '') +
+            '</div>';
+            if (!p.online) {
+              html += '<div class="printer-hint">Verifica che sia accesa e collegata al Powerline con cavo LAN</div>';
+            }
+            return html;
+          }).join('');
 
           const allOnline = statuses.every(s => s.online);
           const onlineCount = statuses.filter(s => s.online).length;
@@ -549,31 +731,100 @@
       });
     }
 
+    // === CHECK 5: Dispositivi connessi (non critici) ===
+    function checkDevices() {
+      return new Promise((resolve) => {
+        setCheckState('devices', 'running');
+
+        if (!socket || !socket.connected) {
+          setCheckState('devices', 'warn', 'Socket non connesso');
+          resolve(false);
+          return;
+        }
+
+        // Aspetta un po' per ricevere device_status aggiornato
+        const timeout = setTimeout(() => {
+          evaluateDevices();
+          resolve(true);
+        }, 3000);
+
+        socket.on('device_status', function handler(data) {
+          deviceStatus = data.devices;
+          clearTimeout(timeout);
+          socket.off('device_status', handler);
+          evaluateDevices();
+          resolve(true);
+        });
+
+        // Richiedi stato
+        socket.emit('register', { role: 'dashboard' });
+      });
+
+      function evaluateDevices() {
+        const details = document.getElementById('deviceDetails');
+        details.classList.add('visible');
+
+        const devs = [
+          { key: 'monitor', name: 'Monitor cuochi' },
+          { key: 'scaldavivande', name: 'Tablet scaldavivande' },
+          { key: 'controllo', name: 'Tablet zona controllo' },
+        ];
+
+        const ds = deviceStatus || {};
+        details.innerHTML = devs.map(d => {
+          const count = ds[d.key] || 0;
+          const online = count > 0;
+          return '<div class="device-row">' +
+            '<div class="device-led ' + (online ? 'on' : 'off') + '"></div>' +
+            '<span class="device-name">' + d.name + '</span>' +
+            '<span class="device-count">' + (online ? count + ' connesso' : 'Offline') + '</span>' +
+          '</div>';
+        }).join('');
+
+        const allOnline = devs.every(d => (ds[d.key] || 0) > 0);
+        const onlineCount = devs.filter(d => (ds[d.key] || 0) > 0).length;
+
+        if (allOnline) {
+          setCheckState('devices', 'ok', onlineCount + '/' + devs.length);
+        } else if (onlineCount > 0) {
+          setCheckState('devices', 'warn', onlineCount + '/' + devs.length + ' connessi');
+        } else {
+          setCheckState('devices', 'warn', 'Nessun dispositivo');
+        }
+      }
+    }
+
     // === ESEGUI TUTTI I CHECK ===
     async function runAllChecks() {
       // Reset
+      completedChecks = 0;
       document.getElementById('resultBanner').classList.remove('visible');
       document.getElementById('btnStart').classList.add('disabled');
+      document.getElementById('btnStartPartial').style.display = 'none';
       document.getElementById('printerDetails').classList.remove('visible');
+      document.getElementById('deviceDetails').classList.remove('visible');
 
-      ['server', 'socket', 'proxy', 'printers'].forEach(id => setCheckState(id, 'waiting'));
+      ['server', 'socket', 'proxy', 'printers', 'devices'].forEach(id => setCheckState(id, 'waiting'));
+      updateProgress();
 
-      // Sequenza
+      // Sequenza: critici prima
       const serverOk = await checkServer();
-      if (!serverOk) { showResult(); return; }
+      if (!serverOk) { setCheckState('devices', 'fail', 'Server offline'); showResult(); return; }
 
       const socketOk = await checkSocket();
-      if (!socketOk) { showResult(); return; }
+      if (!socketOk) { setCheckState('devices', 'fail', 'Socket offline'); showResult(); return; }
 
       const proxyOk = await checkProxy();
-      if (!proxyOk) { showResult(); return; }
 
-      await checkPrinters();
+      // Stampanti e dispositivi in parallelo
+      await Promise.all([checkPrinters(), checkDevices()]);
+
       showResult();
     }
 
     // Auto-start
     runAllChecks();
   </script>
+<script src="/js/sidebar.js"></script>
 </body>
 </html>

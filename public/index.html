@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SagrApp — Test Hardware</title>
+  <title>SagrApp — Seleziona Ruolo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -22,13 +22,9 @@
       --red: #e94560;
       --red-dim: rgba(233, 69, 96, 0.15);
       --yellow: #ffd93d;
-      --yellow-dim: rgba(255, 217, 61, 0.15);
-      --gray: #6c7a89;
-      --gray-dim: rgba(108, 122, 137, 0.15);
       --text: #e2e8f0;
       --text-dim: #94a3b8;
       --text-muted: #64748b;
-      --cyan: #22d3ee;
     }
 
     html { font-size: 15px; }
@@ -38,772 +34,492 @@
       background: var(--bg-deep);
       color: var(--text);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       /* Griglia sottile da control room */
       background-image:
-        linear-gradient(rgba(78, 204, 163, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(78, 204, 163, 0.02) 1px, transparent 1px);
+        linear-gradient(rgba(78, 204, 163, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(78, 204, 163, 0.03) 1px, transparent 1px);
       background-size: 48px 48px;
     }
 
-    /* ===== TOP BAR ===== */
-    .topbar {
-      background: var(--bg-base);
-      border-bottom: 1px solid var(--border);
-      padding: 0.75rem 1.5rem;
+    /* Forza sidebar chiusa su questa pagina: nasconde il toggle e impedisce il margine */
+    .sa-sidebar { transform: translateX(-220px) !important; }
+    .sa-sidebar-toggle { display: none !important; }
+    .sa-sidebar-overlay { display: none !important; }
+    .sa-page-content { margin-left: 0 !important; }
+
+    /* ===== CONTAINER ===== */
+    .landing-wrap {
+      width: 100%;
+      max-width: 880px;
+      padding: 2.5rem 1.5rem 3rem;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(12px);
     }
 
-    .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+    /* ===== HEADER ===== */
+    .landing-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
     }
 
-    .topbar-logo {
-      font-weight: 800;
-      font-size: 1.2rem;
-      letter-spacing: -0.02em;
-      color: var(--text);
+    .logo-row {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
     }
 
-    .topbar-logo .icon {
+    .logo-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 44px;
+      height: 44px;
       background: var(--green);
       color: var(--bg-deep);
-      border-radius: 4px;
-      font-size: 0.85rem;
-      font-weight: 700;
+      border-radius: 8px;
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      box-shadow: 0 0 20px rgba(78, 204, 163, 0.25), 0 0 60px rgba(78, 204, 163, 0.08);
     }
 
-    .topbar-divider {
-      width: 1px;
-      height: 20px;
-      background: var(--border);
+    .logo-text {
+      font-weight: 800;
+      font-size: 2rem;
+      letter-spacing: -0.03em;
+      color: var(--text);
     }
 
-    .topbar-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-    }
-
-    .connection-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: 4px;
+    .landing-subtitle {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
       font-weight: 500;
-      transition: all 200ms ease;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
     }
 
-    .connection-badge.online {
-      background: var(--green-dim);
-      color: var(--green);
+    /* Linea decorativa sotto il titolo */
+    .header-line {
+      width: 60px;
+      height: 2px;
+      background: var(--green);
+      margin: 1rem auto 0;
+      border-radius: 1px;
+      opacity: 0.5;
+    }
+
+    /* ===== REDIRECT BANNER (appare se c'è un ruolo salvato) ===== */
+    .redirect-banner {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+      padding: 0.8rem 1.2rem;
+      margin-bottom: 2rem;
+      background: rgba(78, 204, 163, 0.06);
       border: 1px solid rgba(78, 204, 163, 0.2);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      text-align: center;
+      animation: banner-in 300ms ease;
     }
 
-    .connection-badge.offline {
-      background: var(--red-dim);
+    .redirect-banner.visible { display: block; }
+
+    .redirect-banner .role-name {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .redirect-banner .countdown {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .redirect-banner .cancel-btn {
+      display: inline-block;
+      margin-left: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      background: rgba(233, 69, 96, 0.1);
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      border-radius: 4px;
       color: var(--red);
-      border: 1px solid rgba(233, 69, 96, 0.2);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
     }
 
-    /* ===== LED INDICATOR ===== */
-    .led {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
+    .redirect-banner .cancel-btn:hover {
+      background: rgba(233, 69, 96, 0.2);
+      border-color: var(--red);
+    }
+
+    @keyframes banner-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== ROLE GRID ===== */
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      width: 100%;
+    }
+
+    /* ===== ROLE CARD ===== */
+    .role-card {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem 1.25rem;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
       transition: all 200ms ease;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      overflow: hidden;
     }
 
-    .led.green {
+    /* Sottile linea superiore verde (spenta di default) */
+    .role-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--green);
+      opacity: 0;
+      transition: opacity 200ms ease;
+    }
+
+    .role-card:hover {
+      border-color: rgba(78, 204, 163, 0.4);
+      background: var(--bg-card-hover);
+      box-shadow: 0 0 20px rgba(78, 204, 163, 0.07), 0 0 40px rgba(78, 204, 163, 0.03);
+    }
+
+    .role-card:hover::before { opacity: 1; }
+
+    .role-card:active {
+      transform: scale(0.97);
+      border-color: var(--green);
+    }
+
+    .role-card .card-icon {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .role-card .card-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .role-card .card-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* Badge lucchetto per card admin */
+    .role-card .lock-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.7rem;
+      opacity: 0.4;
+    }
+
+    /* Card admin con bordo leggermente diverso */
+    .role-card.admin-card {
+      border-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .role-card.admin-card:hover {
+      border-color: rgba(78, 204, 163, 0.3);
+    }
+
+    /* ===== FOOTER ===== */
+    .landing-footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-version {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      opacity: 0.5;
+      letter-spacing: 0.05em;
+    }
+
+    .footer-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: all 300ms ease;
+    }
+
+    .status-dot.online {
       background: var(--green);
       box-shadow: 0 0 6px var(--green), 0 0 12px rgba(78, 204, 163, 0.3);
+      animation: dot-pulse 2s ease-in-out infinite;
     }
 
-    .led.red {
+    .status-dot.offline {
       background: var(--red);
-      box-shadow: 0 0 6px var(--red), 0 0 12px rgba(233, 69, 96, 0.3);
+      box-shadow: 0 0 6px var(--red);
     }
 
-    .led.yellow {
-      background: var(--yellow);
-      box-shadow: 0 0 6px var(--yellow);
-    }
-
-    .led.gray {
-      background: var(--gray);
-      box-shadow: none;
-    }
-
-    .led.pulse {
-      animation: led-pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes led-pulse {
+    @keyframes dot-pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
 
-    /* ===== MAIN LAYOUT ===== */
-    .main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 1.25rem 1.5rem 3rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    /* ===== CARDS ===== */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      transition: border-color 200ms ease;
-    }
-
-    .card:hover {
-      border-color: var(--border-active);
-    }
-
-    .card-header {
-      padding: 0.75rem 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.01);
-    }
-
-    .card-title {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-dim);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .card-title .tag {
-      font-size: 0.6rem;
-      padding: 0.15rem 0.4rem;
-      border-radius: 3px;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-    }
-
-    .card-body {
-      padding: 1rem;
-    }
-
-    /* ===== STATUS ROW (per rete, stampanti) ===== */
-    .status-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.65rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .status-row:last-child { border-bottom: none; }
-
-    .status-left {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
-
-    .status-name {
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .status-detail {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .status-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .status-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      font-weight: 500;
-    }
-
-    .status-label.online { color: var(--green); }
-    .status-label.offline { color: var(--red); }
-    .status-label.unknown { color: var(--gray); }
-    .status-label.testing { color: var(--yellow); }
-
-    .status-time {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      color: var(--text-muted);
-    }
-
-    /* ===== BUTTONS ===== */
-    .btn {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      font-size: 0.8rem;
-      padding: 0.45rem 0.9rem;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: var(--bg-base);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 200ms ease;
-      white-space: nowrap;
-    }
-
-    .btn:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-active);
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    .btn.btn-test {
-      background: rgba(78, 204, 163, 0.08);
-      border-color: rgba(78, 204, 163, 0.25);
-      color: var(--green);
-    }
-
-    .btn.btn-test:hover {
-      background: rgba(78, 204, 163, 0.15);
-      border-color: var(--green);
-    }
-
-    .btn.btn-test.firing {
-      background: var(--green);
-      color: var(--bg-deep);
-      border-color: var(--green);
-    }
-
-    .btn.btn-test.error {
-      background: var(--red);
-      color: white;
-      border-color: var(--red);
-    }
-
-    .btn.btn-link {
-      background: transparent;
-      border-color: var(--border);
-      color: var(--cyan);
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .btn.btn-link:hover {
-      background: rgba(34, 211, 238, 0.06);
-      border-color: rgba(34, 211, 238, 0.3);
-    }
-
-    .btn-actions {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    /* ===== FULL TEST BUTTON ===== */
-    .full-test-wrap {
-      padding: 0.25rem;
-    }
-
-    .btn-full-test {
-      width: 100%;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      font-size: 1.05rem;
-      letter-spacing: 0.02em;
-      padding: 1rem 1.5rem;
-      border-radius: 6px;
-      border: 2px solid var(--green);
-      background: rgba(78, 204, 163, 0.06);
-      color: var(--green);
-      cursor: pointer;
-      transition: all 200ms ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-full-test:hover {
-      background: rgba(78, 204, 163, 0.12);
-      box-shadow: 0 0 30px rgba(78, 204, 163, 0.1);
-    }
-
-    .btn-full-test:active {
-      transform: scale(0.99);
-    }
-
-    .btn-full-test.running {
-      border-color: var(--yellow);
-      color: var(--yellow);
-      background: rgba(255, 217, 61, 0.06);
-      cursor: wait;
-    }
-
-    .btn-full-test .play-icon {
-      font-size: 1.1rem;
-    }
-
-    /* ===== TEST REPORT ===== */
-    .test-report {
-      display: none;
-    }
-
-    .test-report.visible {
-      display: block;
-    }
-
-    .report-item {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      padding: 0.55rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      font-size: 0.85rem;
-    }
-
-    .report-item:last-child { border-bottom: none; }
-
-    .report-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.65rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .report-icon.pass {
-      background: var(--green-dim);
-      color: var(--green);
-      border: 1px solid rgba(78, 204, 163, 0.3);
-    }
-
-    .report-icon.fail {
-      background: var(--red-dim);
-      color: var(--red);
-      border: 1px solid rgba(233, 69, 96, 0.3);
-    }
-
-    .report-icon.skip {
-      background: var(--gray-dim);
-      color: var(--gray);
-      border: 1px solid rgba(108, 122, 137, 0.3);
-    }
-
-    .report-icon.wait {
-      background: var(--yellow-dim);
-      color: var(--yellow);
-      border: 1px solid rgba(255, 217, 61, 0.3);
-    }
-
-    .report-label {
-      flex: 1;
-    }
-
-    .report-detail {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .report-summary {
-      margin-top: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: 4px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .report-summary.all-pass {
-      background: var(--green-dim);
-      border: 1px solid rgba(78, 204, 163, 0.2);
-      color: var(--green);
-    }
-
-    .report-summary.has-fail {
-      background: var(--red-dim);
-      border: 1px solid rgba(233, 69, 96, 0.2);
-      color: var(--red);
-    }
-
-    /* ===== PRINTER ROW ===== */
-    .printer-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      gap: 0.75rem;
-    }
-
-    .printer-row:last-child { border-bottom: none; }
-
-    .printer-info {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .printer-id {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 0.15rem 0.4rem;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-
-    .printer-meta {
-      min-width: 0;
-    }
-
-    .printer-name {
-      font-weight: 600;
-      font-size: 0.85rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .printer-conn {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      margin-top: 0.1rem;
-    }
-
-    .printer-status {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-shrink: 0;
-    }
-
-    /* ===== INFO BOX ===== */
-    .info-box {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      padding: 0.5rem 0.75rem;
-      background: rgba(255, 255, 255, 0.02);
-      border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      margin-top: 0.65rem;
-    }
-
-    .info-box .highlight {
-      color: var(--cyan);
-      font-weight: 500;
-    }
-
-    /* ===== FLASH animation per aggiornamenti ===== */
-    .flash {
-      animation: status-flash 500ms ease;
-    }
-
-    @keyframes status-flash {
-      0% { background: rgba(78, 204, 163, 0.15); }
-      100% { background: transparent; }
-    }
-
-    .flash-red {
-      animation: status-flash-red 500ms ease;
-    }
-
-    @keyframes status-flash-red {
-      0% { background: rgba(233, 69, 96, 0.15); }
-      100% { background: transparent; }
-    }
-
-    /* ===== TWO-COL GRID ===== */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
     /* ===== RESPONSIVE ===== */
-    @media (max-width: 700px) {
-      .main { padding: 1rem; }
-      .grid-2 { grid-template-columns: 1fr; }
-      .printer-row { flex-wrap: wrap; }
-      .topbar { padding: 0.5rem 1rem; }
-      .topbar-label { display: none; }
+
+    /* Tablet: 2 colonne */
+    @media (max-width: 768px) {
+      .role-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .landing-wrap {
+        padding: 2rem 1rem 2.5rem;
+      }
+
+      .logo-text { font-size: 1.6rem; }
+      .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+
+    /* Mobile: 1 colonna */
+    @media (max-width: 480px) {
+      .role-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .role-card {
+        flex-direction: row;
+        justify-content: flex-start;
+        padding: 1.1rem 1.25rem;
+        min-height: auto;
+        gap: 1rem;
+      }
+
+      .role-card .card-icon { font-size: 1.6rem; }
+
+      .role-card .card-text {
+        text-align: left;
+      }
+
+      .role-card .card-title {
+        text-align: left;
+        font-size: 0.72rem;
+      }
+
+      .role-card .card-subtitle {
+        text-align: left;
+        font-size: 0.75rem;
+      }
+
+      .landing-header { margin-bottom: 1.75rem; }
+      .logo-text { font-size: 1.4rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ===== TOP BAR ===== -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-logo">
-        <span class="icon">S</span>
-        SagrApp
+  <div class="landing-wrap">
+
+    <!-- ===== HEADER ===== -->
+    <header class="landing-header">
+      <div class="logo-row">
+        <span class="logo-icon">S</span>
+        <span class="logo-text">SagrApp</span>
       </div>
-      <div class="topbar-divider"></div>
-      <span class="topbar-label">Test Hardware</span>
-    </div>
-    <div id="connBadge" class="connection-badge offline">
-      <span class="led red" id="connLed"></span>
-      <span id="connText">Connessione...</span>
-    </div>
-  </header>
+      <div class="landing-subtitle">Seleziona il tuo dispositivo</div>
+      <div class="header-line"></div>
+    </header>
 
-  <!-- ===== MAIN ===== -->
-  <main class="main">
-
-    <!-- RETE -->
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">RETE <span class="tag" style="background:var(--cyan);color:var(--bg-deep);">CONNETTIVIT&Agrave;</span></span>
-      </div>
-      <div class="card-body">
-        <div class="status-row">
-          <div class="status-left">
-            <span class="led gray" id="ledServer"></span>
-            <div>
-              <div class="status-name">Server cloud</div>
-              <div class="status-detail" id="serverPing">&mdash;</div>
-            </div>
-          </div>
-          <div class="status-right">
-            <span class="status-label unknown" id="serverStatus">In attesa</span>
-          </div>
-        </div>
-        <div class="status-row">
-          <div class="status-left">
-            <span class="led gray" id="ledProxy"></span>
-            <div>
-              <div class="status-name">Print proxy</div>
-              <div class="status-detail">Raspberry Pi (PM2)</div>
-            </div>
-          </div>
-          <div class="status-right">
-            <span class="status-label unknown" id="proxyStatus">In attesa</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- STAMPANTI (6 LAN) -->
-    <section class="card">
-      <div class="card-header">
-        <span class="card-title">STAMPANTI <span class="tag" style="background:var(--yellow);color:var(--bg-deep);">6x LAN</span></span>
-        <span class="status-time" id="printerLastCheck">Nessun check</span>
-      </div>
-      <div class="card-body" id="printerList">
-        <!-- Generato da JS -->
-      </div>
-    </section>
-
-    <!-- MONITOR + SCALDAVIVANDE (griglia 2 colonne) -->
-    <div class="grid-2">
-
-      <!-- MONITOR CUOCHI -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">MONITOR CUOCHI</span>
-          <span class="led gray" id="ledMonitor"></span>
-        </div>
-        <div class="card-body">
-          <div class="status-row">
-            <div class="status-left">
-              <div>
-                <div class="status-name">TV Griglia</div>
-                <div class="status-detail" id="monitorDetail">Non connesso</div>
-              </div>
-            </div>
-            <span class="status-label unknown" id="monitorStatus">Offline</span>
-          </div>
-          <div class="info-box">3 colonne: da cucinare / pronto / vendute</div>
-          <div class="btn-actions" style="margin-top:0.75rem;">
-            <a href="/monitor" target="_blank" class="btn btn-link">Apri monitor &nearr;</a>
-            <button class="btn btn-test" id="btnTestMonitor">Invia dato test</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- SCALDAVIVANDE -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">TABLET SCALDAVIVANDE</span>
-          <span class="led gray" id="ledScaldavivande"></span>
-        </div>
-        <div class="card-body">
-          <div class="status-row">
-            <div class="status-left">
-              <div>
-                <div class="status-name">Scaldavivande</div>
-                <div class="status-detail" id="scaldavivandeDetail">Non connesso</div>
-              </div>
-            </div>
-            <span class="status-label unknown" id="scaldavivandeStatus">Offline</span>
-          </div>
-          <div class="info-box">Pulsanti: +10, +20, +30, +40, +50 e &minus;</div>
-          <div class="btn-actions" style="margin-top:0.75rem;">
-            <a href="/scaldavivande" target="_blank" class="btn btn-link">Apri scaldavivande &nearr;</a>
-          </div>
-        </div>
-      </section>
+    <!-- ===== REDIRECT BANNER (visibile solo se ruolo salvato) ===== -->
+    <div class="redirect-banner" id="redirectBanner">
+      Ultimo ruolo: <span class="role-name" id="redirectRoleName">—</span>
+      — redirect in <span class="countdown" id="redirectCountdown">3</span>s
+      <button class="cancel-btn" id="redirectCancel">Annulla</button>
     </div>
 
-    <!-- ZONA CONTROLLO + CASSA -->
-    <div class="grid-2">
-
-      <!-- ZONA CONTROLLO -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">TABLET ZONA CONTROLLO</span>
-          <span class="led gray" id="ledControllo"></span>
-        </div>
-        <div class="card-body">
-          <div class="status-row">
-            <div class="status-left">
-              <div>
-                <div class="status-name">Zona controllo</div>
-                <div class="status-detail" id="controlloDetail">Non connesso</div>
-              </div>
-            </div>
-            <div class="status-right">
-              <span class="status-label unknown" id="controlloStatus">In attesa</span>
-            </div>
-          </div>
-          <div class="info-box">Tastierino numerico per evasione ordini</div>
-          <div class="btn-actions" style="margin-top:0.75rem;">
-            <a href="/controllo" target="_blank" class="btn btn-link">Apri zona controllo &nearr;</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- CASSA TEST -->
-      <section class="card">
-        <div class="card-header">
-          <span class="card-title">CASSA TEST</span>
-          <span class="led gray" id="ledCassa"></span>
-        </div>
-        <div class="card-body">
-          <div class="status-row">
-            <div class="status-left">
-              <div>
-                <div class="status-name">Cassa principale</div>
-                <div class="status-detail" id="cassaDetail">Non connesso</div>
-              </div>
-            </div>
-            <div class="status-right">
-              <span class="status-label unknown" id="cassaStatus">In attesa</span>
-            </div>
-          </div>
-          <div class="info-box">Ordini &rarr; stampa ricevuta + comanda cibo/bevande + aggiorna vendute</div>
-          <div class="btn-actions" style="margin-top:0.75rem;">
-            <a href="/cassa" target="_blank" class="btn btn-link">Apri cassa &nearr;</a>
-          </div>
-        </div>
-      </section>
-
+    <!-- ===== ROLE GRID ===== -->
+    <div class="role-grid" id="roleGrid">
+      <!-- Generato da JS -->
     </div>
 
-    <!-- TEST COMPLETO -->
-    <section class="full-test-wrap">
-      <button class="btn-full-test" id="btnFullTest">
-        <span class="play-icon">&#9654;</span>
-        ESEGUI TEST COMPLETO
-      </button>
-    </section>
-
-    <!-- REPORT TEST -->
-    <section class="card test-report" id="testReport">
-      <div class="card-header">
-        <span class="card-title">REPORT TEST</span>
-        <span class="status-time" id="reportTime">&mdash;</span>
+    <!-- ===== FOOTER ===== -->
+    <footer class="landing-footer">
+      <div class="footer-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connessione...</span>
       </div>
-      <div class="card-body" id="reportBody">
-        <!-- Generato da JS -->
-      </div>
-    </section>
+      <div class="footer-version">SAGRAPP v1.0 — Sagra M.D.G.</div>
+    </footer>
 
-  </main>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // =============================================
-    // STATO GLOBALE
+    // CONFIGURAZIONE RUOLI
     // =============================================
-    const state = {
-      connected: false,
-      pingMs: null,
-      proxyOnline: false,
-      monitorOnline: false,
-      scaldavivandeOnline: false,
-      controlloOnline: false,
-      cassaOnline: false,
-      printers: [
-        { id: 1, name: 'vretti (Ricevuta cassa)', conn: '192.168.1.203:9100', online: false, lastCheck: null },
-        { id: 2, name: 'Fuhuihe (Comanda bev.)', conn: '192.168.1.204:9100', online: false, lastCheck: null },
-        { id: 3, name: 'Fuhuihe (Comanda cibo)', conn: '192.168.1.205:9100', online: false, lastCheck: null },
-        { id: 4, name: 'Fuhuihe (Ricevuta bar)', conn: '192.168.1.206:9100', online: false, lastCheck: null },
-        { id: 5, name: 'Fuhuihe (Piatti spec.)', conn: '192.168.1.207:9100', online: false, lastCheck: null },
-        { id: 6, name: 'Fuhuihe (Casetta aper.)', conn: '192.168.1.208:9100', online: false, lastCheck: null },
-      ],
-      printJobs: {},
-      fullTestRunning: false,
-    };
+    const ROLES = [
+      { id: 'cassa',        icon: '🛒', title: 'Cassa Generale',  subtitle: 'Ordini cibo + bevande', url: '/cassa' },
+      { id: 'cassa-bar',    icon: '🍺', title: 'Cassa Bar',       subtitle: 'Solo bevande',          url: '/cassa-bar' },
+      { id: 'cassa-casetta',icon: '🏠', title: 'Cassa Casetta',   subtitle: 'Aperitivi e snack',     url: '/cassa-casetta' },
+      { id: 'monitor',      icon: '📺', title: 'Monitor Cuochi',  subtitle: 'TV griglia',            url: '/monitor' },
+      { id: 'scaldavivande',icon: '🔥', title: 'Scaldavivande',   subtitle: 'Tablet cuoco',          url: '/scaldavivande' },
+      { id: 'controllo',    icon: '📋', title: 'Operatore',       subtitle: 'Evasione ordini',       url: '/controllo' },
+      { id: 'admin',        icon: '📊', title: 'Admin',           subtitle: 'Dashboard gestione',    url: '/admin/login', admin: true },
+      { id: 'hardware',     icon: '🔧', title: 'Hardware',        subtitle: 'Test e controllo',      url: '/admin/hardware', admin: true },
+    ];
+
+    // Mappa url → nome leggibile per il banner redirect
+    const ROLE_NAMES = {};
+    ROLES.forEach(r => { ROLE_NAMES[r.url] = r.title; });
 
     // =============================================
-    // SOCKET.IO
+    // GENERA LE CARD
+    // =============================================
+    function renderCards() {
+      const grid = document.getElementById('roleGrid');
+      grid.innerHTML = ROLES.map(role => {
+        const adminClass = role.admin ? ' admin-card' : '';
+        const lockBadge = role.admin ? '<span class="lock-badge">🔒</span>' : '';
+        return `
+          <div class="role-card${adminClass}" data-url="${role.url}" data-admin="${!!role.admin}" onclick="selectRole(this)">
+            ${lockBadge}
+            <span class="card-icon">${role.icon}</span>
+            <div class="card-text">
+              <div class="card-title">${role.title}</div>
+              <div class="card-subtitle">${role.subtitle}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =============================================
+    // SELEZIONE RUOLO
+    // =============================================
+    function selectRole(cardEl) {
+      const url = cardEl.dataset.url;
+      const isAdmin = cardEl.dataset.admin === 'true';
+
+      // Per le card admin: se non ha il token, vai al login
+      if (isAdmin && !sessionStorage.getItem('admin_token')) {
+        // Salva la destinazione reale per redirect post-login
+        sessionStorage.setItem('admin_redirect', url);
+        localStorage.setItem('sagrapp_role', url);
+        window.location.href = '/admin/login';
+        return;
+      }
+
+      // Salva il ruolo selezionato e naviga
+      localStorage.setItem('sagrapp_role', url);
+      window.location.href = url;
+    }
+
+    // =============================================
+    // AUTO-REDIRECT (se ruolo salvato)
+    // =============================================
+    let redirectTimer = null;
+    let countdownValue = 3;
+
+    function startAutoRedirect() {
+      const savedRole = localStorage.getItem('sagrapp_role');
+      if (!savedRole) return;
+
+      const banner = document.getElementById('redirectBanner');
+      const nameEl = document.getElementById('redirectRoleName');
+      const countdownEl = document.getElementById('redirectCountdown');
+
+      // Mostra il nome del ruolo salvato
+      nameEl.textContent = ROLE_NAMES[savedRole] || savedRole;
+      countdownValue = 3;
+      countdownEl.textContent = countdownValue;
+      banner.classList.add('visible');
+
+      // Countdown
+      redirectTimer = setInterval(() => {
+        countdownValue--;
+        countdownEl.textContent = countdownValue;
+
+        if (countdownValue <= 0) {
+          clearInterval(redirectTimer);
+          // Controlla se è una pagina admin e serve il token
+          const role = ROLES.find(r => r.url === savedRole);
+          if (role && role.admin && !sessionStorage.getItem('admin_token')) {
+            sessionStorage.setItem('admin_redirect', savedRole);
+            window.location.href = '/admin/login';
+          } else {
+            window.location.href = savedRole;
+          }
+        }
+      }, 1000);
+    }
+
+    function cancelRedirect() {
+      if (redirectTimer) {
+        clearInterval(redirectTimer);
+        redirectTimer = null;
+      }
+      // Rimuovi il ruolo salvato così non fa redirect al prossimo refresh
+      localStorage.removeItem('sagrapp_role');
+      document.getElementById('redirectBanner').classList.remove('visible');
+    }
+
+    // =============================================
+    // SOCKET.IO — solo per lo status in basso
     // =============================================
     const socket = io(window.location.origin, {
       reconnection: true,
@@ -812,389 +528,22 @@
     });
 
     socket.on('connect', () => {
-      state.connected = true;
-      socket.emit('register', { role: 'dashboard' });
-      updateConnectionUI();
-      measurePing();
+      document.getElementById('statusDot').className = 'status-dot online';
+      document.getElementById('statusText').textContent = 'Server online';
     });
 
     socket.on('disconnect', () => {
-      state.connected = false;
-      state.pingMs = null;
-      updateConnectionUI();
+      document.getElementById('statusDot').className = 'status-dot offline';
+      document.getElementById('statusText').textContent = 'Server offline';
     });
-
-    // Stato dispositivi connessi
-    socket.on('device_status', ({ devices }) => {
-      state.proxyOnline = (devices.proxy || 0) > 0;
-      state.monitorOnline = (devices.monitor || 0) > 0;
-      state.scaldavivandeOnline = (devices.scaldavivande || 0) > 0;
-      state.controlloOnline = (devices.controllo || 0) > 0;
-      state.cassaOnline = (devices.cassa || 0) > 0;
-      updateNetworkUI();
-      updateDevicesUI();
-    });
-
-    // Stato stampanti (dal proxy)
-    socket.on('printers_status_update', (statuses) => {
-      statuses.forEach(({ id, online }) => {
-        const p = state.printers.find(pr => pr.id === id);
-        if (p) {
-          p.online = online;
-          p.lastCheck = Date.now();
-        }
-      });
-      updatePrintersUI();
-    });
-
-    // Risultato stampa
-    socket.on('print_result', ({ job_id, success, error }) => {
-      const job = state.printJobs[job_id];
-      if (job) {
-        clearTimeout(job.timeout);
-        if (success) job.resolve();
-        else job.reject(new Error(error || 'Errore stampa'));
-        delete state.printJobs[job_id];
-      }
-    });
-
-    // =============================================
-    // PING
-    // =============================================
-    function measurePing() {
-      const start = Date.now();
-      fetch('/api/health')
-        .then(r => r.json())
-        .then(() => {
-          state.pingMs = Date.now() - start;
-          updateConnectionUI();
-          updateNetworkUI();
-        })
-        .catch(() => {
-          state.pingMs = null;
-        });
-    }
-
-    // Ping + check stampanti ogni 5 secondi
-    setInterval(() => {
-      if (state.connected) {
-        measurePing();
-        socket.emit('request_printer_check');
-      }
-    }, 5000);
-
-    // =============================================
-    // UI UPDATES
-    // =============================================
-
-    function updateConnectionUI() {
-      const badge = document.getElementById('connBadge');
-      const led = document.getElementById('connLed');
-      const text = document.getElementById('connText');
-
-      if (state.connected) {
-        badge.className = 'connection-badge online';
-        led.className = 'led green pulse';
-        text.textContent = state.pingMs !== null
-          ? `Connesso (${state.pingMs}ms)`
-          : 'Connesso';
-      } else {
-        badge.className = 'connection-badge offline';
-        led.className = 'led red';
-        text.textContent = 'Disconnesso';
-      }
-    }
-
-    function updateNetworkUI() {
-      const ledServer = document.getElementById('ledServer');
-      const serverStatus = document.getElementById('serverStatus');
-      const serverPing = document.getElementById('serverPing');
-
-      if (state.connected) {
-        ledServer.className = 'led green pulse';
-        serverStatus.className = 'status-label online';
-        serverStatus.textContent = 'Online';
-        serverPing.textContent = state.pingMs !== null ? `Ping: ${state.pingMs}ms` : 'Ping: ...';
-      } else {
-        ledServer.className = 'led red';
-        serverStatus.className = 'status-label offline';
-        serverStatus.textContent = 'Offline';
-        serverPing.textContent = '\u2014';
-      }
-
-      const ledProxy = document.getElementById('ledProxy');
-      const proxyStatus = document.getElementById('proxyStatus');
-
-      if (state.proxyOnline) {
-        ledProxy.className = 'led green pulse';
-        proxyStatus.className = 'status-label online';
-        proxyStatus.textContent = 'Connesso';
-      } else {
-        ledProxy.className = 'led gray';
-        proxyStatus.className = 'status-label unknown';
-        proxyStatus.textContent = 'Non connesso';
-      }
-    }
-
-    function updateDevicesUI() {
-      // Monitor
-      updateDeviceLed('ledMonitor', 'monitorStatus', 'monitorDetail', state.monitorOnline);
-      // Scaldavivande
-      updateDeviceLed('ledScaldavivande', 'scaldavivandeStatus', 'scaldavivandeDetail', state.scaldavivandeOnline);
-      // Zona controllo
-      updateDeviceLed('ledControllo', 'controlloStatus', 'controlloDetail', state.controlloOnline);
-      // Cassa
-      updateDeviceLed('ledCassa', 'cassaStatus', 'cassaDetail', state.cassaOnline);
-    }
-
-    function updateDeviceLed(ledId, statusId, detailId, isOnline) {
-      const led = document.getElementById(ledId);
-      const status = document.getElementById(statusId);
-      const detail = document.getElementById(detailId);
-      if (!led || !status || !detail) return;
-
-      if (isOnline) {
-        led.className = 'led green pulse';
-        status.className = 'status-label online';
-        status.textContent = 'Online';
-        detail.textContent = 'Connesso al server';
-      } else {
-        led.className = 'led gray';
-        status.className = 'status-label unknown';
-        status.textContent = 'Offline';
-        detail.textContent = 'Non connesso';
-      }
-    }
-
-    function updatePrintersUI() {
-      const container = document.getElementById('printerList');
-      const lastCheck = document.getElementById('printerLastCheck');
-
-      const checks = state.printers.filter(p => p.lastCheck).map(p => p.lastCheck);
-      if (checks.length > 0) {
-        lastCheck.textContent = 'Check: ' + relativeTime(Math.max(...checks));
-      }
-
-      container.innerHTML = state.printers.map(p => {
-        const ledClass = p.lastCheck === null ? 'gray' : (p.online ? 'green' : 'red');
-        const statusClass = p.lastCheck === null ? 'unknown' : (p.online ? 'online' : 'offline');
-        const statusText = p.lastCheck === null ? 'Non testata' : (p.online ? 'Online' : 'Offline');
-
-        return `
-          <div class="printer-row" id="printer-row-${p.id}">
-            <div class="printer-info">
-              <span class="printer-id">#${p.id}</span>
-              <span class="led ${ledClass}" id="led-printer-${p.id}"></span>
-              <div class="printer-meta">
-                <div class="printer-name">${p.name}</div>
-                <div class="printer-conn">${p.conn} &middot; LAN</div>
-              </div>
-            </div>
-            <div class="printer-status">
-              <span class="status-label ${statusClass}">${statusText}</span>
-              <button class="btn btn-test" id="btn-print-${p.id}" onclick="testPrint(${p.id})">Stampa Test</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // =============================================
-    // AZIONI
-    // =============================================
-
-    function testPrint(printerId) {
-      const btn = document.getElementById(`btn-print-${printerId}`);
-      if (!btn) return;
-
-      btn.classList.add('firing');
-      btn.textContent = 'Invio...';
-
-      fetch(`/api/printers/${printerId}/test`, { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) return waitForPrintResult(data.job_id, 8000);
-          throw new Error(data.error || 'Errore');
-        })
-        .then(() => {
-          btn.classList.remove('firing');
-          btn.classList.add('firing');
-          btn.textContent = 'OK!';
-          setTimeout(() => {
-            btn.classList.remove('firing');
-            btn.textContent = 'Stampa Test';
-          }, 1500);
-        })
-        .catch(() => {
-          btn.classList.remove('firing');
-          btn.classList.add('error');
-          btn.textContent = 'Errore';
-          setTimeout(() => {
-            btn.classList.remove('error');
-            btn.textContent = 'Stampa Test';
-          }, 2000);
-        });
-    }
-
-    function waitForPrintResult(jobId, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          delete state.printJobs[jobId];
-          reject(new Error('Timeout stampa'));
-        }, timeoutMs);
-        state.printJobs[jobId] = { resolve, reject, timeout };
-      });
-    }
-
-    // Invia dato test al monitor (simula contatori scaldavivande)
-    document.getElementById('btnTestMonitor').addEventListener('click', () => {
-      const btn = document.getElementById('btnTestMonitor');
-      const testValues = { bistecca: 10, costine: 20, salsiccia: 30, spiedini: 10 };
-      Object.entries(testValues).forEach(([item, val]) => {
-        socket.emit('counter_update', { item, delta: val });
-      });
-      btn.classList.add('firing');
-      btn.textContent = 'Inviato!';
-      setTimeout(() => {
-        btn.classList.remove('firing');
-        btn.textContent = 'Invia dato test';
-      }, 1000);
-    });
-
-    // =============================================
-    // TEST COMPLETO
-    // =============================================
-    document.getElementById('btnFullTest').addEventListener('click', runFullTest);
-
-    async function runFullTest() {
-      if (state.fullTestRunning) return;
-      state.fullTestRunning = true;
-
-      const btn = document.getElementById('btnFullTest');
-      btn.classList.add('running');
-      btn.innerHTML = '<span class="play-icon">&#9632;</span> TEST IN CORSO...';
-
-      const report = document.getElementById('testReport');
-      const body = document.getElementById('reportBody');
-      const timeEl = document.getElementById('reportTime');
-
-      report.classList.add('visible');
-      body.innerHTML = '';
-      timeEl.textContent = new Date().toLocaleTimeString('it-IT');
-
-      const results = [];
-
-      results.push(await runTestStep(body, 'Server cloud raggiungibile', async () => {
-        const r = await fetch('/api/health');
-        const data = await r.json();
-        return { ok: data.status === 'ok', detail: `Uptime: ${Math.round(data.uptime)}s` };
-      }));
-
-      results.push(await runTestStep(body, 'Connessione Socket.IO', async () => {
-        return { ok: state.connected, detail: state.pingMs ? `Ping: ${state.pingMs}ms` : 'N/A' };
-      }));
-
-      results.push(await runTestStep(body, 'Print proxy connesso', async () => {
-        return { ok: state.proxyOnline, detail: state.proxyOnline ? 'Attivo' : 'Non rilevato' };
-      }));
-
-      // Stampanti (6)
-      for (const p of state.printers) {
-        results.push(await runTestStep(body, `Stampante #${p.id} ${p.name}`, async () => {
-          if (!state.proxyOnline) return { ok: false, detail: 'Proxy non connesso' };
-          socket.emit('request_printer_check');
-          await sleep(3000);
-          const current = state.printers.find(pr => pr.id === p.id);
-          return { ok: current.online, detail: current.online ? 'Raggiungibile' : 'Non raggiungibile' };
-        }));
-      }
-
-      results.push(await runTestStep(body, 'Monitor cuochi connesso', async () => {
-        return { ok: state.monitorOnline, detail: state.monitorOnline ? 'Attivo' : 'Non connesso' };
-      }));
-
-      results.push(await runTestStep(body, 'Tablet scaldavivande connesso', async () => {
-        return { ok: state.scaldavivandeOnline, detail: state.scaldavivandeOnline ? 'Attivo' : 'Non connesso' };
-      }));
-
-      results.push(await runTestStep(body, 'Tablet zona controllo connesso', async () => {
-        return { ok: state.controlloOnline, detail: state.controlloOnline ? 'Attivo' : 'Non connesso' };
-      }));
-
-      const passed = results.filter(r => r).length;
-      const total = results.length;
-      const allPass = passed === total;
-
-      const summary = document.createElement('div');
-      summary.className = `report-summary ${allPass ? 'all-pass' : 'has-fail'}`;
-      summary.innerHTML = allPass
-        ? `&#10003; Tutti i test superati (${passed}/${total})`
-        : `&#10007; ${passed}/${total} test superati \u2014 verifica i problemi sopra`;
-      body.appendChild(summary);
-
-      btn.classList.remove('running');
-      btn.innerHTML = '<span class="play-icon">&#9654;</span> ESEGUI TEST COMPLETO';
-      state.fullTestRunning = false;
-    }
-
-    async function runTestStep(container, label, testFn) {
-      const row = document.createElement('div');
-      row.className = 'report-item';
-      row.innerHTML = `
-        <span class="report-icon wait">&#8943;</span>
-        <span class="report-label">${label}</span>
-        <span class="report-detail">In corso...</span>
-      `;
-      container.appendChild(row);
-
-      try {
-        const { ok, detail } = await testFn();
-        const icon = row.querySelector('.report-icon');
-        const detailEl = row.querySelector('.report-detail');
-
-        if (ok) {
-          icon.className = 'report-icon pass';
-          icon.innerHTML = '&#10003;';
-        } else {
-          icon.className = 'report-icon fail';
-          icon.innerHTML = '&#10007;';
-        }
-        detailEl.textContent = detail || '';
-        return ok;
-      } catch (err) {
-        const icon = row.querySelector('.report-icon');
-        const detailEl = row.querySelector('.report-detail');
-        icon.className = 'report-icon fail';
-        icon.innerHTML = '&#10007;';
-        detailEl.textContent = err.message;
-        return false;
-      }
-    }
-
-    // =============================================
-    // UTILITY
-    // =============================================
-
-    function relativeTime(timestamp) {
-      if (!timestamp) return '\u2014';
-      const diff = Math.floor((Date.now() - timestamp) / 1000);
-      if (diff < 5) return 'ora';
-      if (diff < 60) return `${diff} sec fa`;
-      if (diff < 3600) return `${Math.floor(diff / 60)} min fa`;
-      return `${Math.floor(diff / 3600)} ore fa`;
-    }
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
 
     // =============================================
     // INIT
     // =============================================
-    updateConnectionUI();
-    updateNetworkUI();
-    updateDevicesUI();
-    updatePrintersUI();
+    renderCards();
+    startAutoRedirect();
+    document.getElementById('redirectCancel').addEventListener('click', cancelRedirect);
   </script>
+  <script src="/js/sidebar.js"></script>
 </body>
 </html>

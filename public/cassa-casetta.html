@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Cassa Casetta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #060a12;
+      color: #f0f4f8;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.5);
+    }
+
+    .header-last-order {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(78, 204, 163, 0.6);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+
+    .header-last-order.visible { opacity: 1; }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #6c7a89;
+    }
+
+    .header-status.online { color: #4ecca3; }
+    .header-status.offline { color: #e94560; }
+
+    .status-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: all 200ms ease;
+    }
+
+    .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
+    .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
+
+    /* ===== AREA MENU — colonna singola, ultra-compatta ===== */
+    .menu-wrapper {
+      flex: 1;
+      padding: 8px 10px 110px;
+      overflow-y: auto;
+    }
+
+    /* Label di categoria sopra ogni gruppo */
+    .cat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(78, 204, 163, 0.45);
+      padding: 10px 8px 4px;
+    }
+
+    /* ===== RIGA PIATTO ===== */
+    .menu-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      transition: background 120ms ease;
+      min-height: 38px;
+    }
+
+    .menu-row:active {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .menu-row.active {
+      background: rgba(78, 204, 163, 0.06);
+    }
+
+    /* Piatti esauriti: opacità ridotta e non cliccabili */
+    .menu-row.exhausted {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .row-name {
+      flex: 1;
+      font-weight: 500;
+      font-size: 13px;
+      color: rgba(240, 244, 248, 0.8);
+      line-height: 1.2;
+      min-width: 0;
+    }
+
+    .menu-row.active .row-name {
+      color: #f0f4f8;
+      font-weight: 600;
+    }
+
+    .row-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(78, 204, 163, 0.6);
+      white-space: nowrap;
+      min-width: 46px;
+      text-align: right;
+    }
+
+    .menu-row.active .row-price {
+      color: #4ecca3;
+    }
+
+    /* Badge scorte basse */
+    .row-stock-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(255, 217, 61, 0.15);
+      color: #ffd93d;
+      flex-shrink: 0;
+    }
+
+    /* ===== STEPPER COMPATTO ===== */
+    .row-stepper {
+      display: flex;
+      align-items: center;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .step-btn {
+      width: 34px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.02);
+      border: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background 80ms ease;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .step-btn:active { background: rgba(255, 255, 255, 0.1); }
+    .step-minus { color: #e94560; border-right: 1px solid rgba(255, 255, 255, 0.04); }
+    .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
+
+    .step-count {
+      width: 28px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      height: 32px;
+      line-height: 32px;
+      background: rgba(255, 255, 255, 0.015);
+      transition: color 150ms ease;
+    }
+
+    .step-count.zero { color: rgba(255, 255, 255, 0.15); }
+
+    /* ===== SEPARATORE tra gruppi ===== */
+    .sep {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 4px 8px;
+    }
+
+    /* ===== ORDER BAR — fisso in basso ===== */
+    .order-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(10, 14, 22, 0.96);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 50;
+    }
+
+    .table-field {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 6px 8px;
+      flex-shrink: 0;
+      transition: border-color 200ms ease;
+    }
+
+    .table-field.error {
+      border-color: #e94560;
+      animation: shake 300ms ease;
+    }
+
+    @keyframes shake {
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-2px); }
+    }
+
+    .table-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table-field input {
+      width: 40px;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 800;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .table-field input::placeholder { color: rgba(255, 255, 255, 0.15); }
+    .table-field input::-webkit-outer-spin-button,
+    .table-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .order-summary {
+      flex: 1;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+    }
+
+    .order-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(20px, 5vw, 28px);
+      color: #4ecca3;
+      line-height: 1;
+      transition: color 150ms ease;
+    }
+
+    .order-total.empty { color: rgba(78, 204, 163, 0.25); }
+
+    .order-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(240, 244, 248, 0.35);
+      line-height: 1;
+      min-height: 13px;
+    }
+
+    .btn-order {
+      padding: 14px 20px;
+      background: rgba(78, 204, 163, 0.12);
+      border: 2px solid rgba(78, 204, 163, 0.3);
+      border-radius: 10px;
+      color: #4ecca3;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: clamp(14px, 3.5vw, 18px);
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 120ms ease;
+      flex-shrink: 0;
+    }
+
+    .btn-order:active:not(.disabled) {
+      transform: scale(0.95);
+      background: rgba(78, 204, 163, 0.3);
+      border-color: #4ecca3;
+    }
+
+    .btn-order.disabled { opacity: 0.25; pointer-events: none; }
+
+    /* ===== OVERLAYS ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+
+    .overlay.visible { opacity: 1; pointer-events: auto; }
+    .overlay-success { background: rgba(78, 204, 163, 0.93); }
+    .overlay-error { background: rgba(233, 69, 96, 0.93); }
+
+    .overlay-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: clamp(64px, 20vw, 130px);
+      line-height: 1;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .overlay-text {
+      font-weight: 700;
+      font-size: clamp(18px, 4.5vw, 30px);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #fff;
+    }
+
+    .overlay-sub {
+      font-size: clamp(14px, 3vw, 20px);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 6px;
+    }
+
+    .overlay-prints {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .print-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      letter-spacing: 0.03em;
+    }
+
+    /* ===== BANNER DISCONNESSIONE ===== */
+    .offline-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 14px 20px;
+      background: #e94560;
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 200;
+      transform: translateY(-100%);
+      transition: transform 300ms ease;
+    }
+
+    .offline-banner.visible { transform: translateY(0); }
+
+    /* ===== BANNER STAMPANTE OFFLINE ===== */
+    .printer-alert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 10px 20px;
+      background: #ffd93d;
+      color: #1a1a2e;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 190;
+      transform: translateY(-100%);
+      transition: transform 300ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .printer-alert.visible { transform: translateY(0); }
+
+    .printer-alert .alert-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    /* ===== EMPTY STATE — quando il menu non carica ===== */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      opacity: 0.3;
+    }
+
+    .empty-state-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(240, 244, 248, 0.3);
+    }
+
+    .empty-state-sub {
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Banner disconnessione -->
+  <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA</div>
+  <div class="printer-alert" id="printerAlert">
+    <span class="alert-icon">&#9888;</span>
+    <span id="printerAlertText">Stampante offline</span>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="header-title">Cassa Casetta</span>
+      <span class="header-last-order" id="lastOrder"></span>
+    </div>
+    <span class="header-status" id="headerStatus">
+      <span class="status-led" id="statusLed"></span>
+      <span id="statusText">...</span>
+    </span>
+  </header>
+
+  <!-- Menu — colonna singola, caricata dal server -->
+  <div class="menu-wrapper" id="menuWrapper">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-state-icon">&#8987;</div>
+      <div class="empty-state-text">Caricamento menu...</div>
+    </div>
+  </div>
+
+  <!-- Barra ordine — tavolo (opzionale per casetta), totale, ordina -->
+  <div class="order-bar">
+    <div class="table-field" id="tableField">
+      <span class="table-label">Tav</span>
+      <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+    </div>
+    <div class="order-summary">
+      <span class="order-count" id="orderCount"></span>
+      <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
+    </div>
+    <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+  </div>
+
+  <!-- Overlay successo -->
+  <div class="overlay overlay-success" id="overlay-success">
+    <div class="overlay-number" id="successNumber"></div>
+    <div class="overlay-text">Ordine creato</div>
+    <div class="overlay-sub" id="successSub"></div>
+    <div class="overlay-prints" id="successPrints"></div>
+  </div>
+
+  <!-- Overlay errore -->
+  <div class="overlay overlay-error" id="overlay-error">
+    <div class="overlay-number">!</div>
+    <div class="overlay-text" id="errorText">Errore</div>
+    <div class="overlay-sub" id="errorSub"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    // ===== STATO GLOBALE =====
+    let menuItems = [];       // Piatti caricati dal server (filtrati per casetta)
+    const quantities = {};    // { item_id: quantita }
+    let connected = false;
+    let submitting = false;
+
+    // ===== CATEGORIE VISIBILI NELLA CASETTA =====
+    // La casetta vende bevande e contorni. Quando il server avrà un menu
+    // dedicato per la casetta, basterà cambiare questo filtro.
+    const CASETTA_CATEGORIES = ['bevanda', 'contorno'];
+
+    // Label leggibili per le categorie
+    const CATEGORY_LABELS = {
+      contorno: 'Contorni',
+      bevanda: 'Bevande',
+    };
+
+    // Ordine di visualizzazione delle categorie
+    const CATEGORY_ORDER = ['contorno', 'bevanda'];
+
+    // ===== CARICAMENTO MENU DAL SERVER =====
+    async function loadMenu() {
+      try {
+        const res = await fetch('/api/menu');
+        const allItems = await res.json();
+
+        // Filtra solo le categorie della casetta
+        menuItems = allItems.filter(item => CASETTA_CATEGORIES.includes(item.category));
+
+        // Inizializza le quantità a 0 per ogni piatto
+        menuItems.forEach(item => { quantities[item.id] = 0; });
+
+        renderMenu();
+      } catch (err) {
+        // Se il caricamento fallisce, mostra un messaggio di errore
+        document.getElementById('emptyState').innerHTML = `
+          <div class="empty-state-icon">&#9888;</div>
+          <div class="empty-state-text">Errore caricamento menu</div>
+          <div class="empty-state-sub">Controlla la connessione al server</div>
+        `;
+      }
+    }
+
+    // ===== RENDER DEL MENU =====
+    function renderMenu() {
+      const wrapper = document.getElementById('menuWrapper');
+
+      if (menuItems.length === 0) {
+        wrapper.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">&#128722;</div>
+            <div class="empty-state-text">Nessun piatto disponibile</div>
+            <div class="empty-state-sub">Il menu casetta non contiene articoli</div>
+          </div>`;
+        return;
+      }
+
+      // Raggruppa i piatti per categoria nell'ordine definito
+      let html = '';
+      CATEGORY_ORDER.forEach(cat => {
+        const catItems = menuItems.filter(item => item.category === cat);
+        if (catItems.length === 0) return;
+
+        html += `<div class="cat-label">${CATEGORY_LABELS[cat] || cat}</div>`;
+
+        catItems.forEach(item => {
+          // Stato scorta: se esaurito, aggiungi classe "exhausted"
+          const exhausted = item.status === 'exhausted';
+          const lowStock = item.status === 'low';
+          const extraClass = exhausted ? ' exhausted' : '';
+          const stockBadge = lowStock ? `<span class="row-stock-badge">${item.stock}</span>` : '';
+
+          html += `
+            <div class="menu-row${extraClass}" id="card-${item.id}" data-id="${item.id}">
+              <span class="row-name">${item.name}</span>
+              ${stockBadge}
+              <span class="row-price">\u20AC${item.price.toFixed(2)}</span>
+              <div class="row-stepper">
+                <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
+                <span class="step-count zero" id="qty-${item.id}">0</span>
+                <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
+              </div>
+            </div>`;
+        });
+
+        html += '<div class="sep"></div>';
+      });
+
+      wrapper.innerHTML = html;
+    }
+
+    // ===== LOGICA QUANTITA =====
+    function changeQty(id, delta) {
+      if (!connected || submitting) return;
+      quantities[id] = Math.max(0, (quantities[id] || 0) + delta);
+
+      const countEl = document.getElementById(`qty-${id}`);
+      if (countEl) {
+        countEl.textContent = quantities[id];
+        countEl.classList.toggle('zero', quantities[id] === 0);
+      }
+
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        card.classList.toggle('active', quantities[id] > 0);
+      }
+
+      updateOrderBar();
+    }
+
+    // ===== CALCOLO TOTALE =====
+    function calcOrder() {
+      let totalItems = 0;
+      let total = 0;
+      menuItems.forEach(item => {
+        const qty = quantities[item.id] || 0;
+        totalItems += qty;
+        total += qty * item.price;
+      });
+      return { totalItems, total };
+    }
+
+    function updateOrderBar() {
+      const { totalItems, total } = calcOrder();
+
+      const countEl = document.getElementById('orderCount');
+      const totalEl = document.getElementById('orderTotal');
+      const btnOrder = document.getElementById('btnOrder');
+
+      countEl.textContent = totalItems > 0
+        ? `${totalItems} articol${totalItems === 1 ? 'o' : 'i'}`
+        : '';
+
+      totalEl.textContent = `\u20AC ${total.toFixed(2)}`;
+      totalEl.classList.toggle('empty', totalItems === 0);
+
+      // Per la casetta, il tavolo e' opzionale: basta avere almeno un articolo
+      btnOrder.classList.toggle('disabled', totalItems === 0);
+    }
+
+    // ===== INVIO ORDINE =====
+    async function submitOrder() {
+      if (!connected || submitting) return;
+
+      const { totalItems } = calcOrder();
+      if (totalItems === 0) return;
+
+      const tableInput = document.getElementById('tableInput');
+      const table = parseInt(tableInput.value) || 0;
+
+      // Costruisci la lista degli articoli con quantita > 0
+      const items = menuItems
+        .filter(item => (quantities[item.id] || 0) > 0)
+        .map(item => ({ id: item.id, qty: quantities[item.id] }));
+
+      if (items.length === 0) return;
+
+      submitting = true;
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table: table || 0,
+            items,
+            source: 'casetta',
+          }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Mostra overlay di successo
+          document.getElementById('successNumber').textContent = `#${data.order_number}`;
+          const subParts = [];
+          if (table > 0) subParts.push(`Tavolo ${data.table}`);
+          subParts.push(`\u20AC ${data.total.toFixed(2)}`);
+          document.getElementById('successSub').textContent = subParts.join(' \u2014 ');
+
+          // Badge stampe eseguite
+          const printsEl = document.getElementById('successPrints');
+          const badges = [];
+          if (data.prints.receipt) badges.push('Ricevuta');
+          if (data.prints.food) badges.push('Comanda cibo');
+          if (data.prints.drinks) badges.push('Comanda bevande');
+          if (data.prints.special) badges.push('Piatti speciali');
+          printsEl.innerHTML = badges.map(b => `<span class="print-badge">${b}</span>`).join('');
+
+          showOverlay('success');
+
+          // Aggiorna ultimo ordine nell'header
+          const lastEl = document.getElementById('lastOrder');
+          lastEl.textContent = `Ultimo: #${data.order_number}`;
+          lastEl.classList.add('visible');
+
+          resetOrder();
+        } else {
+          document.getElementById('errorText').textContent = 'Errore';
+          document.getElementById('errorSub').textContent = data.error || 'Errore sconosciuto';
+          showOverlay('error');
+        }
+      } catch (err) {
+        document.getElementById('errorText').textContent = 'Errore di rete';
+        document.getElementById('errorSub').textContent = 'Verifica la connessione';
+        showOverlay('error');
+      }
+
+      submitting = false;
+    }
+
+    function resetOrder() {
+      menuItems.forEach(item => {
+        quantities[item.id] = 0;
+        const countEl = document.getElementById(`qty-${item.id}`);
+        if (countEl) {
+          countEl.textContent = '0';
+          countEl.classList.add('zero');
+        }
+        const card = document.getElementById(`card-${item.id}`);
+        if (card) card.classList.remove('active');
+      });
+      document.getElementById('tableInput').value = '';
+      updateOrderBar();
+    }
+
+    function showOverlay(type) {
+      const el = document.getElementById(`overlay-${type}`);
+      el.classList.add('visible');
+      setTimeout(() => el.classList.remove('visible'), 2500);
+    }
+
+    // ===== SOCKET.IO =====
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const offlineBanner = document.getElementById('offlineBanner');
+    const statusLed = document.getElementById('statusLed');
+    const statusText = document.getElementById('statusText');
+    const headerStatus = document.getElementById('headerStatus');
+
+    socket.on('connect', () => {
+      connected = true;
+      socket.emit('register', { role: 'cassa' });
+      offlineBanner.classList.remove('visible');
+      statusLed.classList.add('on');
+      statusLed.classList.remove('off');
+      headerStatus.classList.add('online');
+      headerStatus.classList.remove('offline');
+      statusText.textContent = 'Connesso';
+    });
+
+    socket.on('disconnect', () => {
+      connected = false;
+      offlineBanner.classList.add('visible');
+      statusLed.classList.remove('on');
+      statusLed.classList.add('off');
+      headerStatus.classList.remove('online');
+      headerStatus.classList.add('offline');
+      statusText.textContent = 'Offline';
+    });
+
+    // --- Aggiornamento scorte in tempo reale ---
+    // Quando un piatto si esaurisce o ha scorte basse, aggiorna la UI
+    socket.on('inventory_updated', ({ item_id, stock, status }) => {
+      const item = menuItems.find(i => i.id === item_id);
+      if (!item) return;
+      item.stock = stock;
+      item.status = status;
+
+      const card = document.getElementById(`card-${item_id}`);
+      if (!card) return;
+
+      // Aggiorna stato visivo
+      card.classList.toggle('exhausted', status === 'exhausted');
+
+      // Aggiorna badge scorte basse
+      const existingBadge = card.querySelector('.row-stock-badge');
+      if (status === 'low') {
+        if (existingBadge) {
+          existingBadge.textContent = stock;
+        } else {
+          const badge = document.createElement('span');
+          badge.className = 'row-stock-badge';
+          badge.textContent = stock;
+          const priceEl = card.querySelector('.row-price');
+          card.insertBefore(badge, priceEl);
+        }
+      } else if (existingBadge) {
+        existingBadge.remove();
+      }
+
+      // Se esaurito e l'utente aveva selezionato quantita, resetta
+      if (status === 'exhausted' && quantities[item_id] > 0) {
+        quantities[item_id] = 0;
+        const countEl = document.getElementById(`qty-${item_id}`);
+        if (countEl) {
+          countEl.textContent = '0';
+          countEl.classList.add('zero');
+        }
+        card.classList.remove('active');
+        updateOrderBar();
+      }
+    });
+
+    // Reset inventario completo (da admin)
+    socket.on('inventory_reset', () => {
+      loadMenu();
+    });
+
+    // --- Stampante offline: alert + beep ---
+    const printerAlert = document.getElementById('printerAlert');
+    const printerAlertText = document.getElementById('printerAlertText');
+
+    // Beep audio per alert stampante (Web Audio API, senza file esterni)
+    function beepAlert() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 800;
+        gain.gain.value = 0.3;
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } catch (e) { /* Audio non supportato */ }
+    }
+
+    // Ascolta lo stato delle stampanti dal proxy
+    // La casetta usa la stampante #6 (.208) — mostra alert solo se quella e' offline
+    socket.on('printers_status_update', (statuses) => {
+      // Controlla stampante casetta (#6) e anche ricevuta (#1) che viene usata per tutte le casse
+      const relevantIds = [1, 6];
+      const offlinePrinters = statuses.filter(s => relevantIds.includes(s.id) && !s.online);
+      if (offlinePrinters.length > 0) {
+        const names = offlinePrinters.map(p => p.name || `#${p.id}`).join(', ');
+        printerAlertText.textContent = 'Stampante offline: ' + names;
+        printerAlert.classList.add('visible');
+        beepAlert();
+      } else {
+        printerAlert.classList.remove('visible');
+      }
+    });
+
+    // Richiedi controllo stampanti dopo connessione
+    socket.on('connect', () => {
+      setTimeout(() => socket.emit('request_printer_check'), 2000);
+    });
+
+    // Aggiorna la order bar quando cambia il tavolo
+    document.getElementById('tableInput').addEventListener('input', updateOrderBar);
+
+    // ===== INIT: carica il menu dal server =====
+    loadMenu();
+  </script>
+</body>
+</html>

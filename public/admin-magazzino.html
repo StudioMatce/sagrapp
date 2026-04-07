@@ -148,6 +148,31 @@
       transform: scale(0.97);
     }
 
+    /* Pulsante salva preset (verde) */
+    .btn-preset {
+      height: 44px;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(78, 204, 163, 0.3);
+      background: rgba(78, 204, 163, 0.08);
+      color: #4ecca3;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn-preset:hover {
+      background: rgba(78, 204, 163, 0.15);
+      border-color: rgba(78, 204, 163, 0.5);
+    }
+
+    .btn-preset:active {
+      transform: scale(0.97);
+    }
+
     .filter-group {
       display: flex;
       gap: 6px;
@@ -540,6 +565,7 @@
       .act-btn.medium { min-width: 46px; font-size: 12px; }
       .act-btn.set, .act-btn.reactivate { font-size: 11px; }
       .filter-btn { height: 36px; padding: 0 10px; font-size: 12px; }
+      .btn-preset { height: 40px; padding: 0 14px; font-size: 12px; }
       .action-bar { padding: 10px 12px; gap: 8px; }
       .inventory-list { padding: 0 6px 100px; }
     }
@@ -572,6 +598,7 @@
   <!-- Action Bar -->
   <div class="action-bar">
     <button class="btn-reset" id="btnReset">Reset scorte inizio serata</button>
+    <button class="btn-preset" id="btnSavePreset">Salva preset</button>
     <div class="filter-group">
       <button class="filter-btn active" data-filter="all">Tutti</button>
       <button class="filter-btn" data-filter="low">In esaurimento</button>
@@ -1003,6 +1030,33 @@
     });
 
     // =============================================
+    //  SALVA PRESET — Snapshot delle scorte attuali
+    // =============================================
+
+    document.getElementById('btnSavePreset').addEventListener('click', async () => {
+      // Chiede un nome per il preset
+      const name = prompt('Nome del preset (es. "Serata venerdì", "Scorte standard"):');
+      if (!name || !name.trim()) return;
+
+      try {
+        const res = await fetch('/api/inventory/presets', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ name: name.trim() }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Preset "${name.trim()}" salvato con successo!`);
+        } else {
+          alert('Errore: ' + (data.error || 'Impossibile salvare il preset.'));
+        }
+      } catch (err) {
+        console.error('Errore salvataggio preset:', err);
+        alert('Errore di rete durante il salvataggio del preset.');
+      }
+    });
+
+    // =============================================
     //  SOCKET.IO — Aggiornamenti real-time
     // =============================================
 
@@ -1066,5 +1120,6 @@
     // =============================================
     loadInventory();
   </script>
+<script src="/js/sidebar.js"></script>
 </body>
 </html>

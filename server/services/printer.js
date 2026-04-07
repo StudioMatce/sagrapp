@@ -343,13 +343,14 @@ function buildFoodOrder(order) {
 
 // Comanda bevande — Fuhuihe .204 (printer #2)
 // Filtra per print_to che include 'bevande'
+// Comanda bevande — STAMPA SEMPRE, anche senza bevande (per posate/coperti)
 function buildDrinkOrder(order) {
   const drinkItems = order.items.filter(i =>
     i.print_to && i.print_to.includes('bevande')
   );
-  if (drinkItems.length === 0) return null;
 
   const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+  const coperti = order.coperti || 0;
   const parts = [
     INIT,
     CODEPAGE_CP437,
@@ -361,16 +362,28 @@ function buildDrinkOrder(order) {
     BOLD_OFF,
     text(`Ordine #${order.id}  Tavolo ${order.table}`),
     text(now),
-    text(LINE),
-    ALIGN_LEFT,
-    text(''),
   ];
 
-  drinkItems.forEach(item => {
+  // Stampa sempre i coperti (per le posate del cameriere)
+  if (coperti > 0) {
+    parts.push(text(''));
     parts.push(BOLD_ON, DOUBLE_BOTH);
-    parts.push(text(`  ${item.qty}x ${item.name}`));
+    parts.push(text(`  COPERTI: ${coperti}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
-  });
+  }
+
+  parts.push(text(LINE), ALIGN_LEFT, text(''));
+
+  if (drinkItems.length > 0) {
+    drinkItems.forEach(item => {
+      parts.push(BOLD_ON, DOUBLE_BOTH);
+      parts.push(text(`  ${item.qty}x ${item.name}`));
+      parts.push(NORMAL_SIZE, BOLD_OFF);
+    });
+  } else {
+    // Nessuna bevanda — stampa solo per posate
+    parts.push(text('  (nessuna bevanda)'));
+  }
 
   parts.push(
     text(''),
