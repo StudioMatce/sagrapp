@@ -563,10 +563,15 @@
       .inventory-list { padding: 0 6px 100px; }
     }
 
+    /* Desktop: griglia 2 colonne inventario */
+    @media (min-width: 960px) {
+      .inventory-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+    }
+
     /* Tablet / desktop: layout piu' spaziato */
     @media (min-width: 768px) {
-      .inventory-list { max-width: 900px; margin: 0 auto; }
-      .action-bar { max-width: 900px; margin: 0 auto; padding: 16px 0; border-bottom: none; }
+      .inventory-list { max-width: 1200px; margin: 0 auto; }
+      .action-bar { max-width: 1200px; margin: 0 auto; padding: 16px 0; border-bottom: none; }
       .page-header { padding: 14px 32px; }
       .inv-row { padding: 18px 12px; }
       .inv-name { font-size: 17px; }

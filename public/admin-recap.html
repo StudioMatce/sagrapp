@@ -41,7 +41,7 @@
 
     /* ===== LAYOUT CONTENITORE ===== */
     .report-wrap {
-      max-width: 960px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 24px 16px 60px;
     }
@@ -659,24 +659,24 @@
       </div>
     </section>
 
-    <!-- 3. CLASSIFICA VENDITE -->
-    <section class="section">
-      <div class="section-label">Classifica vendite</div>
-      <div class="card">
-        <div class="ranking-list" id="rankingList"></div>
-      </div>
-    </section>
-
-    <!-- 4. DISTRIBUZIONE ORARIA -->
-    <section class="section">
-      <div class="section-label">Distribuzione oraria</div>
-      <div class="card">
-        <div class="chart-container">
-          <div class="bar-chart" id="barChart"></div>
-          <div class="chart-axis"></div>
+    <!-- 3+4. CLASSIFICA + DISTRIBUZIONE ORARIA (affiancate su desktop) -->
+    <div class="grid-2">
+      <section class="section">
+        <div class="section-label">Classifica vendite</div>
+        <div class="card" style="max-height: 480px; overflow-y: auto;">
+          <div class="ranking-list" id="rankingList"></div>
         </div>
-      </div>
-    </section>
+      </section>
+      <section class="section">
+        <div class="section-label">Distribuzione oraria</div>
+        <div class="card">
+          <div class="chart-container">
+            <div class="bar-chart" id="barChart"></div>
+            <div class="chart-axis"></div>
+          </div>
+        </div>
+      </section>
+    </div>
 
     <!-- 5. MAGAZZINO -->
     <section class="section">
