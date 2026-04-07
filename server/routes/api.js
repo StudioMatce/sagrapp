@@ -59,6 +59,22 @@ function emitToProxy(event, data) {
   return true;
 }
 
+// --- Helper: broadcast lista ordini aperti al tablet operatore ---
+function broadcastOpenOrders() {
+  if (!io) return;
+  const openOrders = orders
+    .filter(o => o.status === 'in_progress')
+    .map(o => ({
+      id: o.id,
+      table: o.table,
+      customer_name: o.customer_name,
+      items_summary: o.items.map(i => `${i.qty}x ${i.name}`).join(', '),
+      total: o.total,
+      created_at: o.created_at,
+    }));
+  io.to('controllo').emit('open_orders_update', { orders: openOrders });
+}
+
 // --- Helper: verifica token admin ---
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
@@ -175,6 +191,77 @@ router.post('/printers/:id/test', (req, res) => {
   });
 });
 
+// Lista ordini aperti (per tablet operatore fisso)
+router.get('/orders/open', (req, res) => {
+  const openOrders = orders
+    .filter(o => o.status === 'in_progress')
+    .map(o => ({
+      id: o.id,
+      table: o.table,
+      customer_name: o.customer_name,
+      items_summary: o.items.map(i => `${i.qty}x ${i.name}`).join(', '),
+      total: o.total,
+      created_at: o.created_at,
+    }));
+  res.json(openOrders);
+});
+
+// Annullamento ordine (dal tablet operatore fisso)
+router.post('/orders/:id/cancel', (req, res) => {
+  const orderId = parseInt(req.params.id);
+  const order = orders.find(o => o.id === orderId);
+
+  if (!order) {
+    return res.status(404).json({ success: false, error: 'Ordine non trovato' });
+  }
+
+  if (order.status === 'cancelled') {
+    return res.json({ success: false, already_cancelled: true, order_number: orderId });
+  }
+
+  const wasFulfilled = order.status === 'completed';
+  order.status = 'cancelled';
+  order.cancelled_at = Date.now();
+
+  // Ripristina le scorte magazzino (come se l'ordine non fosse mai stato fatto)
+  order.items.forEach(item => {
+    if (inventory[item.id]) {
+      inventory[item.id].stock += item.qty;
+      updateInventoryStatus(item.id);
+    }
+  });
+
+  // Ripristina i contatori monitor cuochi
+  let countersChanged = false;
+  order.items.forEach(item => {
+    const menuItem = findMenuItem(item.id);
+    if (menuItem && menuItem.composition) {
+      for (const [piece, count] of Object.entries(menuItem.composition)) {
+        if (counters[piece] !== undefined) {
+          const qty = count * item.qty;
+          // Scala le vendute (da cucinare scende)
+          counters[piece].vendute = Math.max(0, counters[piece].vendute - qty);
+          // Se era già evaso, ripristina anche i pezzi nello scaldavivande
+          if (wasFulfilled) {
+            counters[piece].evasi = Math.max(0, counters[piece].evasi - qty);
+          }
+          countersChanged = true;
+        }
+      }
+    }
+  });
+
+  if (io) {
+    if (countersChanged) {
+      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    }
+    io.emit('order_cancelled', { order_number: orderId, table: order.table });
+    broadcastOpenOrders();
+  }
+
+  res.json({ success: true, order_number: orderId, table: order.table });
+});
+
 // Evasione ordine (dal tablet zona controllo)
 router.post('/orders/:id/fulfill', (req, res) => {
   const orderId = parseInt(req.params.id);
@@ -236,6 +323,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
   if (io) {
     io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
     io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    broadcastOpenOrders();
   }
 
   res.json({ success: true, order_number: orderId, table: order.table });
@@ -344,6 +432,7 @@ router.post('/orders', (req, res) => {
     io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
     io.emit('order_created', order);
     io.to('admin').emit('stats_update', { type: 'new_order', order });
+    broadcastOpenOrders();
   }
 
   // --- STAMPA ---

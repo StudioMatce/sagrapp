@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, counters, inventory, setActiveProxyId } = require('./routes/api');
+const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId } = require('./routes/api');
 
 const app = express();
 const server = http.createServer(app);
@@ -110,6 +110,11 @@ io.on('connection', (socket) => {
     if (role === 'monitor' || role === 'scaldavivande') {
       socket.emit('counters_changed', { counters });
     }
+
+    // Invia la lista ordini aperti al tablet operatore
+    if (role === 'controllo') {
+      sendOpenOrders(socket);
+    }
   });
 
   // --- Scaldavivande: aggiornamento contatori (colonna "pronto") ---
@@ -124,8 +129,20 @@ io.on('connection', (socket) => {
   // --- Zona controllo: evasione ordine ---
   socket.on('order_fulfilled', ({ order_number }) => {
     console.log(`[Controllo] Evasione ordine: ${order_number}`);
-    // Il risultato viene gestito via API REST, qui facciamo broadcast
     io.to('dashboard').to('admin').emit('order_fulfilled_broadcast', { order_number });
+    // Aggiorna la lista ordini aperti su tutti i tablet operatore
+    broadcastOpenOrders();
+  });
+
+  // --- Annullamento ordine: aggiorna lista ordini aperti ---
+  socket.on('order_cancelled_ack', ({ order_number }) => {
+    console.log(`[Controllo] Annullamento ordine: ${order_number}`);
+    broadcastOpenOrders();
+  });
+
+  // --- Nuovo ordine: aggiorna lista ordini aperti ---
+  socket.on('order_created', () => {
+    broadcastOpenOrders();
   });
 
   // --- Print proxy: risultato stampa ---
@@ -175,6 +192,26 @@ io.on('connection', (socket) => {
     broadcastDeviceStatus();
   });
 });
+
+// Invia la lista ordini aperti a un socket o a tutta la room controllo
+function sendOpenOrders(target) {
+  const openOrders = orders
+    .filter(o => o.status === 'in_progress')
+    .map(o => ({
+      id: o.id,
+      table: o.table,
+      customer_name: o.customer_name,
+      items_summary: o.items.map(i => `${i.qty}x ${i.name}`).join(', '),
+      total: o.total,
+      created_at: o.created_at,
+    }));
+  (target || io.to('controllo')).emit('open_orders_update', { orders: openOrders });
+}
+
+// Broadcast ordini aperti a tutti i tablet operatore (chiamato dopo creazione/evasione/annullamento)
+function broadcastOpenOrders() {
+  sendOpenOrders(io.to('controllo'));
+}
 
 // Invia lo stato di tutti i dispositivi connessi alle dashboard
 function broadcastDeviceStatus() {
