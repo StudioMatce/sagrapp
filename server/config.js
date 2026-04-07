@@ -2,11 +2,24 @@ module.exports = {
   // Railway/Render impostano PORT automaticamente
   PORT: process.env.PORT || 3000,
 
-  // PIN accesso admin — configurabile via env per non lasciarlo nel codice
-  ADMIN_PIN: process.env.ADMIN_PIN || '1234',
+  // PIN di accesso per ruolo
+  // Ogni PIN corrisponde a un ruolo specifico
+  PINS: {
+    '0000': { role: 'admin', redirect: '/admin', sidebar: true },
+    '0001': { role: 'cassa_generale', redirect: '/cassa', sidebar: false },
+    '0002': { role: 'operatore', redirect: null, sidebar: false,
+              destinations: [
+                { id: 'cassa-bar', name: 'Cassa Bar', icon: '🍺', url: '/cassa-bar' },
+                { id: 'cassa-casetta', name: 'Cassa Casetta', icon: '🏠', url: '/cassa-casetta' },
+                { id: 'scaldavivande', name: 'Scaldavivande', icon: '🔥', url: '/scaldavivande' },
+                { id: 'controllo', name: 'Zona Controllo', icon: '📋', url: '/controllo' },
+              ]
+            },
+  },
+  // Il monitor cuochi (/monitor) non richiede PIN — accesso diretto via URL
 
-  // Segreto per token sessioni admin
-  ADMIN_TOKEN_SECRET: process.env.ADMIN_TOKEN_SECRET || 'sagrapp-test-2026',
+  // Segreto per token sessioni
+  TOKEN_SECRET: process.env.TOKEN_SECRET || 'sagrapp-test-2026',
 
   // Stampanti — tutte in rete LAN via Powerline (ESC/POS TCP porta 9100)
   PRINTERS: [

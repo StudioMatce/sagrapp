@@ -486,7 +486,7 @@
     // Auth check
     var TOKEN = sessionStorage.getItem('admin_token');
     if (!TOKEN) {
-      window.location.href = '/admin/login';
+      window.location.href = '/';
     }
 
     (async function checkAuth() {
@@ -495,7 +495,7 @@
         var data = await res.json();
         if (!data.valid) {
           sessionStorage.removeItem('admin_token');
-          window.location.href = '/admin/login';
+          window.location.href = '/';
         }
       } catch (e) { /* procedi comunque */ }
     })();

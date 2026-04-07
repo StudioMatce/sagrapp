@@ -777,7 +777,7 @@
     // =============================================
     const TOKEN = sessionStorage.getItem('admin_token');
     if (!TOKEN) {
-      window.location.href = '/admin/login';
+      window.location.href = '/';
     }
 
     (async function verifyToken() {
@@ -786,7 +786,7 @@
         const data = await res.json();
         if (!data.valid) {
           sessionStorage.removeItem('admin_token');
-          window.location.href = '/admin/login';
+          window.location.href = '/';
         }
       } catch {
         // Se il server non risponde, proviamo comunque
@@ -1004,7 +1004,7 @@
         if (res.status === 401) {
           // Token scaduto o non valido
           sessionStorage.removeItem('admin_token');
-          window.location.href = '/admin/login';
+          window.location.href = '/';
           return;
         }
         const data = await res.json();

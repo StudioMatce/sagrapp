@@ -631,7 +631,7 @@
     // =============================================
     const TOKEN = sessionStorage.getItem('admin_token');
     if (!TOKEN) {
-      window.location.href = '/admin/login';
+      window.location.href = '/';
     }
 
     // Verifica validita' token lato server
@@ -641,7 +641,7 @@
         const data = await res.json();
         if (!data.valid) {
           sessionStorage.removeItem('admin_token');
-          window.location.href = '/admin/login';
+          window.location.href = '/';
         }
       } catch {
         // Se il server non risponde, non blocchiamo — riproviamo al prossimo API call

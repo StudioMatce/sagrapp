@@ -548,18 +548,52 @@ router.post('/orders', (req, res) => {
 });
 
 // =============================================
-// ADMIN — LOGIN
+// LOGIN UNIFICATO — PIN per ruolo
 // =============================================
 
-router.post('/admin/login', (req, res) => {
+router.post('/login', (req, res) => {
   const { pin } = req.body;
+  const pinConfig = config.PINS[pin];
 
-  if (pin !== config.ADMIN_PIN) {
+  if (!pinConfig) {
     return res.status(403).json({ error: 'PIN errato' });
   }
 
   const token = crypto.randomBytes(32).toString('hex');
   adminSessions.set(token, {
+    role: pinConfig.role,
+    created: Date.now(),
+    expires: Date.now() + 12 * 60 * 60 * 1000,
+  });
+
+  const response = {
+    success: true,
+    token,
+    role: pinConfig.role,
+    redirect: pinConfig.redirect,
+    sidebar: pinConfig.sidebar,
+  };
+
+  // Per il ruolo operatore, invia anche le destinazioni possibili
+  if (pinConfig.destinations) {
+    response.destinations = pinConfig.destinations;
+  }
+
+  res.json(response);
+});
+
+// Mantieni compatibilità — vecchio endpoint admin/login usa stessi PIN
+router.post('/admin/login', (req, res) => {
+  const { pin } = req.body;
+  const pinConfig = config.PINS[pin];
+
+  if (!pinConfig || pinConfig.role !== 'admin') {
+    return res.status(403).json({ error: 'PIN errato' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  adminSessions.set(token, {
+    role: 'admin',
     created: Date.now(),
     expires: Date.now() + 12 * 60 * 60 * 1000,
   });

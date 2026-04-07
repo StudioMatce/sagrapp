@@ -72,10 +72,6 @@ app.get('/admin/magazzino', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-magazzino.html'));
 });
 
-app.get('/admin/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'admin-login.html'));
-});
-
 app.get('/admin/hardware', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-hardware.html'));
 });
@@ -261,19 +257,8 @@ server.listen(config.PORT, '0.0.0.0', () => {
   console.log('  ==============================');
   console.log('');
   console.log('  Pagine disponibili:');
-  console.log(`    Landing page:     http://localhost:${config.PORT}/`);
-  console.log(`    Cassa generale:   http://localhost:${config.PORT}/cassa`);
-  console.log(`    Cassa bar:        http://localhost:${config.PORT}/cassa-bar`);
-  console.log(`    Cassa casetta:    http://localhost:${config.PORT}/cassa-casetta`);
-  console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor`);
-  console.log(`    Scaldavivande:    http://localhost:${config.PORT}/scaldavivande`);
-  console.log(`    Zona controllo:   http://localhost:${config.PORT}/controllo`);
-  console.log(`    Setup wizard:     http://localhost:${config.PORT}/setup`);
-  console.log(`    Admin login:      http://localhost:${config.PORT}/admin/login`);
-  console.log(`    Admin live:       http://localhost:${config.PORT}/admin`);
-  console.log(`    Admin recap:      http://localhost:${config.PORT}/admin/recap`);
-  console.log(`    Magazzino:        http://localhost:${config.PORT}/admin/magazzino`);
-  console.log(`    Hardware:         http://localhost:${config.PORT}/admin/hardware`);
-  console.log(`    Chiusura turno:   http://localhost:${config.PORT}/admin/chiusura`);
+  console.log(`    Login (PIN):      http://localhost:${config.PORT}/`);
+  console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor  (accesso diretto)`);
+  console.log(`    PIN 0000 → Admin  PIN 0001 → Cassa  PIN 0002 → Operatore`);
   console.log('');
 });

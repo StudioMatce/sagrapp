@@ -2,548 +2,726 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SagrApp — Seleziona Ruolo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SagrApp — Accesso</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep: #060a12;
-      --bg-base: #0a0e17;
-      --bg-card: #111827;
-      --bg-card-hover: #1a2332;
+      --bg: #060a12;
+      --bg-surface: #0c1220;
+      --bg-raised: #111827;
       --border: #1e293b;
-      --border-active: #334155;
       --green: #4ecca3;
-      --green-dim: rgba(78, 204, 163, 0.15);
+      --green-glow: rgba(78, 204, 163, 0.35);
       --red: #e94560;
-      --red-dim: rgba(233, 69, 96, 0.15);
-      --yellow: #ffd93d;
+      --red-glow: rgba(233, 69, 96, 0.4);
       --text: #e2e8f0;
-      --text-dim: #94a3b8;
-      --text-muted: #64748b;
+      --text-dim: rgba(226, 232, 240, 0.5);
+      --text-muted: #475569;
     }
 
-    html { font-size: 15px; }
+    html {
+      font-size: 16px;
+      background: var(--bg);
+    }
 
     body {
-      font-family: 'Outfit', system-ui, sans-serif;
-      background: var(--bg-deep);
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      /* Griglia sottile da control room */
-      background-image:
-        linear-gradient(rgba(78, 204, 163, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(78, 204, 163, 0.03) 1px, transparent 1px);
-      background-size: 48px 48px;
-    }
-
-    /* Forza sidebar chiusa su questa pagina: nasconde il toggle e impedisce il margine */
-    .sa-sidebar { transform: translateX(-220px) !important; }
-    .sa-sidebar-toggle { display: none !important; }
-    .sa-sidebar-overlay { display: none !important; }
-    .sa-page-content { margin-left: 0 !important; }
-
-    /* ===== CONTAINER ===== */
-    .landing-wrap {
-      width: 100%;
-      max-width: 880px;
-      padding: 2.5rem 1.5rem 3rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* ===== HEADER ===== */
-    .landing-header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
-
-    .logo-row {
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .logo-icon {
+    /* Sottile effetto scanline industriale */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(78, 204, 163, 0.008) 2px,
+        rgba(78, 204, 163, 0.008) 4px
+      );
+      z-index: 9999;
+    }
+
+    /* ===== SCHERMATE ===== */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      transition: opacity 300ms ease, transform 300ms ease;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      transform: scale(0.96);
+      pointer-events: none;
+    }
+
+    /* ===== SCHERMATA PIN ===== */
+    .login-box {
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    /* Logo + titolo */
+    .brand {
+      text-align: center;
+    }
+
+    .brand-mark {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
-      height: 44px;
+      width: 56px;
+      height: 56px;
       background: var(--green);
-      color: var(--bg-deep);
-      border-radius: 8px;
-      font-size: 1.3rem;
+      color: var(--bg);
+      border-radius: 12px;
       font-weight: 800;
-      letter-spacing: -0.03em;
-      box-shadow: 0 0 20px rgba(78, 204, 163, 0.25), 0 0 60px rgba(78, 204, 163, 0.08);
+      font-size: 1.5rem;
+      letter-spacing: -0.04em;
+      box-shadow:
+        0 0 30px var(--green-glow),
+        0 0 80px rgba(78, 204, 163, 0.1);
+      margin-bottom: 1rem;
     }
 
-    .logo-text {
+    .brand-title {
       font-weight: 800;
-      font-size: 2rem;
+      font-size: 1.75rem;
       letter-spacing: -0.03em;
-      color: var(--text);
     }
 
-    .landing-subtitle {
+    .brand-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--text-muted);
-      margin-top: 0.5rem;
-    }
-
-    /* Linea decorativa sotto il titolo */
-    .header-line {
-      width: 60px;
-      height: 2px;
-      background: var(--green);
-      margin: 1rem auto 0;
-      border-radius: 1px;
-      opacity: 0.5;
-    }
-
-    /* ===== REDIRECT BANNER (appare se c'è un ruolo salvato) ===== */
-    .redirect-banner {
-      display: none;
-      width: 100%;
-      max-width: 480px;
-      padding: 0.8rem 1.2rem;
-      margin-bottom: 2rem;
-      background: rgba(78, 204, 163, 0.06);
-      border: 1px solid rgba(78, 204, 163, 0.2);
-      border-radius: 8px;
-      font-size: 0.85rem;
-      color: var(--text-dim);
-      text-align: center;
-      animation: banner-in 300ms ease;
-    }
-
-    .redirect-banner.visible { display: block; }
-
-    .redirect-banner .role-name {
-      color: var(--green);
-      font-weight: 600;
-    }
-
-    .redirect-banner .countdown {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.65rem;
       font-weight: 700;
-      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
     }
 
-    .redirect-banner .cancel-btn {
-      display: inline-block;
-      margin-left: 0.75rem;
-      padding: 0.25rem 0.75rem;
-      background: rgba(233, 69, 96, 0.1);
-      border: 1px solid rgba(233, 69, 96, 0.3);
-      border-radius: 4px;
-      color: var(--red);
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 150ms ease;
-    }
-
-    .redirect-banner .cancel-btn:hover {
-      background: rgba(233, 69, 96, 0.2);
-      border-color: var(--red);
-    }
-
-    @keyframes banner-in {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== ROLE GRID ===== */
-    .role-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      width: 100%;
-    }
-
-    /* ===== ROLE CARD ===== */
-    .role-card {
-      position: relative;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.5rem 1.25rem;
-      min-height: 120px;
+    /* PIN dots */
+    .pin-display {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 0.6rem;
-      cursor: pointer;
-      transition: all 200ms ease;
-      text-decoration: none;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      user-select: none;
-      overflow: hidden;
+      gap: 14px;
+      padding: 1rem 0 0.5rem;
     }
 
-    /* Sottile linea superiore verde (spenta di default) */
-    .role-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
+    .pin-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pin-dot.filled {
       background: var(--green);
+      border-color: var(--green);
+      box-shadow: 0 0 10px var(--green-glow);
+      transform: scale(1.15);
+    }
+
+    .pin-dot.error {
+      background: var(--red);
+      border-color: var(--red);
+      box-shadow: 0 0 10px var(--red-glow);
+    }
+
+    /* Messaggio errore sotto i dots */
+    .pin-error {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--red);
+      height: 1.2em;
       opacity: 0;
       transition: opacity 200ms ease;
     }
 
-    .role-card:hover {
-      border-color: rgba(78, 204, 163, 0.4);
-      background: var(--bg-card-hover);
-      box-shadow: 0 0 20px rgba(78, 204, 163, 0.07), 0 0 40px rgba(78, 204, 163, 0.03);
+    .pin-error.visible { opacity: 1; }
+
+    /* Shake animation per PIN errato */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-12px); }
+      30% { transform: translateX(10px); }
+      45% { transform: translateX(-8px); }
+      60% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(2px); }
     }
 
-    .role-card:hover::before { opacity: 1; }
+    .pin-display.shake {
+      animation: shake 500ms ease;
+    }
 
-    .role-card:active {
-      transform: scale(0.97);
+    /* Tastierino numerico */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .key {
+      aspect-ratio: 1.4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-raised);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 120ms ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      /* Profondita' tattile */
+      box-shadow:
+        0 2px 0 rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .key:active {
+      transform: translateY(2px);
+      box-shadow: none;
+      background: rgba(78, 204, 163, 0.08);
+      border-color: rgba(78, 204, 163, 0.3);
+    }
+
+    .key.fn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .key.key-clear {
+      color: var(--red);
+      border-color: rgba(233, 69, 96, 0.15);
+    }
+
+    .key.key-clear:active {
+      background: rgba(233, 69, 96, 0.1);
+      border-color: rgba(233, 69, 96, 0.4);
+    }
+
+    .key.key-enter {
+      color: var(--green);
+      border-color: rgba(78, 204, 163, 0.2);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+    }
+
+    .key.key-enter:active {
+      background: rgba(78, 204, 163, 0.12);
       border-color: var(--green);
     }
 
-    .role-card .card-icon {
+    /* ===== SCHERMATA SCELTA RUOLO (PIN 0002) ===== */
+    .role-screen {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .role-heading {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-dim);
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .role-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 1.75rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-raised);
+      cursor: pointer;
+      transition: all 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .role-btn:active {
+      transform: scale(0.96);
+    }
+
+    .role-btn:hover {
+      border-color: rgba(78, 204, 163, 0.4);
+      background: rgba(78, 204, 163, 0.04);
+      box-shadow: 0 0 24px rgba(78, 204, 163, 0.06);
+    }
+
+    .role-btn .role-icon {
       font-size: 2rem;
       line-height: 1;
     }
 
-    .role-card .card-title {
+    .role-btn .role-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       color: var(--text);
       text-align: center;
     }
 
-    .role-card .card-subtitle {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      text-align: center;
-      line-height: 1.3;
-    }
-
-    /* Badge lucchetto per card admin */
-    .role-card .lock-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 0.7rem;
-      opacity: 0.4;
-    }
-
-    /* Card admin con bordo leggermente diverso */
-    .role-card.admin-card {
-      border-color: rgba(255, 255, 255, 0.06);
-    }
-
-    .role-card.admin-card:hover {
-      border-color: rgba(78, 204, 163, 0.3);
-    }
-
-    /* ===== FOOTER ===== */
-    .landing-footer {
-      margin-top: 2.5rem;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .footer-version {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      opacity: 0.5;
-      letter-spacing: 0.05em;
-    }
-
-    .footer-status {
+    /* ===== FOOTER STATUS ===== */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
+      padding: 0.75rem;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.6rem;
       color: var(--text-muted);
+      letter-spacing: 0.04em;
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
+    .footer-dot {
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: var(--text-muted);
       transition: all 300ms ease;
     }
 
-    .status-dot.online {
+    .footer-dot.online {
       background: var(--green);
-      box-shadow: 0 0 6px var(--green), 0 0 12px rgba(78, 204, 163, 0.3);
-      animation: dot-pulse 2s ease-in-out infinite;
+      box-shadow: 0 0 6px var(--green-glow);
     }
 
-    .status-dot.offline {
+    .footer-dot.offline {
       background: var(--red);
-      box-shadow: 0 0 6px var(--red);
+      box-shadow: 0 0 6px var(--red-glow);
     }
 
-    @keyframes dot-pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    /* ===== REDIRECT BANNER ===== */
+    .redirect-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 0.6rem 1rem;
+      background: rgba(78, 204, 163, 0.06);
+      border-bottom: 1px solid rgba(78, 204, 163, 0.15);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      z-index: 100;
+      animation: slide-down 300ms ease;
     }
 
-    /* ===== RESPONSIVE ===== */
+    .redirect-bar.visible { display: flex; }
 
-    /* Tablet: 2 colonne */
-    @media (max-width: 768px) {
-      .role-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .landing-wrap {
-        padding: 2rem 1rem 2.5rem;
-      }
-
-      .logo-text { font-size: 1.6rem; }
-      .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+    .redirect-bar .role-tag {
+      font-weight: 700;
+      color: var(--green);
     }
 
-    /* Mobile: 1 colonna */
-    @media (max-width: 480px) {
-      .role-grid {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-      }
+    .redirect-bar .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--green);
+    }
 
-      .role-card {
-        flex-direction: row;
-        justify-content: flex-start;
-        padding: 1.1rem 1.25rem;
-        min-height: auto;
-        gap: 1rem;
-      }
+    .redirect-bar .cancel {
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      background: rgba(233, 69, 96, 0.08);
+      color: var(--red);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
 
-      .role-card .card-icon { font-size: 1.6rem; }
+    .redirect-bar .cancel:hover {
+      background: rgba(233, 69, 96, 0.15);
+      border-color: var(--red);
+    }
 
-      .role-card .card-text {
-        text-align: left;
-      }
+    @keyframes slide-down {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
 
-      .role-card .card-title {
-        text-align: left;
-        font-size: 0.72rem;
-      }
-
-      .role-card .card-subtitle {
-        text-align: left;
-        font-size: 0.75rem;
-      }
-
-      .landing-header { margin-bottom: 1.75rem; }
-      .logo-text { font-size: 1.4rem; }
+    /* ===== MOBILE ===== */
+    @media (max-width: 400px) {
+      .login-box { gap: 1.5rem; }
+      .brand-mark { width: 48px; height: 48px; font-size: 1.3rem; }
+      .brand-title { font-size: 1.5rem; }
+      .keypad { max-width: 260px; gap: 8px; }
+      .key { font-size: 1.2rem; }
+      .pin-dot { width: 15px; height: 15px; }
+      .role-btn { padding: 1.25rem 0.75rem; }
     }
   </style>
 </head>
 <body>
 
-  <div class="landing-wrap">
+  <!-- Redirect banner (se ruolo salvato) -->
+  <div class="redirect-bar" id="redirectBar">
+    <span class="role-tag" id="redirectRole">—</span>
+    <span>redirect in</span>
+    <span class="timer" id="redirectTimer">3</span>s
+    <button class="cancel" id="redirectCancel">Annulla</button>
+  </div>
 
-    <!-- ===== HEADER ===== -->
-    <header class="landing-header">
-      <div class="logo-row">
-        <span class="logo-icon">S</span>
-        <span class="logo-text">SagrApp</span>
+  <!-- ===== SCREEN 1: PIN KEYPAD ===== -->
+  <div class="screen" id="screenPin">
+    <div class="login-box">
+
+      <div class="brand">
+        <div class="brand-mark">S</div>
+        <div class="brand-title">SagrApp</div>
+        <div class="brand-label">Inserisci il PIN di accesso</div>
       </div>
-      <div class="landing-subtitle">Seleziona il tuo dispositivo</div>
-      <div class="header-line"></div>
-    </header>
 
-    <!-- ===== REDIRECT BANNER (visibile solo se ruolo salvato) ===== -->
-    <div class="redirect-banner" id="redirectBanner">
-      Ultimo ruolo: <span class="role-name" id="redirectRoleName">—</span>
-      — redirect in <span class="countdown" id="redirectCountdown">3</span>s
-      <button class="cancel-btn" id="redirectCancel">Annulla</button>
-    </div>
-
-    <!-- ===== ROLE GRID ===== -->
-    <div class="role-grid" id="roleGrid">
-      <!-- Generato da JS -->
-    </div>
-
-    <!-- ===== FOOTER ===== -->
-    <footer class="landing-footer">
-      <div class="footer-status">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Connessione...</span>
+      <div>
+        <div class="pin-display" id="pinDisplay">
+          <div class="pin-dot" id="dot0"></div>
+          <div class="pin-dot" id="dot1"></div>
+          <div class="pin-dot" id="dot2"></div>
+          <div class="pin-dot" id="dot3"></div>
+        </div>
+        <div class="pin-error" id="pinError">PIN errato</div>
       </div>
-      <div class="footer-version">SAGRAPP v1.0 — Sagra M.D.G.</div>
-    </footer>
 
+      <div class="keypad" id="keypad">
+        <button class="key" data-val="1">1</button>
+        <button class="key" data-val="2">2</button>
+        <button class="key" data-val="3">3</button>
+        <button class="key" data-val="4">4</button>
+        <button class="key" data-val="5">5</button>
+        <button class="key" data-val="6">6</button>
+        <button class="key" data-val="7">7</button>
+        <button class="key" data-val="8">8</button>
+        <button class="key" data-val="9">9</button>
+        <button class="key fn key-clear" data-val="C">C</button>
+        <button class="key" data-val="0">0</button>
+        <button class="key fn key-enter" data-val="ENTER">ENTRA</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: SCELTA RUOLO (PIN 0002) ===== -->
+  <div class="screen hidden" id="screenRole">
+    <div class="role-screen">
+      <div class="role-heading">Seleziona il tuo ruolo</div>
+      <div class="role-grid" id="roleGrid">
+        <!-- Popolato via JS dopo login con destinations -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer status -->
+  <div class="footer">
+    <span class="footer-dot" id="footerDot"></span>
+    <span id="footerText">Connessione...</span>
+    <span>&mdash; SagrApp v1.0</span>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // =============================================
-    // CONFIGURAZIONE RUOLI
+    // STATO
     // =============================================
-    const ROLES = [
-      { id: 'cassa',        icon: '🛒', title: 'Cassa Generale',  subtitle: 'Ordini cibo + bevande', url: '/cassa' },
-      { id: 'cassa-bar',    icon: '🍺', title: 'Cassa Bar',       subtitle: 'Solo bevande',          url: '/cassa-bar' },
-      { id: 'cassa-casetta',icon: '🏠', title: 'Cassa Casetta',   subtitle: 'Aperitivi e snack',     url: '/cassa-casetta' },
-      { id: 'monitor',      icon: '📺', title: 'Monitor Cuochi',  subtitle: 'TV griglia',            url: '/monitor' },
-      { id: 'scaldavivande',icon: '🔥', title: 'Scaldavivande',   subtitle: 'Tablet cuoco',          url: '/scaldavivande' },
-      { id: 'controllo',    icon: '📋', title: 'Operatore',       subtitle: 'Evasione ordini',       url: '/controllo' },
-      { id: 'admin',        icon: '📊', title: 'Admin',           subtitle: 'Dashboard gestione',    url: '/admin/login', admin: true },
-      { id: 'hardware',     icon: '🔧', title: 'Hardware',        subtitle: 'Test e controllo',      url: '/admin/hardware', admin: true },
-    ];
+    var pin = '';
+    var locked = false; // blocca input durante animazione
+    var loginToken = null;
+    var loginData = null;
 
-    // Mappa url → nome leggibile per il banner redirect
-    const ROLE_NAMES = {};
-    ROLES.forEach(r => { ROLE_NAMES[r.url] = r.title; });
+    // Mappa nomi leggibili per redirect banner
+    var DEST_NAMES = {
+      '/cassa': 'Cassa Generale',
+      '/cassa-bar': 'Cassa Bar',
+      '/cassa-casetta': 'Cassa Casetta',
+      '/admin': 'Admin',
+      '/scaldavivande': 'Scaldavivande',
+      '/controllo': 'Zona Controllo',
+      '/admin/recap': 'Admin Recap',
+      '/admin/magazzino': 'Magazzino',
+      '/admin/hardware': 'Hardware',
+      '/admin/chiusura': 'Chiusura',
+      '/setup': 'Setup',
+    };
 
     // =============================================
-    // GENERA LE CARD
+    // AUTO-REDIRECT (ruolo salvato in localStorage)
     // =============================================
-    function renderCards() {
-      const grid = document.getElementById('roleGrid');
-      grid.innerHTML = ROLES.map(role => {
-        const adminClass = role.admin ? ' admin-card' : '';
-        const lockBadge = role.admin ? '<span class="lock-badge">🔒</span>' : '';
-        return `
-          <div class="role-card${adminClass}" data-url="${role.url}" data-admin="${!!role.admin}" onclick="selectRole(this)">
-            ${lockBadge}
-            <span class="card-icon">${role.icon}</span>
-            <div class="card-text">
-              <div class="card-title">${role.title}</div>
-              <div class="card-subtitle">${role.subtitle}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
+    var redirectInterval = null;
+
+    function checkAutoRedirect() {
+      var savedRole = localStorage.getItem('sagrapp_role');
+      var savedToken = sessionStorage.getItem('sagrapp_token');
+      if (!savedRole || !savedToken) return;
+
+      var bar = document.getElementById('redirectBar');
+      var roleEl = document.getElementById('redirectRole');
+      var timerEl = document.getElementById('redirectTimer');
+
+      roleEl.textContent = DEST_NAMES[savedRole] || savedRole;
+      var count = 3;
+      timerEl.textContent = count;
+      bar.classList.add('visible');
+
+      redirectInterval = setInterval(function() {
+        count--;
+        timerEl.textContent = count;
+        if (count <= 0) {
+          clearInterval(redirectInterval);
+          window.location.href = savedRole;
+        }
+      }, 1000);
+    }
+
+    document.getElementById('redirectCancel').addEventListener('click', function() {
+      if (redirectInterval) clearInterval(redirectInterval);
+      localStorage.removeItem('sagrapp_role');
+      sessionStorage.removeItem('sagrapp_token');
+      document.getElementById('redirectBar').classList.remove('visible');
+    });
+
+    // =============================================
+    // PIN INPUT
+    // =============================================
+    function updateDots() {
+      for (var i = 0; i < 4; i++) {
+        var dot = document.getElementById('dot' + i);
+        dot.classList.toggle('filled', i < pin.length);
+        dot.classList.remove('error');
+      }
+      document.getElementById('pinError').classList.remove('visible');
+    }
+
+    function addDigit(d) {
+      if (locked || pin.length >= 4) return;
+      pin += d;
+      updateDots();
+
+      // Auto-submit a 4 cifre
+      if (pin.length === 4) {
+        submitPin();
+      }
+    }
+
+    function clearPin() {
+      if (locked) return;
+      pin = '';
+      updateDots();
+    }
+
+    async function submitPin() {
+      if (locked || pin.length !== 4) return;
+      locked = true;
+
+      try {
+        var res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pin }),
+        });
+        var data = await res.json();
+
+        if (!res.ok || !data.success) {
+          // PIN errato: shake + dots rossi
+          showPinError();
+          return;
+        }
+
+        // Login riuscito: salva token
+        sessionStorage.setItem('sagrapp_token', data.token);
+        if (data.role === 'admin') {
+          // Compatibilita' con pagine admin che controllano admin_token
+          sessionStorage.setItem('admin_token', data.token);
+        }
+
+        loginToken = data.token;
+        loginData = data;
+
+        // Redirect in base al ruolo
+        if (data.redirect) {
+          // Ruoli con destinazione fissa (admin, cassa_generale)
+          localStorage.setItem('sagrapp_role', data.redirect);
+          window.location.href = data.redirect;
+        } else if (data.destinations) {
+          // Ruolo operatore: mostra scelta ruolo
+          showRoleSelection(data.destinations);
+        }
+
+      } catch (e) {
+        showPinError('Errore rete');
+      }
+    }
+
+    function showPinError(msg) {
+      var display = document.getElementById('pinDisplay');
+      var errorEl = document.getElementById('pinError');
+
+      // Dots rossi
+      for (var i = 0; i < 4; i++) {
+        var dot = document.getElementById('dot' + i);
+        dot.classList.add('error');
+        dot.classList.remove('filled');
+      }
+
+      // Shake
+      display.classList.add('shake');
+
+      // Messaggio
+      if (msg) errorEl.textContent = msg;
+      else errorEl.textContent = 'PIN errato';
+      errorEl.classList.add('visible');
+
+      // Reset dopo animazione
+      setTimeout(function() {
+        display.classList.remove('shake');
+        pin = '';
+        updateDots();
+        locked = false;
+      }, 700);
     }
 
     // =============================================
-    // SELEZIONE RUOLO
+    // SCHERMATA SCELTA RUOLO (PIN 0002)
     // =============================================
-    function selectRole(cardEl) {
-      const url = cardEl.dataset.url;
-      const isAdmin = cardEl.dataset.admin === 'true';
+    function showRoleSelection(destinations) {
+      var grid = document.getElementById('roleGrid');
+      grid.innerHTML = destinations.map(function(d) {
+        return '<button class="role-btn" onclick="selectDestination(\'' + d.url + '\')">' +
+          '<span class="role-icon">' + d.icon + '</span>' +
+          '<span class="role-label">' + d.name + '</span>' +
+        '</button>';
+      }).join('');
 
-      // Per le card admin: se non ha il token, vai al login
-      if (isAdmin && !sessionStorage.getItem('admin_token')) {
-        // Salva la destinazione reale per redirect post-login
-        sessionStorage.setItem('admin_redirect', url);
-        localStorage.setItem('sagrapp_role', url);
-        window.location.href = '/admin/login';
-        return;
-      }
+      // Transizione tra schermate
+      document.getElementById('screenPin').classList.add('hidden');
+      document.getElementById('screenRole').classList.remove('hidden');
+    }
 
-      // Salva il ruolo selezionato e naviga
+    function selectDestination(url) {
       localStorage.setItem('sagrapp_role', url);
       window.location.href = url;
     }
 
     // =============================================
-    // AUTO-REDIRECT (se ruolo salvato)
+    // EVENT LISTENERS — tastierino
     // =============================================
-    let redirectTimer = null;
-    let countdownValue = 3;
+    document.getElementById('keypad').addEventListener('click', function(e) {
+      var btn = e.target.closest('.key');
+      if (!btn) return;
+      var val = btn.dataset.val;
 
-    function startAutoRedirect() {
-      const savedRole = localStorage.getItem('sagrapp_role');
-      if (!savedRole) return;
-
-      const banner = document.getElementById('redirectBanner');
-      const nameEl = document.getElementById('redirectRoleName');
-      const countdownEl = document.getElementById('redirectCountdown');
-
-      // Mostra il nome del ruolo salvato
-      nameEl.textContent = ROLE_NAMES[savedRole] || savedRole;
-      countdownValue = 3;
-      countdownEl.textContent = countdownValue;
-      banner.classList.add('visible');
-
-      // Countdown
-      redirectTimer = setInterval(() => {
-        countdownValue--;
-        countdownEl.textContent = countdownValue;
-
-        if (countdownValue <= 0) {
-          clearInterval(redirectTimer);
-          // Controlla se è una pagina admin e serve il token
-          const role = ROLES.find(r => r.url === savedRole);
-          if (role && role.admin && !sessionStorage.getItem('admin_token')) {
-            sessionStorage.setItem('admin_redirect', savedRole);
-            window.location.href = '/admin/login';
-          } else {
-            window.location.href = savedRole;
-          }
-        }
-      }, 1000);
-    }
-
-    function cancelRedirect() {
-      if (redirectTimer) {
-        clearInterval(redirectTimer);
-        redirectTimer = null;
+      if (val === 'C') {
+        clearPin();
+      } else if (val === 'ENTER') {
+        submitPin();
+      } else {
+        addDigit(val);
       }
-      // Rimuovi il ruolo salvato così non fa redirect al prossimo refresh
-      localStorage.removeItem('sagrapp_role');
-      document.getElementById('redirectBanner').classList.remove('visible');
-    }
+    });
+
+    // Tastiera fisica (per test desktop)
+    document.addEventListener('keydown', function(e) {
+      if (document.getElementById('screenPin').classList.contains('hidden')) return;
+
+      if (e.key >= '0' && e.key <= '9') {
+        addDigit(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Escape') {
+        clearPin();
+      } else if (e.key === 'Enter') {
+        submitPin();
+      }
+    });
 
     // =============================================
-    // SOCKET.IO — solo per lo status in basso
+    // SOCKET.IO — status footer
     // =============================================
-    const socket = io(window.location.origin, {
+    var socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    socket.on('connect', () => {
-      document.getElementById('statusDot').className = 'status-dot online';
-      document.getElementById('statusText').textContent = 'Server online';
+    socket.on('connect', function() {
+      document.getElementById('footerDot').className = 'footer-dot online';
+      document.getElementById('footerText').textContent = 'Server online';
     });
 
-    socket.on('disconnect', () => {
-      document.getElementById('statusDot').className = 'status-dot offline';
-      document.getElementById('statusText').textContent = 'Server offline';
+    socket.on('disconnect', function() {
+      document.getElementById('footerDot').className = 'footer-dot offline';
+      document.getElementById('footerText').textContent = 'Server offline';
     });
 
     // =============================================
     // INIT
     // =============================================
-    renderCards();
-    startAutoRedirect();
-    document.getElementById('redirectCancel').addEventListener('click', cancelRedirect);
+    checkAutoRedirect();
   </script>
-  <script src="/js/sidebar.js"></script>
 </body>
 </html>

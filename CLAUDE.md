@@ -8,7 +8,8 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 - **Database:** In-memory (SQLite previsto per produzione)
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
-- **Navigazione:** Sidebar globale (js/sidebar.js) inclusa in tutte le pagine
+- **Accesso:** Login unificato con PIN (config.js → PINS). Sidebar solo per admin
+- **Navigazione:** Sidebar (js/sidebar.js) solo pagine admin. Pulsante "Esci" su pagine non-admin
 - **Deploy:** VPS con PM2 (attualmente test su localhost:3000)
 
 ## Struttura file
@@ -23,21 +24,20 @@ print-proxy/
   index.js          # Proxy locale che inoltra stampe alle stampanti LAN
 
 public/
-  index.html        # Landing page selezione ruolo (con auto-redirect ultimo ruolo)
+  index.html        # Login unificato con PIN (tastierino + scelta ruolo per operatore)
   cassa.html        # Cassa ordini — 70/30 layout con tab CIBO/BEVANDE
   cassa-bar.html    # Cassa bar (solo bevande, source: 'bar')
   cassa-casetta.html # Cassa casetta aperitivi (source: 'casetta')
-  monitor.html      # Monitor TV cuochi (2 colonne: da cucinare/nello scaldavivande)
+  monitor.html      # Monitor TV cuochi (accesso diretto senza PIN)
   scaldavivande.html # Tablet scaldavivande (+10/+20/+30/+40/+50)
-  controllo.html    # Tablet operatore fisso (lista ordini aperti + tastierino evasione + annullamento)
-  admin.html        # Dashboard admin LIVE
-  admin-login.html  # Login admin PIN
+  controllo.html    # Tablet operatore fisso (lista ordini + tastierino evasione)
+  admin.html        # Dashboard admin LIVE (con sidebar)
   admin-recap.html  # Report post-serata (con omaggi e sconti)
   admin-magazzino.html # Gestione scorte
   admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo)
   admin-chiusura.html  # Procedura chiusura turno (flash summary + PIN re-entry)
   setup.html        # Wizard setup inizio turno (progress bar + device checks)
-  js/sidebar.js     # Sidebar navigazione globale (incluso in tutte le pagine)
+  js/sidebar.js     # Sidebar navigazione (solo pagine admin)
 ```
 
 ## Stampanti (tutte LAN via Powerline, TCP porta 9100)
@@ -148,7 +148,7 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
 - Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.1.md`
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.2.md`
 
 ## Comandi
 ```bash
@@ -156,19 +156,31 @@ node server/index.js    # Avvia il server (porta 3000)
 node print-proxy/index.js  # Avvia il print proxy locale
 ```
 
+## Sistema di accesso (PIN)
+| PIN | Ruolo | Destinazione |
+|---|---|---|
+| 0000 | Admin | `/admin` + sidebar completa |
+| 0001 | Cassa Generale | `/cassa` direttamente |
+| 0002 | Operatore | Scelta: Cassa Bar / Casetta / Scaldavivande / Zona Controllo |
+| (nessuno) | Monitor Cuochi | `/monitor` — accesso diretto via URL, nessun PIN |
+
+- I PIN sono in `config.js` → `PINS`
+- Il token viene salvato in `sessionStorage`, il ruolo in `localStorage`
+- Auto-redirect al ruolo salvato in localStorage (con countdown 3s annullabile)
+- Pagine non-admin hanno pulsante "Esci" (top-left) → torna al login
+- Monitor non ha né login né pulsante Esci (display fisso)
+
 ## Pagine disponibili
-- `/` — Selezione ruolo
-- `/cassa` — Cassa ordini (layout 2 colonne)
-- `/cassa-bar` — Cassa bar (solo bevande)
-- `/cassa-casetta` — Cassa casetta aperitivi
-- `/monitor` — Monitor cuochi (TV)
-- `/scaldavivande` — Tablet scaldavivande
-- `/controllo` — Tablet operatore fisso (ordini aperti + evasione + annullamento)
-- `/test` — Dashboard test hardware
-- `/setup` — Wizard setup inizio turno
-- `/admin/login` — Login admin (PIN: env `ADMIN_PIN`, default 1234, prod 0000)
-- `/admin` — Dashboard admin LIVE
-- `/admin/recap` — Report post-serata
-- `/admin/magazzino` — Gestione scorte
-- `/admin/hardware` — Pannello controllo hardware
-- `/admin/chiusura` — Procedura chiusura turno
+- `/` — Login unificato (tastierino PIN)
+- `/cassa` — Cassa ordini (PIN 0001)
+- `/cassa-bar` — Cassa bar (PIN 0002 → scelta ruolo)
+- `/cassa-casetta` — Cassa casetta aperitivi (PIN 0002 → scelta ruolo)
+- `/monitor` — Monitor cuochi TV (accesso diretto, no PIN)
+- `/scaldavivande` — Tablet scaldavivande (PIN 0002 → scelta ruolo)
+- `/controllo` — Tablet operatore fisso (PIN 0002 → scelta ruolo)
+- `/setup` — Wizard setup inizio turno (admin)
+- `/admin` — Dashboard admin LIVE (PIN 0000)
+- `/admin/recap` — Report post-serata (admin)
+- `/admin/magazzino` — Gestione scorte (admin)
+- `/admin/hardware` — Pannello controllo hardware (admin)
+- `/admin/chiusura` — Procedura chiusura turno (admin)
