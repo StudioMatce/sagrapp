@@ -80,6 +80,10 @@ app.get('/admin/chiusura', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-chiusura.html'));
 });
 
+app.get('/admin/menu', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-menu.html'));
+});
+
 app.get('/setup', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'setup.html'));
 });

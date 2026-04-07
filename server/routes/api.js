@@ -19,6 +19,15 @@ config.MONITOR_ITEMS.forEach(item => {
   counters[item] = { pronto: 0, vendute: 0, evasi: 0 };
 });
 
+// Inizializza campi runtime sui piatti del menu (casses, available)
+config.MENU.forEach(item => {
+  if (item.available === undefined) item.available = true;
+  if (!item.casses) {
+    // Default: bevande → cassa bar, tutto il resto → cassa generale
+    item.casses = item.category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale'];
+  }
+});
+
 // Inventario / scorte — un record per ogni piatto del menu
 const inventory = {};
 config.MENU.forEach(item => {
@@ -168,19 +177,98 @@ router.get('/menu', (req, res) => {
   res.json(menuWithStock);
 });
 
-// Modifica un piatto del menu (disponibilità, prezzo, ecc.)
+// Modifica un piatto del menu (nome, prezzo, casse, composizione, ecc.)
 router.put('/menu/:id', requireAdmin, (req, res) => {
   const menuItem = config.MENU.find(m => m.id === req.params.id);
   if (!menuItem) {
     return res.status(404).json({ error: 'Piatto non trovato' });
   }
 
-  const { price, available, available_date } = req.body;
+  const { name, price, available, available_date, casses, composition, category, station, print_to } = req.body;
+  if (name !== undefined) menuItem.name = String(name).trim();
   if (price !== undefined) menuItem.price = parseFloat(price);
   if (available !== undefined) menuItem.available = !!available;
   if (available_date !== undefined) menuItem.available_date = available_date;
+  if (casses !== undefined && Array.isArray(casses)) menuItem.casses = casses;
+  if (composition !== undefined) menuItem.composition = composition;
+  if (category !== undefined) menuItem.category = category;
+  if (station !== undefined) menuItem.station = station;
+  if (print_to !== undefined && Array.isArray(print_to)) menuItem.print_to = print_to;
+
+  // Aggiorna anche l'inventario se il nome e' cambiato
+  if (name !== undefined && inventory[menuItem.id]) {
+    inventory[menuItem.id].name = menuItem.name;
+  }
+  if (price !== undefined && inventory[menuItem.id]) {
+    inventory[menuItem.id].price = menuItem.price;
+  }
+
+  // Notifica le casse in tempo reale
+  if (io) io.emit('menu_updated', { item: menuItem });
 
   res.json(menuItem);
+});
+
+// Aggiunge un nuovo piatto al menu
+router.post('/menu', requireAdmin, (req, res) => {
+  const { name, price, category, station, print_to, casses, composition, available_date, initial_stock, alert_threshold } = req.body;
+
+  if (!name || price === undefined || !category || !station) {
+    return res.status(400).json({ error: 'Campi obbligatori: name, price, category, station' });
+  }
+
+  // Genera ID dal nome (slug)
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  if (config.MENU.find(m => m.id === id)) {
+    return res.status(409).json({ error: 'Esiste gia\' un piatto con questo ID: ' + id });
+  }
+
+  const newItem = {
+    id,
+    name: String(name).trim(),
+    price: parseFloat(price),
+    category,
+    station,
+    print_to: print_to || (category === 'bevanda' ? ['bevande'] : ['cibo']),
+    casses: casses || (category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale']),
+    available: true,
+    initial_stock: initial_stock || 100,
+    alert_threshold: alert_threshold || 10,
+  };
+
+  if (composition) newItem.composition = composition;
+  if (category === 'speciale') {
+    newItem.special = true;
+    newItem.print_to = ['cibo', 'speciali'];
+    if (available_date) newItem.available_date = available_date;
+  }
+
+  // Aggiungi al menu e all'inventario
+  config.MENU.push(newItem);
+  inventory[id] = {
+    id, name: newItem.name, station, price: newItem.price, category,
+    stock: newItem.initial_stock, initial_stock: newItem.initial_stock,
+    alert_threshold: newItem.alert_threshold, status: 'available',
+  };
+
+  if (io) io.emit('menu_updated', { item: newItem, action: 'added' });
+
+  res.status(201).json(newItem);
+});
+
+// Elimina un piatto dal menu
+router.delete('/menu/:id', requireAdmin, (req, res) => {
+  const idx = config.MENU.findIndex(m => m.id === req.params.id);
+  if (idx === -1) {
+    return res.status(404).json({ error: 'Piatto non trovato' });
+  }
+
+  const removed = config.MENU.splice(idx, 1)[0];
+  delete inventory[req.params.id];
+
+  if (io) io.emit('menu_updated', { item: removed, action: 'deleted' });
+
+  res.json({ success: true, id: req.params.id });
 });
 
 router.get('/printers/status', (req, res) => {

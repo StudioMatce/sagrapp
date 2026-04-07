@@ -36,6 +36,7 @@ public/
   admin-magazzino.html # Gestione scorte
   admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo)
   admin-chiusura.html  # Procedura chiusura turno (flash summary + PIN re-entry)
+  admin-menu.html   # Gestione menu: piatti, prezzi, casse, composizione pezzi
   setup.html        # Wizard setup inizio turno (progress bar + device checks)
   js/sidebar.js     # Sidebar navigazione (solo pagine admin)
 ```
@@ -60,13 +61,27 @@ Se il proxy è offline al momento dell'ordine, i job vengono **accodati in memor
 La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta offline, appare un **banner giallo** + **beep audio** per avvisare il cassiere.
 
 ## Menu e composizione piatti
-- Il menu reale è in `config.js` → `MENU` (42 piatti)
+- Il menu reale è in `config.js` → `MENU` (42 piatti), modificabile a runtime via admin
 - Categorie: primo, secondo, speciale, contorno, condimento, bevanda
 - Postazioni: cucina, piastra, griglia, polenta, bar, speciali
+- Ogni piatto ha `casses` (array): in quali casse è disponibile (`cassa_generale`, `cassa_bar`, `cassa_casetta`)
+- Ogni piatto ha `available` (boolean): se disattivato non appare in nessuna cassa
 - I piatti griglia hanno `composition` che li scompone in pezzi singoli per il monitor cuochi
 - Esempio: "Costicine con polenta" → costicine: 3 pezzi + polenta: 1 porzione
 - I piatti speciali (`special: true`) hanno **doppia stampa**: comanda cibo (.205) + stampante dedicata (.207)
 - I piatti speciali hanno `available_date` — uno diverso per ogni serata della sagra
+
+## Gestione Menu (admin-menu.html)
+- Pagina admin per CRUD piatti: nome, prezzo, categoria, postazione, casse
+- Tab per categoria in alto (filtro rapido)
+- Prezzo editabile inline (click → input → blur salva)
+- Toggle attiva/disattiva per ogni piatto
+- Checkbox per disponibilità nelle 3 casse (Gen/Bar/Cas)
+- Composizione pezzi per piatti griglia
+- Data disponibilità per piatti speciali
+- Form modale per nuovo piatto o modifica completa
+- API: `GET /api/menu`, `PUT /api/menu/:id`, `POST /api/menu`, `DELETE /api/menu/:id`
+- Socket.IO event `menu_updated` per aggiornare le casse in tempo reale
 
 ## Interfaccia cassa (cassa.html)
 - **Layout 70/30**: area piatti a sinistra (70%) con tab CIBO/BEVANDE, colonna ordine a destra (30%)
@@ -148,7 +163,7 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
 - Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.2.md`
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.3.md`
 
 ## Comandi
 ```bash
@@ -183,4 +198,5 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/admin/recap` — Report post-serata (admin)
 - `/admin/magazzino` — Gestione scorte (admin)
 - `/admin/hardware` — Pannello controllo hardware (admin)
+- `/admin/menu` — Gestione menu (admin) — piatti, prezzi, disponibilità casse, composizione
 - `/admin/chiusura` — Procedura chiusura turno (admin)

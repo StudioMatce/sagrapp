@@ -34,6 +34,7 @@
       items: [
         { name: 'Dashboard Live', url: '/admin', icon: '\uD83D\uDCCA' },
         { name: 'Dashboard Recap', url: '/admin/recap', icon: '\uD83D\uDCC8' },
+        { name: 'Gestione Menu', url: '/admin/menu', icon: '\uD83D\uDCCB' },
         { name: 'Magazzino', url: '/admin/magazzino', icon: '\uD83D\uDCE6' },
         { name: 'Controllo Hardware', url: '/admin/hardware', icon: '\uD83D\uDD27' },
         { name: 'Setup Turno', url: '/setup', icon: '\u2699\uFE0F' },

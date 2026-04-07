@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SagrApp — Gestione Menu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #060a12;
+      --card: #111827;
+      --border: #1e293b;
+      --green: #4ecca3;
+      --red: #e94560;
+      --yellow: #ffd93d;
+      --gray: #6c7a89;
+      --cyan: #22d3ee;
+      --text: #e2e8f0;
+      --text-dim: rgba(226, 232, 240, 0.45);
+      --text-mid: rgba(226, 232, 240, 0.65);
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
+        var(--bg);
+      padding: 0;
+    }
+
+    .page-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ===== HEADER ===== */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(6, 10, 18, 0.92);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dish-count-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(78, 204, 163, 0.3);
+      background: rgba(78, 204, 163, 0.08);
+      color: var(--green);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn-add:hover {
+      background: rgba(78, 204, 163, 0.15);
+      border-color: var(--green);
+    }
+
+    .btn-add:active { transform: scale(0.97); }
+
+    /* ===== CATEGORY TABS ===== */
+    .tabs-bar {
+      display: flex;
+      gap: 4px;
+      padding: 16px 0 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .tabs-bar::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      border-color: rgba(226, 232, 240, 0.15);
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.3);
+      color: var(--green);
+    }
+
+    .tab-count {
+      margin-left: 4px;
+      opacity: 0.5;
+    }
+
+    /* ===== CATEGORY GROUP ===== */
+    .cat-group {
+      margin-top: 24px;
+    }
+
+    .cat-group.hidden { display: none; }
+
+    .cat-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ===== DISH ROW ===== */
+    .dish-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      transition: border-color 200ms ease, opacity 200ms ease;
+    }
+
+    .dish-row:hover { border-color: rgba(226, 232, 240, 0.1); }
+    .dish-row.disabled { opacity: 0.4; }
+
+    .dish-row.flash-save {
+      border-color: rgba(78, 204, 163, 0.4);
+    }
+
+    /* Toggle switch */
+    .toggle-wrap {
+      flex-shrink: 0;
+      position: relative;
+      width: 36px;
+      height: 20px;
+    }
+
+    .toggle-wrap input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      background: rgba(108, 122, 137, 0.3);
+      cursor: pointer;
+      transition: background 200ms ease;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: all 200ms ease;
+    }
+
+    .toggle-wrap input:checked + .toggle-track {
+      background: rgba(78, 204, 163, 0.3);
+    }
+
+    .toggle-wrap input:checked + .toggle-track::after {
+      transform: translateX(16px);
+      background: var(--green);
+    }
+
+    /* Info area */
+    .dish-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dish-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dish-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+      flex-wrap: wrap;
+    }
+
+    .dish-composition {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .dish-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(34, 211, 238, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.02em;
+    }
+
+    .dish-station {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Price */
+    .dish-price {
+      flex-shrink: 0;
+      min-width: 72px;
+      text-align: right;
+    }
+
+    .price-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--green);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: all 150ms ease;
+      background: transparent;
+    }
+
+    .price-display:hover {
+      border-color: rgba(78, 204, 163, 0.2);
+      background: rgba(78, 204, 163, 0.04);
+    }
+
+    .price-input {
+      width: 72px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--green);
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 15px;
+      text-align: right;
+      outline: none;
+    }
+
+    /* Casse checkboxes */
+    .casse-group {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .casse-label {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .casse-label input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 150ms ease;
+    }
+
+    .casse-label input[type="checkbox"]:checked {
+      background: rgba(78, 204, 163, 0.2);
+      border-color: var(--green);
+    }
+
+    .casse-label input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 4px;
+      height: 8px;
+      border: solid var(--green);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .casse-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 0.02em;
+    }
+
+    /* Action buttons */
+    .dish-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .act-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms ease;
+    }
+
+    .act-icon:hover {
+      border-color: rgba(226, 232, 240, 0.2);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .act-icon.delete:hover {
+      border-color: rgba(233, 69, 96, 0.3);
+      color: var(--red);
+      background: rgba(233, 69, 96, 0.06);
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+      padding: 20px;
+    }
+
+    .modal-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 200ms ease;
+    }
+
+    .modal-overlay.visible .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms ease;
+    }
+
+    .modal-close:hover { color: var(--red); border-color: rgba(233, 69, 96, 0.3); }
+
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .field-row .field { flex: 1; }
+
+    .field-input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 150ms ease;
+    }
+
+    .field-input:focus { border-color: var(--green); }
+
+    .field-select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236c7a89' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      transition: border-color 150ms ease;
+    }
+
+    .field-select:focus { border-color: var(--green); }
+
+    .field-casses {
+      display: flex;
+      gap: 16px;
+      padding: 6px 0;
+    }
+
+    .field-casses .casse-label { gap: 6px; }
+    .field-casses .casse-text { font-size: 12px; }
+    .field-casses input[type="checkbox"] { width: 18px; height: 18px; }
+
+    /* Composition fields (griglia) */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .comp-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .comp-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: capitalize;
+    }
+
+    .comp-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      transition: border-color 150ms ease;
+    }
+
+    .comp-input:focus { border-color: var(--green); }
+
+    .conditional-field { display: none; }
+    .conditional-field.show { display: flex; }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn-cancel {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-cancel:hover { border-color: rgba(226, 232, 240, 0.2); color: var(--text); }
+
+    .btn-save {
+      padding: 10px 24px;
+      border-radius: 6px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: var(--bg);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-save:hover { box-shadow: 0 0 16px rgba(78, 204, 163, 0.3); }
+    .btn-save:disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--gray);
+    }
+
+    .empty-state-text {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* ===== LOADING ===== */
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 40vh;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 800ms linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .casse-group { display: none; }
+      .dish-row { gap: 8px; padding: 12px; }
+    }
+
+    @media (max-width: 640px) {
+      .page-wrap { padding: 16px 10px 48px; }
+      .dish-name { font-size: 13px; }
+      .price-display { font-size: 13px; }
+      .dish-actions { gap: 2px; }
+      .act-icon { width: 28px; height: 28px; font-size: 12px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .comp-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Subtle grid line texture on the page-wrap background */
+    .page-wrap::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(30, 41, 59, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, 0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrap > * { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-title">Gestione Menu</div>
+    </div>
+    <div class="header-right">
+      <span class="dish-count-badge" id="dishCountBadge">--</span>
+      <button class="btn-add" id="btnAdd">+ Nuovo</button>
+    </div>
+  </header>
+
+  <div class="page-wrap">
+
+    <!-- CATEGORY TABS -->
+    <div class="tabs-bar" id="tabsBar"></div>
+
+    <!-- DISH LIST (grouped by category) -->
+    <div id="menuList">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <div class="loading-text">Caricamento menu...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: Nuovo / Modifica piatto -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Nuovo piatto</div>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Nome piatto</label>
+            <input class="field-input" id="fName" type="text" placeholder="es. Gnocchi al ragu">
+          </div>
+          <div class="field" style="max-width: 120px;">
+            <label class="field-label">Prezzo</label>
+            <input class="field-input" id="fPrice" type="number" step="0.10" min="0" placeholder="0.00" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Categoria</label>
+            <select class="field-select" id="fCategory">
+              <option value="primo">Primo</option>
+              <option value="secondo">Secondo</option>
+              <option value="contorno">Contorno</option>
+              <option value="condimento">Condimento</option>
+              <option value="bevanda">Bevanda</option>
+              <option value="speciale">Speciale</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Postazione</label>
+            <select class="field-select" id="fStation">
+              <option value="cucina">Cucina</option>
+              <option value="piastra">Piastra</option>
+              <option value="griglia">Griglia</option>
+              <option value="polenta">Polenta</option>
+              <option value="bar">Bar</option>
+              <option value="speciali">Speciali</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Casse disponibili</label>
+          <div class="field-casses">
+            <label class="casse-label"><input type="checkbox" id="fCGen" checked> <span class="casse-text">Cassa Generale</span></label>
+            <label class="casse-label"><input type="checkbox" id="fCBar"> <span class="casse-text">Cassa Bar</span></label>
+            <label class="casse-label"><input type="checkbox" id="fCCas"> <span class="casse-text">Cassa Casetta</span></label>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Scorta iniziale</label>
+            <input class="field-input" id="fStock" type="number" min="0" value="100" style="font-family: 'JetBrains Mono', monospace;">
+          </div>
+          <div class="field">
+            <label class="field-label">Soglia allarme</label>
+            <input class="field-input" id="fThreshold" type="number" min="0" value="10" style="font-family: 'JetBrains Mono', monospace;">
+          </div>
+        </div>
+
+        <!-- Composizione — visibile solo se postazione = griglia -->
+        <div class="field conditional-field" id="compSection">
+          <label class="field-label">Composizione pezzi</label>
+          <div class="comp-grid">
+            <div class="comp-field"><span class="comp-label">Costicine</span><input class="comp-input" id="cCosticine" type="number" min="0" step="0.5" value="0"></div>
+            <div class="comp-field"><span class="comp-label">Salsicce</span><input class="comp-input" id="cSalsicce" type="number" min="0" step="0.5" value="0"></div>
+            <div class="comp-field"><span class="comp-label">Sovracoscia</span><input class="comp-input" id="cSovracoscia" type="number" min="0" step="0.5" value="0"></div>
+            <div class="comp-field"><span class="comp-label">Pastin</span><input class="comp-input" id="cPastin" type="number" min="0" step="0.5" value="0"></div>
+            <div class="comp-field"><span class="comp-label">Polenta</span><input class="comp-input" id="cPolenta" type="number" min="0" step="0.5" value="0"></div>
+            <div class="comp-field"><span class="comp-label">Patate</span><input class="comp-input" id="cPatate" type="number" min="0" step="0.5" value="0"></div>
+          </div>
+        </div>
+
+        <!-- Data disponibilita' — visibile solo se categoria = speciale -->
+        <div class="field conditional-field" id="dateSection">
+          <label class="field-label">Data disponibilita</label>
+          <input class="field-input" id="fDate" type="date" style="font-family: 'JetBrains Mono', monospace;">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnModalCancel">Annulla</button>
+        <button class="btn-save" id="btnModalSave">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ===================================================
+    // AUTH
+    // ===================================================
+    var TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) window.location.href = '/';
+
+    (async function checkAuth() {
+      try {
+        var res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        var data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/';
+          return;
+        }
+      } catch (e) { /* procedi */ }
+      loadMenu();
+    })();
+
+    function apiHeaders() {
+      return { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN };
+    }
+
+    // ===================================================
+    // STATO
+    // ===================================================
+    var menu = [];
+    var activeTab = 'tutti';
+
+    var CATEGORIES = [
+      { id: 'tutti', label: 'Tutti' },
+      { id: 'primo', label: 'Primi' },
+      { id: 'secondo', label: 'Secondi' },
+      { id: 'contorno', label: 'Contorni' },
+      { id: 'bevanda', label: 'Bevande' },
+      { id: 'speciale', label: 'Speciali' },
+      { id: 'condimento', label: 'Condimenti' },
+    ];
+
+    var CAT_ORDER = ['primo', 'secondo', 'speciale', 'contorno', 'condimento', 'bevanda'];
+
+    var CASSE_MAP = [
+      { key: 'cassa_generale', label: 'Gen' },
+      { key: 'cassa_bar', label: 'Bar' },
+      { key: 'cassa_casetta', label: 'Cas' },
+    ];
+
+    var COMP_ITEMS = ['costicine', 'salsicce', 'sovracoscia', 'pastin', 'polenta', 'patate'];
+
+    // ===================================================
+    // CARICAMENTO
+    // ===================================================
+    async function loadMenu() {
+      try {
+        var res = await fetch('/api/menu', { headers: apiHeaders() });
+        menu = await res.json();
+        renderTabs();
+        renderMenu();
+      } catch (e) {
+        document.getElementById('menuList').innerHTML =
+          '<div class="empty-state"><div class="empty-state-text">Errore caricamento menu</div></div>';
+      }
+    }
+
+    // ===================================================
+    // TABS
+    // ===================================================
+    function renderTabs() {
+      var bar = document.getElementById('tabsBar');
+      bar.innerHTML = CATEGORIES.map(function(cat) {
+        var count = cat.id === 'tutti' ? menu.length : menu.filter(function(m) { return m.category === cat.id; }).length;
+        return '<button class="tab-btn' + (activeTab === cat.id ? ' active' : '') + '" data-cat="' + cat.id + '">' +
+          cat.label + '<span class="tab-count">' + count + '</span></button>';
+      }).join('');
+
+      bar.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          activeTab = btn.dataset.cat;
+          bar.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          renderMenu();
+        });
+      });
+    }
+
+    // ===================================================
+    // RENDERING MENU
+    // ===================================================
+    function renderMenu() {
+      var filtered = activeTab === 'tutti' ? menu : menu.filter(function(m) { return m.category === activeTab; });
+      document.getElementById('dishCountBadge').textContent = filtered.length + ' / ' + menu.length + ' piatti';
+
+      if (filtered.length === 0) {
+        document.getElementById('menuList').innerHTML =
+          '<div class="empty-state"><div class="empty-state-text">Nessun piatto in questa categoria</div></div>';
+        return;
+      }
+
+      // Raggruppa per categoria
+      var groups = {};
+      CAT_ORDER.forEach(function(c) { groups[c] = []; });
+      filtered.forEach(function(item) {
+        if (!groups[item.category]) groups[item.category] = [];
+        groups[item.category].push(item);
+      });
+
+      var html = '';
+      CAT_ORDER.forEach(function(cat) {
+        if (!groups[cat] || groups[cat].length === 0) return;
+        var catLabel = CATEGORIES.find(function(c) { return c.id === cat; });
+        html += '<div class="cat-group">';
+        html += '<div class="cat-label">' + (catLabel ? catLabel.label : cat) + '</div>';
+        groups[cat].forEach(function(item) {
+          html += renderDishRow(item);
+        });
+        html += '</div>';
+      });
+
+      document.getElementById('menuList').innerHTML = html;
+      bindDishEvents();
+    }
+
+    function renderDishRow(item) {
+      var isAvailable = item.available !== false;
+      var casses = item.casses || [];
+      var compStr = formatComposition(item.composition);
+      var priceStr = item.price.toFixed(2).replace('.', ',');
+
+      var html = '<div class="dish-row' + (isAvailable ? '' : ' disabled') + '" data-id="' + item.id + '">';
+
+      // Toggle
+      html += '<label class="toggle-wrap">';
+      html += '<input type="checkbox" class="dish-toggle" data-id="' + item.id + '"' + (isAvailable ? ' checked' : '') + '>';
+      html += '<span class="toggle-track"></span></label>';
+
+      // Info
+      html += '<div class="dish-info">';
+      html += '<div class="dish-name">' + escapeHtml(item.name) + '</div>';
+      html += '<div class="dish-meta">';
+      html += '<span class="dish-station">' + item.station + '</span>';
+      if (compStr) html += '<span class="dish-composition">' + compStr + '</span>';
+      if (item.available_date) {
+        var d = item.available_date.split('-');
+        html += '<span class="dish-date">' + d[2] + '/' + d[1] + '</span>';
+      }
+      html += '</div></div>';
+
+      // Price
+      html += '<div class="dish-price">';
+      html += '<span class="price-display" data-id="' + item.id + '">&euro; ' + priceStr + '</span>';
+      html += '</div>';
+
+      // Casse
+      html += '<div class="casse-group">';
+      CASSE_MAP.forEach(function(c) {
+        var checked = casses.indexOf(c.key) >= 0 ? ' checked' : '';
+        html += '<label class="casse-label"><input type="checkbox" class="casse-chk" data-id="' + item.id + '" data-casse="' + c.key + '"' + checked + '>';
+        html += '<span class="casse-text">' + c.label + '</span></label>';
+      });
+      html += '</div>';
+
+      // Actions
+      html += '<div class="dish-actions">';
+      html += '<button class="act-icon edit-btn" data-id="' + item.id + '" title="Modifica">&#9998;</button>';
+      html += '<button class="act-icon delete delete-btn" data-id="' + item.id + '" title="Elimina">&times;</button>';
+      html += '</div>';
+
+      html += '</div>';
+      return html;
+    }
+
+    function formatComposition(comp) {
+      if (!comp) return '';
+      var parts = [];
+      COMP_ITEMS.forEach(function(key) {
+        if (comp[key] && comp[key] > 0) {
+          parts.push(comp[key] + ' ' + key);
+        }
+      });
+      return parts.length ? parts.join(' + ') : '';
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ===================================================
+    // EVENT BINDING
+    // ===================================================
+    function bindDishEvents() {
+      // Toggle disponibilita'
+      document.querySelectorAll('.dish-toggle').forEach(function(el) {
+        el.addEventListener('change', function() {
+          var id = el.dataset.id;
+          var available = el.checked;
+          var row = el.closest('.dish-row');
+          row.classList.toggle('disabled', !available);
+          saveDish(id, { available: available });
+        });
+      });
+
+      // Click su prezzo → input inline
+      document.querySelectorAll('.price-display').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = el.dataset.id;
+          var item = menu.find(function(m) { return m.id === id; });
+          if (!item) return;
+
+          var input = document.createElement('input');
+          input.type = 'number';
+          input.step = '0.10';
+          input.min = '0';
+          input.value = item.price.toFixed(2);
+          input.className = 'price-input';
+
+          el.replaceWith(input);
+          input.focus();
+          input.select();
+
+          function save() {
+            var newPrice = parseFloat(input.value);
+            if (isNaN(newPrice) || newPrice < 0) newPrice = item.price;
+            item.price = newPrice;
+            saveDish(id, { price: newPrice });
+
+            var span = document.createElement('span');
+            span.className = 'price-display';
+            span.dataset.id = id;
+            span.innerHTML = '&euro; ' + newPrice.toFixed(2).replace('.', ',');
+            input.replaceWith(span);
+            // Ri-aggancia l'evento
+            span.addEventListener('click', function() {
+              // Ricrea l'input
+              document.querySelectorAll('.price-display[data-id="' + id + '"]').forEach(function(s) { s.click(); });
+            });
+            bindPriceClick(span);
+          }
+
+          input.addEventListener('blur', save);
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = item.price.toFixed(2); input.blur(); }
+          });
+        });
+      });
+
+      // Checkbox casse
+      document.querySelectorAll('.casse-chk').forEach(function(el) {
+        el.addEventListener('change', function() {
+          var id = el.dataset.id;
+          // Leggi tutti i checkbox per questo piatto
+          var checks = document.querySelectorAll('.casse-chk[data-id="' + id + '"]');
+          var casses = [];
+          checks.forEach(function(c) { if (c.checked) casses.push(c.dataset.casse); });
+          saveDish(id, { casses: casses });
+          // Aggiorna lo stato locale
+          var item = menu.find(function(m) { return m.id === id; });
+          if (item) item.casses = casses;
+        });
+      });
+
+      // Modifica
+      document.querySelectorAll('.edit-btn').forEach(function(el) {
+        el.addEventListener('click', function() {
+          openEditModal(el.dataset.id);
+        });
+      });
+
+      // Elimina
+      document.querySelectorAll('.delete-btn').forEach(function(el) {
+        el.addEventListener('click', function() {
+          deleteDish(el.dataset.id);
+        });
+      });
+    }
+
+    function bindPriceClick(span) {
+      span.addEventListener('click', function() {
+        var id = span.dataset.id;
+        var item = menu.find(function(m) { return m.id === id; });
+        if (!item) return;
+
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.10';
+        input.min = '0';
+        input.value = item.price.toFixed(2);
+        input.className = 'price-input';
+
+        span.replaceWith(input);
+        input.focus();
+        input.select();
+
+        function save() {
+          var newPrice = parseFloat(input.value);
+          if (isNaN(newPrice) || newPrice < 0) newPrice = item.price;
+          item.price = newPrice;
+          saveDish(id, { price: newPrice });
+
+          var newSpan = document.createElement('span');
+          newSpan.className = 'price-display';
+          newSpan.dataset.id = id;
+          newSpan.innerHTML = '&euro; ' + newPrice.toFixed(2).replace('.', ',');
+          input.replaceWith(newSpan);
+          bindPriceClick(newSpan);
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = item.price.toFixed(2); input.blur(); }
+        });
+      });
+    }
+
+    // ===================================================
+    // API: SALVATAGGIO
+    // ===================================================
+    async function saveDish(id, fields) {
+      try {
+        var res = await fetch('/api/menu/' + encodeURIComponent(id), {
+          method: 'PUT',
+          headers: apiHeaders(),
+          body: JSON.stringify(fields),
+        });
+        var updated = await res.json();
+        // Aggiorna stato locale
+        var idx = menu.findIndex(function(m) { return m.id === id; });
+        if (idx >= 0 && updated.id) Object.assign(menu[idx], updated);
+
+        // Flash di conferma sulla riga
+        var row = document.querySelector('.dish-row[data-id="' + id + '"]');
+        if (row) {
+          row.classList.add('flash-save');
+          setTimeout(function() { row.classList.remove('flash-save'); }, 400);
+        }
+      } catch (e) {
+        console.error('Errore salvataggio:', e);
+      }
+    }
+
+    async function deleteDish(id) {
+      var item = menu.find(function(m) { return m.id === id; });
+      if (!item) return;
+      if (!confirm('Eliminare "' + item.name + '" dal menu?')) return;
+
+      try {
+        await fetch('/api/menu/' + encodeURIComponent(id), {
+          method: 'DELETE',
+          headers: apiHeaders(),
+        });
+        menu = menu.filter(function(m) { return m.id !== id; });
+        renderTabs();
+        renderMenu();
+      } catch (e) {
+        console.error('Errore eliminazione:', e);
+      }
+    }
+
+    // ===================================================
+    // MODAL: NUOVO / MODIFICA
+    // ===================================================
+    var editingId = null; // null = nuovo, altrimenti id del piatto in modifica
+
+    var modalOverlay = document.getElementById('modalOverlay');
+    var fCategory = document.getElementById('fCategory');
+    var fStation = document.getElementById('fStation');
+    var compSection = document.getElementById('compSection');
+    var dateSection = document.getElementById('dateSection');
+
+    document.getElementById('btnAdd').addEventListener('click', function() { openNewModal(); });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('btnModalCancel').addEventListener('click', closeModal);
+    document.getElementById('btnModalSave').addEventListener('click', handleSave);
+
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    // Mostra/nascondi campi condizionali in base a categoria e postazione
+    fCategory.addEventListener('change', updateConditionalFields);
+    fStation.addEventListener('change', updateConditionalFields);
+
+    function updateConditionalFields() {
+      var cat = fCategory.value;
+      var station = fStation.value;
+
+      compSection.classList.toggle('show', station === 'griglia');
+      dateSection.classList.toggle('show', cat === 'speciale');
+    }
+
+    function openNewModal() {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = 'Nuovo piatto';
+      document.getElementById('fName').value = '';
+      document.getElementById('fPrice').value = '';
+      fCategory.value = 'primo';
+      fStation.value = 'cucina';
+      document.getElementById('fCGen').checked = true;
+      document.getElementById('fCBar').checked = false;
+      document.getElementById('fCCas').checked = false;
+      document.getElementById('fStock').value = '100';
+      document.getElementById('fThreshold').value = '10';
+      document.getElementById('fDate').value = '';
+      COMP_ITEMS.forEach(function(key) {
+        var el = document.getElementById('c' + key.charAt(0).toUpperCase() + key.slice(1));
+        if (el) el.value = '0';
+      });
+      updateConditionalFields();
+      modalOverlay.classList.add('visible');
+      document.getElementById('fName').focus();
+    }
+
+    function openEditModal(id) {
+      var item = menu.find(function(m) { return m.id === id; });
+      if (!item) return;
+
+      editingId = id;
+      document.getElementById('modalTitle').textContent = 'Modifica piatto';
+      document.getElementById('fName').value = item.name;
+      document.getElementById('fPrice').value = item.price;
+      fCategory.value = item.category;
+      fStation.value = item.station;
+
+      var casses = item.casses || [];
+      document.getElementById('fCGen').checked = casses.indexOf('cassa_generale') >= 0;
+      document.getElementById('fCBar').checked = casses.indexOf('cassa_bar') >= 0;
+      document.getElementById('fCCas').checked = casses.indexOf('cassa_casetta') >= 0;
+
+      document.getElementById('fStock').value = item.initial_stock || 100;
+      document.getElementById('fThreshold').value = item.alert_threshold || 10;
+      document.getElementById('fDate').value = item.available_date || '';
+
+      var comp = item.composition || {};
+      COMP_ITEMS.forEach(function(key) {
+        var el = document.getElementById('c' + key.charAt(0).toUpperCase() + key.slice(1));
+        if (el) el.value = comp[key] || 0;
+      });
+
+      updateConditionalFields();
+      modalOverlay.classList.add('visible');
+      document.getElementById('fName').focus();
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('visible');
+      editingId = null;
+    }
+
+    async function handleSave() {
+      var name = document.getElementById('fName').value.trim();
+      var price = parseFloat(document.getElementById('fPrice').value);
+      var category = fCategory.value;
+      var station = fStation.value;
+
+      if (!name || isNaN(price)) {
+        document.getElementById('fName').style.borderColor = name ? '' : 'var(--red)';
+        document.getElementById('fPrice').style.borderColor = isNaN(price) ? 'var(--red)' : '';
+        return;
+      }
+
+      var casses = [];
+      if (document.getElementById('fCGen').checked) casses.push('cassa_generale');
+      if (document.getElementById('fCBar').checked) casses.push('cassa_bar');
+      if (document.getElementById('fCCas').checked) casses.push('cassa_casetta');
+
+      var payload = { name: name, price: price, category: category, station: station, casses: casses };
+
+      // Composizione (solo se griglia)
+      if (station === 'griglia') {
+        var composition = {};
+        var hasComp = false;
+        COMP_ITEMS.forEach(function(key) {
+          var el = document.getElementById('c' + key.charAt(0).toUpperCase() + key.slice(1));
+          var val = parseFloat(el ? el.value : 0);
+          if (val > 0) { composition[key] = val; hasComp = true; }
+        });
+        if (hasComp) payload.composition = composition;
+      }
+
+      // Data (solo se speciale)
+      if (category === 'speciale') {
+        var dateVal = document.getElementById('fDate').value;
+        if (dateVal) payload.available_date = dateVal;
+      }
+
+      var btn = document.getElementById('btnModalSave');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio...';
+
+      try {
+        if (editingId) {
+          // Modifica esistente
+          var res = await fetch('/api/menu/' + encodeURIComponent(editingId), {
+            method: 'PUT',
+            headers: apiHeaders(),
+            body: JSON.stringify(payload),
+          });
+          var updated = await res.json();
+          var idx = menu.findIndex(function(m) { return m.id === editingId; });
+          if (idx >= 0 && updated.id) Object.assign(menu[idx], updated);
+        } else {
+          // Nuovo piatto
+          payload.initial_stock = parseInt(document.getElementById('fStock').value) || 100;
+          payload.alert_threshold = parseInt(document.getElementById('fThreshold').value) || 10;
+
+          var res2 = await fetch('/api/menu', {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify(payload),
+          });
+          if (!res2.ok) {
+            var err = await res2.json();
+            alert('Errore: ' + (err.error || 'Impossibile creare il piatto'));
+            return;
+          }
+          var newItem = await res2.json();
+          menu.push(newItem);
+        }
+
+        closeModal();
+        renderTabs();
+        renderMenu();
+      } catch (e) {
+        console.error('Errore salvataggio:', e);
+        alert('Errore di rete');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salva';
+      }
+    }
+
+    // ===================================================
+    // SOCKET.IO — Aggiornamenti real-time
+    // ===================================================
+    var socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    socket.on('connect', function() {
+      socket.emit('register', { role: 'admin' });
+    });
+
+    // Quando un altro client modifica il menu
+    socket.on('menu_updated', function(data) {
+      if (!data || !data.item) return;
+
+      if (data.action === 'deleted') {
+        menu = menu.filter(function(m) { return m.id !== data.item.id; });
+      } else if (data.action === 'added') {
+        if (!menu.find(function(m) { return m.id === data.item.id; })) {
+          menu.push(data.item);
+        }
+      } else {
+        // Update
+        var idx = menu.findIndex(function(m) { return m.id === data.item.id; });
+        if (idx >= 0) Object.assign(menu[idx], data.item);
+      }
+
+      renderTabs();
+      renderMenu();
+    });
+  </script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>
