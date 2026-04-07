@@ -19,7 +19,7 @@
       font-family: 'Outfit', sans-serif;
       background: #060a12;
       color: #f0f4f8;
-      min-height: 100%;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
@@ -29,43 +29,96 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ===== HEADER ===== */
-    .header {
+    /* ===== LAYOUT PRINCIPALE: 70% piatti + 30% colonna ordine ===== */
+    .app-shell {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .menu-area {
+      flex: 7;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .order-column {
+      flex: 3;
+      min-width: 320px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    /* ===== TAB BAR ===== */
+    .tab-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
+      gap: 4px;
+      padding: 10px 14px;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
-    .header-left {
+    .tab-btn {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .header-title {
-      font-weight: 700;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(240, 244, 248, 0.45);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
       font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgba(240, 244, 248, 0.5);
+      cursor: pointer;
+      transition: all 150ms ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .header-last-order {
+    .tab-btn:active { transform: scale(0.97); }
+
+    .tab-btn.active {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.35);
+      color: #4ecca3;
+    }
+
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: #4ecca3;
+      color: #060a12;
       font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
       font-size: 11px;
-      font-weight: 700;
-      color: rgba(78, 204, 163, 0.6);
-      opacity: 0;
-      transition: opacity 300ms ease;
+      line-height: 1;
     }
 
-    .header-last-order.visible { opacity: 1; }
+    .tab-badge.hidden { display: none; }
 
-    .header-status {
+    .tab-check {
+      font-size: 14px;
+      margin-left: -2px;
+      display: none;
+    }
+
+    .tab-check.visible { display: inline; }
+
+    .tab-spacer { flex: 1; }
+
+    .tab-status {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -75,8 +128,8 @@
       color: #6c7a89;
     }
 
-    .header-status.online { color: #4ecca3; }
-    .header-status.offline { color: #e94560; }
+    .tab-status.online { color: #4ecca3; }
+    .tab-status.offline { color: #e94560; }
 
     .status-led {
       width: 8px;
@@ -89,44 +142,60 @@
     .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
     .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
 
-    /* ===== AREA MENU — colonna singola, ultra-compatta ===== */
-    .menu-wrapper {
+    /* ===== AREA SCROLLABILE MENU ===== */
+    .menu-scroll {
       flex: 1;
-      padding: 8px 10px 110px;
       overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px 10px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
     }
 
-    /* Label di categoria sopra ogni gruppo */
-    .cat-label {
+    .menu-scroll::-webkit-scrollbar { width: 6px; }
+    .menu-scroll::-webkit-scrollbar-track { background: transparent; }
+    .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .section-header {
+      padding: 12px 8px 6px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgba(78, 204, 163, 0.45);
-      padding: 10px 8px 4px;
+      letter-spacing: 0.12em;
+      color: rgba(78, 204, 163, 0.5);
+    }
+
+    .section-header:first-child { padding-top: 4px; }
+
+    .sep {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.05);
+      margin: 6px 8px;
     }
 
     /* ===== RIGA PIATTO ===== */
     .menu-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
-      border-radius: 6px;
-      transition: background 120ms ease;
-      min-height: 38px;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      transition: all 120ms ease;
+      min-height: 44px;
     }
 
-    .menu-row:active {
-      background: rgba(255, 255, 255, 0.04);
-    }
+    .menu-row:active { background: rgba(255, 255, 255, 0.03); }
 
     .menu-row.active {
       background: rgba(78, 204, 163, 0.06);
+      border-color: rgba(78, 204, 163, 0.2);
     }
 
-    /* Piatti esauriti: opacità ridotta e non cliccabili */
     .menu-row.exhausted {
       opacity: 0.3;
       pointer-events: none;
@@ -135,32 +204,26 @@
     .row-name {
       flex: 1;
       font-weight: 500;
-      font-size: 13px;
-      color: rgba(240, 244, 248, 0.8);
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.75);
       line-height: 1.2;
       min-width: 0;
     }
 
-    .menu-row.active .row-name {
-      color: #f0f4f8;
-      font-weight: 600;
-    }
+    .menu-row.active .row-name { color: #f0f4f8; font-weight: 600; }
 
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 12px;
-      color: rgba(78, 204, 163, 0.6);
+      font-size: 13px;
+      color: rgba(78, 204, 163, 0.5);
       white-space: nowrap;
-      min-width: 46px;
+      min-width: 52px;
       text-align: right;
     }
 
-    .menu-row.active .row-price {
-      color: #4ecca3;
-    }
+    .menu-row.active .row-price { color: #4ecca3; }
 
-    /* Badge scorte basse */
     .row-stock-badge {
       font-family: 'JetBrains Mono', monospace;
       font-size: 9px;
@@ -172,29 +235,30 @@
       flex-shrink: 0;
     }
 
-    /* ===== STEPPER COMPATTO ===== */
+    /* ===== STEPPER ===== */
     .row-stepper {
       display: flex;
       align-items: center;
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 34px;
-      height: 32px;
+      width: 40px;
+      height: 38px;
       background: rgba(255, 255, 255, 0.02);
       border: none;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 800;
       cursor: pointer;
       touch-action: manipulation;
       transition: background 80ms ease;
       line-height: 1;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .step-btn:active { background: rgba(255, 255, 255, 0.1); }
@@ -202,145 +266,258 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 28px;
+      width: 32px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 14px;
+      font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 32px;
-      line-height: 32px;
+      height: 38px;
+      line-height: 38px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
 
-    .step-count.zero { color: rgba(255, 255, 255, 0.15); }
+    .step-count.zero { color: rgba(255, 255, 255, 0.12); }
 
-    /* ===== SEPARATORE tra gruppi ===== */
-    .sep {
-      height: 1px;
-      background: rgba(255, 255, 255, 0.06);
-      margin: 4px 8px;
+    /* ===== COLONNA ORDINE ===== */
+    .order-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
     }
 
-    /* ===== ORDER BAR — fisso in basso ===== */
-    .order-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+    .order-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 16px;
+      color: rgba(240, 244, 248, 0.5);
+      letter-spacing: 0.02em;
+    }
+
+    .order-last {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(78, 204, 163, 0.5);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+
+    .order-last.visible { opacity: 1; }
+
+    /* ===== FORM ORDINE ===== */
+    .order-form {
+      padding: 12px 16px;
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      flex-direction: column;
       gap: 10px;
-      padding: 10px 14px;
-      background: rgba(10, 14, 22, 0.96);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 50;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
     }
 
-    .table-field {
+    .form-field {
       display: flex;
       align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.04);
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.03);
       border: 1.5px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 6px 8px;
-      flex-shrink: 0;
+      padding: 6px 10px;
       transition: border-color 200ms ease;
     }
 
-    .table-field.error {
-      border-color: #e94560;
-      animation: shake 300ms ease;
-    }
+    .form-field:focus-within { border-color: rgba(78, 204, 163, 0.3); }
+    .form-field.flex-1 { flex: 1; }
 
-    @keyframes shake {
-      25% { transform: translateX(-4px); }
-      50% { transform: translateX(4px); }
-      75% { transform: translateX(-2px); }
-    }
-
-    .table-label {
+    .field-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      color: rgba(240, 244, 248, 0.35);
+      color: rgba(240, 244, 248, 0.3);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
-    .table-field input {
-      width: 40px;
+    .form-field input[type="number"] {
+      width: 44px;
       background: none;
       border: none;
       outline: none;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       text-align: center;
       -moz-appearance: textfield;
     }
 
-    .table-field input::placeholder { color: rgba(255, 255, 255, 0.15); }
-    .table-field input::-webkit-outer-spin-button,
-    .table-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .form-field input[type="number"]::-webkit-outer-spin-button,
+    .form-field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .form-field input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
 
-    .order-summary {
-      flex: 1;
-      text-align: right;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 1px;
+    /* ===== RIEPILOGO ORDINE ===== */
+    .order-summary-label {
+      padding: 10px 16px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.25);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
     }
 
-    .order-total {
+    .order-items-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+
+    .order-items-scroll::-webkit-scrollbar { width: 4px; }
+    .order-items-scroll::-webkit-scrollbar-track { background: transparent; }
+    .order-items-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 2px; }
+
+    .order-empty {
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(240, 244, 248, 0.15);
+      font-style: italic;
+    }
+
+    .order-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      transition: background 100ms ease;
+    }
+
+    .order-item-row:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .order-item-qty {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(20px, 5vw, 28px);
+      font-size: 13px;
       color: #4ecca3;
-      line-height: 1;
-      transition: color 150ms ease;
+      min-width: 26px;
     }
 
-    .order-total.empty { color: rgba(78, 204, 163, 0.25); }
+    .order-item-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(240, 244, 248, 0.7);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    .order-count {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(240, 244, 248, 0.35);
-      line-height: 1;
-      min-height: 13px;
+    .order-item-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.4);
+      white-space: nowrap;
+    }
+
+    .order-item-remove {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.2);
+      background: rgba(233, 69, 96, 0.06);
+      color: #e94560;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms ease;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .order-item-remove:active {
+      background: rgba(233, 69, 96, 0.2);
+      transform: scale(0.9);
+    }
+
+    /* ===== FOOTER ORDINE ===== */
+    .order-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+
+    .totals-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .total-row.grand-total .total-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .total-row.grand-total .total-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 800;
+      color: #4ecca3;
+    }
+
+    .total-row.grand-total .total-value.empty {
+      color: rgba(78, 204, 163, 0.2);
     }
 
     .btn-order {
-      padding: 14px 20px;
+      width: 100%;
+      padding: 16px 20px;
       background: rgba(78, 204, 163, 0.12);
       border: 2px solid rgba(78, 204, 163, 0.3);
       border-radius: 10px;
       color: #4ecca3;
       font-family: 'Outfit', sans-serif;
       font-weight: 700;
-      font-size: clamp(14px, 3.5vw, 18px);
-      letter-spacing: 0.06em;
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       cursor: pointer;
       touch-action: manipulation;
       transition: all 120ms ease;
-      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn-order:active:not(.disabled) {
-      transform: scale(0.95);
+      transform: scale(0.97);
       background: rgba(78, 204, 163, 0.3);
       border-color: #4ecca3;
     }
 
-    .btn-order.disabled { opacity: 0.25; pointer-events: none; }
+    .btn-order.disabled { opacity: 0.2; pointer-events: none; }
 
     /* ===== OVERLAYS ===== */
     .overlay {
@@ -350,20 +527,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
+      z-index: 1000;
       opacity: 0;
       pointer-events: none;
       transition: opacity 200ms ease;
     }
 
     .overlay.visible { opacity: 1; pointer-events: auto; }
-    .overlay-success { background: rgba(78, 204, 163, 0.93); }
-    .overlay-error { background: rgba(233, 69, 96, 0.93); }
+    .overlay-success { background: rgba(78, 204, 163, 0.95); }
+    .overlay-error { background: rgba(233, 69, 96, 0.95); }
 
     .overlay-number {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(64px, 20vw, 130px);
+      font-size: clamp(64px, 18vw, 130px);
       line-height: 1;
       color: #fff;
       margin-bottom: 8px;
@@ -371,14 +548,14 @@
 
     .overlay-text {
       font-weight: 700;
-      font-size: clamp(18px, 4.5vw, 30px);
+      font-size: clamp(18px, 4vw, 30px);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #fff;
     }
 
     .overlay-sub {
-      font-size: clamp(14px, 3vw, 20px);
+      font-size: clamp(14px, 2.5vw, 20px);
       font-weight: 500;
       color: rgba(255, 255, 255, 0.8);
       margin-top: 6px;
@@ -393,16 +570,16 @@
     }
 
     .print-badge {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 20px;
       background: rgba(255, 255, 255, 0.2);
       color: #fff;
       letter-spacing: 0.03em;
     }
 
-    /* ===== BANNER DISCONNESSIONE ===== */
+    /* ===== BANNERS ===== */
     .offline-banner {
       position: fixed;
       top: 0;
@@ -416,14 +593,13 @@
       font-size: 15px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      z-index: 200;
+      z-index: 2000;
       transform: translateY(-100%);
       transition: transform 300ms ease;
     }
 
     .offline-banner.visible { transform: translateY(0); }
 
-    /* ===== BANNER STAMPANTE OFFLINE ===== */
     .printer-alert {
       position: fixed;
       top: 0;
@@ -437,7 +613,7 @@
       font-size: 13px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      z-index: 190;
+      z-index: 1900;
       transform: translateY(-100%);
       transition: transform 300ms ease;
       display: flex;
@@ -447,13 +623,9 @@
     }
 
     .printer-alert.visible { transform: translateY(0); }
+    .printer-alert .alert-icon { font-size: 16px; line-height: 1; }
 
-    .printer-alert .alert-icon {
-      font-size: 16px;
-      line-height: 1;
-    }
-
-    /* ===== EMPTY STATE — quando il menu non carica ===== */
+    /* ===== EMPTY STATE ===== */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -464,20 +636,31 @@
       gap: 12px;
     }
 
-    .empty-state-icon {
-      font-size: 48px;
-      opacity: 0.3;
+    .empty-state-icon { font-size: 48px; opacity: 0.3; }
+    .empty-state-text { font-size: 15px; font-weight: 600; color: rgba(240, 244, 248, 0.3); }
+    .empty-state-sub { font-size: 12px; color: rgba(240, 244, 248, 0.15); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .order-column { min-width: 280px; }
     }
 
-    .empty-state-text {
-      font-size: 15px;
-      font-weight: 600;
-      color: rgba(240, 244, 248, 0.3);
-    }
-
-    .empty-state-sub {
-      font-size: 12px;
-      color: rgba(240, 244, 248, 0.15);
+    @media (max-width: 700px) {
+      .app-shell {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+      .menu-area {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        min-height: 50vh;
+      }
+      .order-column {
+        min-width: 100%;
+        max-width: 100%;
+        min-height: 50vh;
+      }
     }
 
     .btn-esci {
@@ -505,44 +688,78 @@
 <body>
   <button class="btn-esci" onclick="localStorage.removeItem('sagrapp_role');sessionStorage.removeItem('sagrapp_token');window.location.href='/'">Esci</button>
 
-  <!-- Banner disconnessione -->
   <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA</div>
   <div class="printer-alert" id="printerAlert">
     <span class="alert-icon">&#9888;</span>
     <span id="printerAlertText">Stampante offline</span>
   </div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-left">
-      <span class="header-title">Cassa Casetta</span>
-      <span class="header-last-order" id="lastOrder"></span>
-    </div>
-    <span class="header-status" id="headerStatus">
-      <span class="status-led" id="statusLed"></span>
-      <span id="statusText">...</span>
-    </span>
-  </header>
+  <div class="app-shell">
 
-  <!-- Menu — colonna singola, caricata dal server -->
-  <div class="menu-wrapper" id="menuWrapper">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-state-icon">&#8987;</div>
-      <div class="empty-state-text">Caricamento menu...</div>
-    </div>
-  </div>
+    <!-- AREA MENU (70%, sinistra) -->
+    <div class="menu-area">
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabContorni" onclick="switchTab('contorni')">
+          CONTORNI
+          <span class="tab-check" id="tabContorniCheck">&#10003;</span>
+        </button>
+        <button class="tab-btn" id="tabBevande" onclick="switchTab('bevande')">
+          BEVANDE
+          <span class="tab-badge hidden" id="tabBevandeBadge">0</span>
+        </button>
+        <span class="tab-spacer"></span>
+        <span class="tab-status" id="tabStatus">
+          <span class="status-led" id="statusLed"></span>
+          <span id="statusText">...</span>
+        </span>
+      </div>
 
-  <!-- Barra ordine — tavolo (opzionale per casetta), totale, ordina -->
-  <div class="order-bar">
-    <div class="table-field" id="tableField">
-      <span class="table-label">Tav</span>
-      <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+      <div class="menu-scroll">
+        <div class="tab-panel active" id="panelContorni">
+          <div class="empty-state" id="emptyContorni">
+            <div class="empty-state-icon">&#8987;</div>
+            <div class="empty-state-text">Caricamento menu...</div>
+          </div>
+        </div>
+        <div class="tab-panel" id="panelBevande">
+          <div class="empty-state" id="emptyBevande">
+            <div class="empty-state-icon">&#8987;</div>
+            <div class="empty-state-text">Caricamento menu...</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="order-summary">
-      <span class="order-count" id="orderCount"></span>
-      <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
+
+    <!-- COLONNA ORDINE (30%, destra) -->
+    <div class="order-column">
+      <div class="order-header">
+        <span class="order-number">ORDINE</span>
+        <span class="order-last" id="lastOrder"></span>
+      </div>
+
+      <div class="order-form">
+        <div class="form-field flex-1" id="tableField">
+          <span class="field-label">Tav</span>
+          <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="opzionale">
+        </div>
+      </div>
+
+      <div class="order-summary-label">Riepilogo</div>
+      <div class="order-items-scroll" id="orderItemsList">
+        <div class="order-empty">Nessun articolo selezionato</div>
+      </div>
+
+      <div class="order-footer">
+        <div class="totals-block">
+          <div class="total-row grand-total">
+            <span class="total-label">Totale</span>
+            <span class="total-value empty" id="grandTotal">&euro; 0,00</span>
+          </div>
+        </div>
+        <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+      </div>
     </div>
-    <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+
   </div>
 
   <!-- Overlay successo -->
@@ -562,95 +779,112 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ===== STATO GLOBALE =====
-    let menuItems = [];       // Piatti caricati dal server (filtrati per casetta)
-    const quantities = {};    // { item_id: quantita }
-    let connected = false;
-    let submitting = false;
-
-    // ===== CATEGORIE VISIBILI NELLA CASETTA =====
-    // La casetta vende bevande e contorni. Quando il server avrà un menu
-    // dedicato per la casetta, basterà cambiare questo filtro.
-    const CASETTA_CATEGORIES = ['bevanda', 'contorno'];
-
-    // Label leggibili per le categorie
-    const CATEGORY_LABELS = {
-      contorno: 'Contorni',
-      bevanda: 'Bevande',
-    };
-
-    // Ordine di visualizzazione delle categorie
-    const CATEGORY_ORDER = ['contorno', 'bevanda'];
+    // ===== STATO =====
+    var menuItems = [];
+    var quantities = {};
+    var itemMap = {};
+    var connected = false;
+    var submitting = false;
+    var currentTab = 'contorni';
 
     // ===== CARICAMENTO MENU DAL SERVER =====
     async function loadMenu() {
       try {
-        const res = await fetch('/api/menu');
-        const allItems = await res.json();
+        var res = await fetch('/api/menu');
+        var allItems = await res.json();
 
-        // Filtra solo le categorie della casetta
-        menuItems = allItems.filter(item => CASETTA_CATEGORIES.includes(item.category));
+        // Filtra solo contorni e bevande per la casetta
+        menuItems = allItems.filter(function(item) {
+          return item.category === 'contorno' || item.category === 'bevanda';
+        });
 
-        // Inizializza le quantità a 0 per ogni piatto
-        menuItems.forEach(item => { quantities[item.id] = 0; });
+        itemMap = {};
+        menuItems.forEach(function(item) {
+          quantities[item.id] = quantities[item.id] || 0;
+          itemMap[item.id] = item;
+        });
 
-        renderMenu();
+        renderPanels();
       } catch (err) {
-        // Se il caricamento fallisce, mostra un messaggio di errore
-        document.getElementById('emptyState').innerHTML = `
-          <div class="empty-state-icon">&#9888;</div>
-          <div class="empty-state-text">Errore caricamento menu</div>
-          <div class="empty-state-sub">Controlla la connessione al server</div>
-        `;
+        document.getElementById('emptyContorni').innerHTML =
+          '<div class="empty-state-icon">&#9888;</div>' +
+          '<div class="empty-state-text">Errore caricamento menu</div>' +
+          '<div class="empty-state-sub">Controlla la connessione al server</div>';
       }
     }
 
-    // ===== RENDER DEL MENU =====
-    function renderMenu() {
-      const wrapper = document.getElementById('menuWrapper');
+    // ===== RENDER TABS =====
+    function renderPanels() {
+      var contorni = menuItems.filter(function(i) { return i.category === 'contorno'; });
+      var bevande = menuItems.filter(function(i) { return i.category === 'bevanda'; });
 
-      if (menuItems.length === 0) {
-        wrapper.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">&#128722;</div>
-            <div class="empty-state-text">Nessun piatto disponibile</div>
-            <div class="empty-state-sub">Il menu casetta non contiene articoli</div>
-          </div>`;
-        return;
+      document.getElementById('panelContorni').innerHTML = renderItemList(contorni, 'Contorni');
+      document.getElementById('panelBevande').innerHTML = renderItemList(bevande, 'Bevande');
+    }
+
+    function renderItemList(items, label) {
+      if (items.length === 0) {
+        return '<div class="empty-state">' +
+          '<div class="empty-state-icon">&#128722;</div>' +
+          '<div class="empty-state-text">Nessun articolo disponibile</div>' +
+        '</div>';
       }
 
-      // Raggruppa i piatti per categoria nell'ordine definito
-      let html = '';
-      CATEGORY_ORDER.forEach(cat => {
-        const catItems = menuItems.filter(item => item.category === cat);
-        if (catItems.length === 0) return;
+      var html = '<div class="section-header">' + label + '</div>';
+      items.forEach(function(item) {
+        var exhausted = item.status === 'exhausted';
+        var lowStock = item.status === 'low';
+        var extraClass = exhausted ? ' exhausted' : '';
+        var stockBadge = lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
+        var priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
 
-        html += `<div class="cat-label">${CATEGORY_LABELS[cat] || cat}</div>`;
-
-        catItems.forEach(item => {
-          // Stato scorta: se esaurito, aggiungi classe "exhausted"
-          const exhausted = item.status === 'exhausted';
-          const lowStock = item.status === 'low';
-          const extraClass = exhausted ? ' exhausted' : '';
-          const stockBadge = lowStock ? `<span class="row-stock-badge">${item.stock}</span>` : '';
-
-          html += `
-            <div class="menu-row${extraClass}" id="card-${item.id}" data-id="${item.id}">
-              <span class="row-name">${item.name}</span>
-              ${stockBadge}
-              <span class="row-price">\u20AC${item.price.toFixed(2)}</span>
-              <div class="row-stepper">
-                <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
-                <span class="step-count zero" id="qty-${item.id}">0</span>
-                <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
-              </div>
-            </div>`;
-        });
-
-        html += '<div class="sep"></div>';
+        html += '<div class="menu-row' + extraClass + '" id="card-' + item.id + '">' +
+          '<span class="row-name">' + item.name + '</span>' +
+          stockBadge +
+          '<span class="row-price">' + priceFormatted + '</span>' +
+          '<div class="row-stepper">' +
+            '<button class="step-btn step-minus" onclick="changeQty(\'' + item.id + '\', -1)">\u2212</button>' +
+            '<span class="step-count zero" id="qty-' + item.id + '">0</span>' +
+            '<button class="step-btn step-plus" onclick="changeQty(\'' + item.id + '\', 1)">+</button>' +
+          '</div>' +
+        '</div>';
       });
+      return html;
+    }
 
-      wrapper.innerHTML = html;
+    // ===== SWITCH TAB =====
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabContorni').classList.toggle('active', tab === 'contorni');
+      document.getElementById('tabBevande').classList.toggle('active', tab === 'bevande');
+      document.getElementById('panelContorni').classList.toggle('active', tab === 'contorni');
+      document.getElementById('panelBevande').classList.toggle('active', tab === 'bevande');
+    }
+
+    function updateTabBadges() {
+      // Badge bevande
+      var drinkCount = 0;
+      menuItems.forEach(function(item) {
+        if (item.category === 'bevanda' && quantities[item.id] > 0) {
+          drinkCount += quantities[item.id];
+        }
+      });
+      var badge = document.getElementById('tabBevandeBadge');
+      if (drinkCount > 0) {
+        badge.textContent = drinkCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      // Check contorni
+      var contorniSelected = false;
+      menuItems.forEach(function(item) {
+        if (item.category === 'contorno' && quantities[item.id] > 0) {
+          contorniSelected = true;
+        }
+      });
+      document.getElementById('tabContorniCheck').classList.toggle('visible', contorniSelected);
     }
 
     // ===== LOGICA QUANTITA =====
@@ -658,103 +892,130 @@
       if (!connected || submitting) return;
       quantities[id] = Math.max(0, (quantities[id] || 0) + delta);
 
-      const countEl = document.getElementById(`qty-${id}`);
+      var countEl = document.getElementById('qty-' + id);
       if (countEl) {
         countEl.textContent = quantities[id];
         countEl.classList.toggle('zero', quantities[id] === 0);
       }
 
-      const card = document.getElementById(`card-${id}`);
-      if (card) {
-        card.classList.toggle('active', quantities[id] > 0);
-      }
+      var card = document.getElementById('card-' + id);
+      if (card) card.classList.toggle('active', quantities[id] > 0);
 
-      updateOrderBar();
+      updateTabBadges();
+      updateOrderColumn();
+    }
+
+    function removeItem(id) {
+      if (submitting) return;
+      quantities[id] = 0;
+      var countEl = document.getElementById('qty-' + id);
+      if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
+      var card = document.getElementById('card-' + id);
+      if (card) card.classList.remove('active');
+      updateTabBadges();
+      updateOrderColumn();
     }
 
     // ===== CALCOLO TOTALE =====
     function calcOrder() {
-      let totalItems = 0;
-      let total = 0;
-      menuItems.forEach(item => {
-        const qty = quantities[item.id] || 0;
+      var totalItems = 0;
+      var total = 0;
+      menuItems.forEach(function(item) {
+        var qty = quantities[item.id] || 0;
         totalItems += qty;
         total += qty * item.price;
       });
-      return { totalItems, total };
+      total = Math.round(total * 100) / 100;
+      return { totalItems: totalItems, total: total };
     }
 
-    function updateOrderBar() {
-      const { totalItems, total } = calcOrder();
+    function formatPrice(value) {
+      return '\u20AC ' + value.toFixed(2).replace('.', ',');
+    }
 
-      const countEl = document.getElementById('orderCount');
-      const totalEl = document.getElementById('orderTotal');
-      const btnOrder = document.getElementById('btnOrder');
+    // ===== AGGIORNA COLONNA ORDINE =====
+    function updateOrderColumn() {
+      var result = calcOrder();
+      var totalItems = result.totalItems;
+      var total = result.total;
 
-      countEl.textContent = totalItems > 0
-        ? `${totalItems} articol${totalItems === 1 ? 'o' : 'i'}`
-        : '';
+      var listEl = document.getElementById('orderItemsList');
+      var selectedItems = menuItems.filter(function(item) { return quantities[item.id] > 0; });
 
-      totalEl.textContent = `\u20AC ${total.toFixed(2)}`;
-      totalEl.classList.toggle('empty', totalItems === 0);
+      if (selectedItems.length === 0) {
+        listEl.innerHTML = '<div class="order-empty">Nessun articolo selezionato</div>';
+      } else {
+        var html = '';
+        selectedItems.forEach(function(item) {
+          var linePrice = item.price * quantities[item.id];
+          html += '<div class="order-item-row">' +
+            '<span class="order-item-qty">' + quantities[item.id] + 'x</span>' +
+            '<span class="order-item-name">' + item.name + '</span>' +
+            '<span class="order-item-price">' + formatPrice(linePrice) + '</span>' +
+            '<button class="order-item-remove" onclick="removeItem(\'' + item.id + '\')">&times;</button>' +
+          '</div>';
+        });
+        listEl.innerHTML = html;
+      }
 
-      // Per la casetta, il tavolo e' opzionale: basta avere almeno un articolo
-      btnOrder.classList.toggle('disabled', totalItems === 0);
+      var grandTotal = document.getElementById('grandTotal');
+      grandTotal.textContent = formatPrice(total);
+      grandTotal.classList.toggle('empty', totalItems === 0);
+
+      // Per la casetta, basta almeno 1 articolo (tavolo opzionale)
+      document.getElementById('btnOrder').classList.toggle('disabled', totalItems === 0);
     }
 
     // ===== INVIO ORDINE =====
     async function submitOrder() {
       if (!connected || submitting) return;
 
-      const { totalItems } = calcOrder();
-      if (totalItems === 0) return;
+      var result = calcOrder();
+      if (result.totalItems === 0) return;
 
-      const tableInput = document.getElementById('tableInput');
-      const table = parseInt(tableInput.value) || 0;
+      var tableInput = document.getElementById('tableInput');
+      var table = parseInt(tableInput.value) || 0;
 
-      // Costruisci la lista degli articoli con quantita > 0
-      const items = menuItems
-        .filter(item => (quantities[item.id] || 0) > 0)
-        .map(item => ({ id: item.id, qty: quantities[item.id] }));
+      var items = menuItems
+        .filter(function(item) { return (quantities[item.id] || 0) > 0; })
+        .map(function(item) { return { id: item.id, qty: quantities[item.id] }; });
 
       if (items.length === 0) return;
 
       submitting = true;
+      document.getElementById('btnOrder').classList.add('disabled');
 
       try {
-        const res = await fetch('/api/orders', {
+        var res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             table: table || 0,
-            items,
+            items: items,
             source: 'casetta',
           }),
         });
-        const data = await res.json();
+        var data = await res.json();
 
         if (data.success) {
-          // Mostra overlay di successo
-          document.getElementById('successNumber').textContent = `#${data.order_number}`;
-          const subParts = [];
-          if (table > 0) subParts.push(`Tavolo ${data.table}`);
-          subParts.push(`\u20AC ${data.total.toFixed(2)}`);
+          document.getElementById('successNumber').textContent = '#' + data.order_number;
+          var subParts = [];
+          if (table > 0) subParts.push('Tavolo ' + data.table);
+          subParts.push(formatPrice(data.total));
           document.getElementById('successSub').textContent = subParts.join(' \u2014 ');
 
-          // Badge stampe eseguite
-          const printsEl = document.getElementById('successPrints');
-          const badges = [];
-          if (data.prints.receipt) badges.push('Ricevuta');
-          if (data.prints.food) badges.push('Comanda cibo');
-          if (data.prints.drinks) badges.push('Comanda bevande');
-          if (data.prints.special) badges.push('Piatti speciali');
-          printsEl.innerHTML = badges.map(b => `<span class="print-badge">${b}</span>`).join('');
+          // Badge stampe
+          var printsEl = document.getElementById('successPrints');
+          var badges = [];
+          if (data.prints && data.prints.receipt) badges.push('Ricevuta');
+          if (data.prints && data.prints.food) badges.push('Comanda cibo');
+          if (data.prints && data.prints.drinks) badges.push('Comanda bevande');
+          printsEl.innerHTML = badges.map(function(b) { return '<span class="print-badge">' + b + '</span>'; }).join('');
 
           showOverlay('success');
 
-          // Aggiorna ultimo ordine nell'header
-          const lastEl = document.getElementById('lastOrder');
-          lastEl.textContent = `Ultimo: #${data.order_number}`;
+          var lastEl = document.getElementById('lastOrder');
+          lastEl.textContent = 'Ultimo: #' + data.order_number;
           lastEl.classList.add('visible');
 
           resetOrder();
@@ -773,134 +1034,124 @@
     }
 
     function resetOrder() {
-      menuItems.forEach(item => {
+      menuItems.forEach(function(item) {
         quantities[item.id] = 0;
-        const countEl = document.getElementById(`qty-${item.id}`);
-        if (countEl) {
-          countEl.textContent = '0';
-          countEl.classList.add('zero');
-        }
-        const card = document.getElementById(`card-${item.id}`);
+        var countEl = document.getElementById('qty-' + item.id);
+        if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
+        var card = document.getElementById('card-' + item.id);
         if (card) card.classList.remove('active');
       });
       document.getElementById('tableInput').value = '';
-      updateOrderBar();
+      switchTab('contorni');
+      updateTabBadges();
+      updateOrderColumn();
     }
 
     function showOverlay(type) {
-      const el = document.getElementById(`overlay-${type}`);
+      var el = document.getElementById('overlay-' + type);
       el.classList.add('visible');
-      setTimeout(() => el.classList.remove('visible'), 2500);
+      setTimeout(function() { el.classList.remove('visible'); }, 2500);
     }
 
     // ===== SOCKET.IO =====
-    const socket = io(window.location.origin, {
+    var socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    const offlineBanner = document.getElementById('offlineBanner');
-    const statusLed = document.getElementById('statusLed');
-    const statusText = document.getElementById('statusText');
-    const headerStatus = document.getElementById('headerStatus');
+    var offlineBanner = document.getElementById('offlineBanner');
+    var statusLed = document.getElementById('statusLed');
+    var statusText = document.getElementById('statusText');
+    var tabStatus = document.getElementById('tabStatus');
 
-    socket.on('connect', () => {
+    socket.on('connect', function() {
       connected = true;
       socket.emit('register', { role: 'cassa' });
       offlineBanner.classList.remove('visible');
       statusLed.classList.add('on');
       statusLed.classList.remove('off');
-      headerStatus.classList.add('online');
-      headerStatus.classList.remove('offline');
+      tabStatus.classList.add('online');
+      tabStatus.classList.remove('offline');
       statusText.textContent = 'Connesso';
+      updateOrderColumn();
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', function() {
       connected = false;
       offlineBanner.classList.add('visible');
       statusLed.classList.remove('on');
       statusLed.classList.add('off');
-      headerStatus.classList.remove('online');
-      headerStatus.classList.add('offline');
+      tabStatus.classList.remove('online');
+      tabStatus.classList.add('offline');
       statusText.textContent = 'Offline';
     });
 
-    // --- Aggiornamento scorte in tempo reale ---
-    // Quando un piatto si esaurisce o ha scorte basse, aggiorna la UI
-    socket.on('inventory_updated', ({ item_id, stock, status }) => {
-      const item = menuItems.find(i => i.id === item_id);
+    // Aggiornamento scorte in tempo reale
+    socket.on('inventory_updated', function(data) {
+      var item = menuItems.find(function(i) { return i.id === data.item_id; });
       if (!item) return;
-      item.stock = stock;
-      item.status = status;
+      item.stock = data.stock;
+      item.status = data.status;
 
-      const card = document.getElementById(`card-${item_id}`);
+      var card = document.getElementById('card-' + data.item_id);
       if (!card) return;
 
-      // Aggiorna stato visivo
-      card.classList.toggle('exhausted', status === 'exhausted');
+      card.classList.toggle('exhausted', data.status === 'exhausted');
 
-      // Aggiorna badge scorte basse
-      const existingBadge = card.querySelector('.row-stock-badge');
-      if (status === 'low') {
+      var existingBadge = card.querySelector('.row-stock-badge');
+      if (data.status === 'low') {
         if (existingBadge) {
-          existingBadge.textContent = stock;
+          existingBadge.textContent = data.stock;
         } else {
-          const badge = document.createElement('span');
+          var badge = document.createElement('span');
           badge.className = 'row-stock-badge';
-          badge.textContent = stock;
-          const priceEl = card.querySelector('.row-price');
+          badge.textContent = data.stock;
+          var priceEl = card.querySelector('.row-price');
           card.insertBefore(badge, priceEl);
         }
       } else if (existingBadge) {
         existingBadge.remove();
       }
 
-      // Se esaurito e l'utente aveva selezionato quantita, resetta
-      if (status === 'exhausted' && quantities[item_id] > 0) {
-        quantities[item_id] = 0;
-        const countEl = document.getElementById(`qty-${item_id}`);
-        if (countEl) {
-          countEl.textContent = '0';
-          countEl.classList.add('zero');
-        }
+      if (data.status === 'exhausted' && quantities[data.item_id] > 0) {
+        quantities[data.item_id] = 0;
+        var countEl = document.getElementById('qty-' + data.item_id);
+        if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
         card.classList.remove('active');
-        updateOrderBar();
+        updateTabBadges();
+        updateOrderColumn();
       }
     });
 
-    // Reset inventario completo (da admin)
-    socket.on('inventory_reset', () => {
-      loadMenu();
-    });
+    socket.on('inventory_reset', function() { loadMenu(); });
 
-    // --- Stampante offline: alert + beep ---
-    const printerAlert = document.getElementById('printerAlert');
-    const printerAlertText = document.getElementById('printerAlertText');
+    // Stampante offline
+    var printerAlert = document.getElementById('printerAlert');
+    var printerAlertText = document.getElementById('printerAlertText');
 
-    // Beep audio per alert stampante (Web Audio API, senza file esterni)
     function beepAlert() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.frequency.value = 800;
         gain.gain.value = 0.3;
         osc.start();
         osc.stop(ctx.currentTime + 0.2);
-      } catch (e) { /* Audio non supportato */ }
+      } catch (e) {}
     }
 
-    // Ascolta lo stato delle stampanti dal proxy
-    // La casetta usa la stampante #6 (.208) — mostra alert solo se quella e' offline
-    socket.on('printers_status_update', (statuses) => {
-      // Controlla stampante casetta (#6) e anche ricevuta (#1) che viene usata per tutte le casse
-      const relevantIds = [1, 6];
-      const offlinePrinters = statuses.filter(s => relevantIds.includes(s.id) && !s.online);
+    // Monitora stampanti casetta: #1 (ricevuta .203) e #6 (casetta .208)
+    socket.on('printers_status_update', function(statuses) {
+      var relevantIds = [1, 6];
+      var offlinePrinters = statuses.filter(function(s) {
+        return relevantIds.includes(s.id) && !s.online;
+      });
       if (offlinePrinters.length > 0) {
-        const names = offlinePrinters.map(p => p.name || `#${p.id}`).join(', ');
+        var names = offlinePrinters.map(function(p) { return p.name || '#' + p.id; }).join(', ');
         printerAlertText.textContent = 'Stampante offline: ' + names;
         printerAlert.classList.add('visible');
         beepAlert();
@@ -909,15 +1160,13 @@
       }
     });
 
-    // Richiedi controllo stampanti dopo connessione
-    socket.on('connect', () => {
-      setTimeout(() => socket.emit('request_printer_check'), 2000);
+    socket.on('connect', function() {
+      setTimeout(function() { socket.emit('request_printer_check'); }, 2000);
     });
 
-    // Aggiorna la order bar quando cambia il tavolo
-    document.getElementById('tableInput').addEventListener('input', updateOrderBar);
+    document.getElementById('tableInput').addEventListener('input', updateOrderColumn);
 
-    // ===== INIT: carica il menu dal server =====
+    // ===== INIT =====
     loadMenu();
   </script>
 </body>

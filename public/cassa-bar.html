@@ -19,7 +19,7 @@
       font-family: 'Outfit', sans-serif;
       background: #060a12;
       color: #f0f4f8;
-      min-height: 100%;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
@@ -29,43 +29,54 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ===== HEADER ===== */
-    .header {
+    /* ===== LAYOUT PRINCIPALE: 70% piatti + 30% colonna ordine ===== */
+    .app-shell {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .menu-area {
+      flex: 7;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .order-column {
+      flex: 3;
+      min-width: 320px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    /* ===== TAB BAR ===== */
+    .tab-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
+      gap: 4px;
+      padding: 10px 14px;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .header-title {
+    .tab-title {
+      font-family: 'Outfit', sans-serif;
       font-weight: 700;
       font-size: 14px;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: rgba(240, 244, 248, 0.5);
+      color: rgba(240, 244, 248, 0.45);
+      padding: 10px 18px;
     }
 
-    .header-last-order {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(78, 204, 163, 0.6);
-      opacity: 0;
-      transition: opacity 300ms ease;
-    }
+    .tab-spacer { flex: 1; }
 
-    .header-last-order.visible { opacity: 1; }
-
-    .header-status {
+    .tab-status {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -75,8 +86,8 @@
       color: #6c7a89;
     }
 
-    .header-status.online { color: #4ecca3; }
-    .header-status.offline { color: #e94560; }
+    .tab-status.online { color: #4ecca3; }
+    .tab-status.offline { color: #e94560; }
 
     .status-led {
       width: 8px;
@@ -89,86 +100,93 @@
     .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
     .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
 
-    /* ===== LISTA BEVANDE (colonna singola scrollabile) ===== */
-    .menu-wrapper {
+    /* ===== AREA SCROLLABILE MENU ===== */
+    .menu-scroll {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 8px 10px 132px;
       overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px 10px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
     }
 
-    /* ===== LABEL GRUPPO (es. Birra, Vini sfusi, ...) ===== */
-    .group-label {
+    .menu-scroll::-webkit-scrollbar { width: 6px; }
+    .menu-scroll::-webkit-scrollbar-track { background: transparent; }
+    .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+    .section-header {
+      padding: 12px 8px 6px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgba(78, 204, 163, 0.4);
-      padding: 10px 8px 4px;
+      letter-spacing: 0.12em;
+      color: rgba(78, 204, 163, 0.5);
     }
 
-    /* ===== RIGA BEVANDA ===== */
+    .section-header:first-child { padding-top: 4px; }
+
+    .sep {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.05);
+      margin: 6px 8px;
+    }
+
+    /* ===== RIGA PIATTO ===== */
     .menu-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
-      border-radius: 6px;
-      transition: background 120ms ease;
-      min-height: 42px;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      transition: all 120ms ease;
+      min-height: 44px;
     }
 
-    .menu-row:active {
-      background: rgba(255, 255, 255, 0.04);
-    }
+    .menu-row:active { background: rgba(255, 255, 255, 0.03); }
 
     .menu-row.active {
       background: rgba(78, 204, 163, 0.06);
+      border-color: rgba(78, 204, 163, 0.2);
     }
 
     .row-name {
       flex: 1;
       font-weight: 500;
       font-size: 14px;
-      color: rgba(240, 244, 248, 0.8);
+      color: rgba(240, 244, 248, 0.75);
       line-height: 1.2;
       min-width: 0;
     }
 
-    .menu-row.active .row-name {
-      color: #f0f4f8;
-      font-weight: 600;
-    }
+    .menu-row.active .row-name { color: #f0f4f8; font-weight: 600; }
 
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
       font-size: 13px;
-      color: rgba(78, 204, 163, 0.6);
+      color: rgba(78, 204, 163, 0.5);
       white-space: nowrap;
-      min-width: 50px;
+      min-width: 52px;
       text-align: right;
     }
 
-    .menu-row.active .row-price {
-      color: #4ecca3;
-    }
+    .menu-row.active .row-price { color: #4ecca3; }
 
-    /* ===== STEPPER COMPATTO ===== */
+    /* ===== STEPPER ===== */
     .row-stepper {
       display: flex;
       align-items: center;
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 38px;
-      height: 36px;
+      width: 40px;
+      height: 38px;
       background: rgba(255, 255, 255, 0.02);
       border: none;
       font-family: 'JetBrains Mono', monospace;
@@ -179,6 +197,7 @@
       transition: background 80ms ease;
       line-height: 1;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .step-btn:active { background: rgba(255, 255, 255, 0.1); }
@@ -186,77 +205,74 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 30px;
+      width: 32px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 36px;
-      line-height: 36px;
+      height: 38px;
+      line-height: 38px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
 
-    .step-count.zero { color: rgba(255, 255, 255, 0.15); }
+    .step-count.zero { color: rgba(255, 255, 255, 0.12); }
 
-    /* ===== SEPARATORE tra gruppi ===== */
-    .sep {
-      height: 1px;
-      background: rgba(255, 255, 255, 0.06);
-      margin: 4px 8px;
+    /* ===== COLONNA ORDINE ===== */
+    .order-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
     }
 
-    /* ===== ORDER BAR ===== */
-    .order-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+    .order-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 16px;
+      color: rgba(240, 244, 248, 0.5);
+      letter-spacing: 0.02em;
+    }
+
+    .order-last {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(78, 204, 163, 0.5);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+
+    .order-last.visible { opacity: 1; }
+
+    /* ===== FORM ORDINE ===== */
+    .order-form {
+      padding: 12px 16px;
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      flex-direction: column;
       gap: 10px;
-      padding: 10px 14px;
-      background: rgba(10, 14, 22, 0.96);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 50;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
     }
 
-    /* Riga superiore: tavolo + nome */
-    .order-top {
+    .form-field {
       display: flex;
       align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      margin-bottom: 4px;
-    }
-
-    /* Riga inferiore: totale + ordina */
-    .order-bottom {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-    }
-
-    .field-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.04);
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.03);
       border: 1.5px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 5px 8px;
-      flex-shrink: 0;
+      padding: 6px 10px;
       transition: border-color 200ms ease;
     }
 
-    .field-group.error {
+    .form-field:focus-within { border-color: rgba(78, 204, 163, 0.3); }
+    .form-field.flex-1 { flex: 1; }
+
+    .form-field.error {
       border-color: #e94560;
       animation: shake 300ms ease;
     }
@@ -273,91 +289,200 @@
       font-weight: 700;
       color: rgba(240, 244, 248, 0.3);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
-    .field-group input[type="number"] {
-      width: 40px;
-      background: none;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
-      font-weight: 800;
-      text-align: center;
-      -moz-appearance: textfield;
-    }
-
-    .field-group input[type="number"]::-webkit-outer-spin-button,
-    .field-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-    .field-group input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.15); }
-
-    .field-group input[type="text"] {
-      width: 110px;
+    .form-field input[type="text"] {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
       background: none;
       border: none;
       outline: none;
       color: #fff;
       font-family: 'Outfit', sans-serif;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 500;
     }
 
-    .field-group input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
+    .form-field input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
 
-    .order-summary {
-      flex: 1;
-      text-align: right;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 1px;
+    .form-field input[type="number"] {
+      width: 44px;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      -moz-appearance: textfield;
     }
 
-    .order-total {
+    .form-field input[type="number"]::-webkit-outer-spin-button,
+    .form-field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .form-field input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+    /* ===== RIEPILOGO ORDINE ===== */
+    .order-summary-label {
+      padding: 10px 16px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.25);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+    }
+
+    .order-items-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+
+    .order-items-scroll::-webkit-scrollbar { width: 4px; }
+    .order-items-scroll::-webkit-scrollbar-track { background: transparent; }
+    .order-items-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 2px; }
+
+    .order-empty {
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(240, 244, 248, 0.15);
+      font-style: italic;
+    }
+
+    .order-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      transition: background 100ms ease;
+    }
+
+    .order-item-row:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .order-item-qty {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(22px, 5vw, 30px);
+      font-size: 13px;
       color: #4ecca3;
-      line-height: 1;
-      transition: color 150ms ease;
+      min-width: 26px;
     }
 
-    .order-total.empty { color: rgba(78, 204, 163, 0.25); }
+    .order-item-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(240, 244, 248, 0.7);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    .order-count {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(240, 244, 248, 0.35);
-      line-height: 1;
-      min-height: 13px;
+    .order-item-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.4);
+      white-space: nowrap;
+    }
+
+    .order-item-remove {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.2);
+      background: rgba(233, 69, 96, 0.06);
+      color: #e94560;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms ease;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .order-item-remove:active {
+      background: rgba(233, 69, 96, 0.2);
+      transform: scale(0.9);
+    }
+
+    /* ===== FOOTER ORDINE ===== */
+    .order-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+
+    .totals-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .total-row.grand-total .total-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .total-row.grand-total .total-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 800;
+      color: #4ecca3;
+    }
+
+    .total-row.grand-total .total-value.empty {
+      color: rgba(78, 204, 163, 0.2);
     }
 
     .btn-order {
-      padding: 14px 24px;
+      width: 100%;
+      padding: 16px 20px;
       background: rgba(78, 204, 163, 0.12);
       border: 2px solid rgba(78, 204, 163, 0.3);
       border-radius: 10px;
       color: #4ecca3;
       font-family: 'Outfit', sans-serif;
       font-weight: 700;
-      font-size: clamp(15px, 3.5vw, 18px);
-      letter-spacing: 0.06em;
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       cursor: pointer;
       touch-action: manipulation;
       transition: all 120ms ease;
-      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn-order:active:not(.disabled) {
-      transform: scale(0.95);
+      transform: scale(0.97);
       background: rgba(78, 204, 163, 0.3);
       border-color: #4ecca3;
     }
 
-    .btn-order.disabled { opacity: 0.25; pointer-events: none; }
+    .btn-order.disabled { opacity: 0.2; pointer-events: none; }
 
     /* ===== OVERLAYS ===== */
     .overlay {
@@ -367,20 +492,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
+      z-index: 1000;
       opacity: 0;
       pointer-events: none;
       transition: opacity 200ms ease;
     }
 
     .overlay.visible { opacity: 1; pointer-events: auto; }
-    .overlay-success { background: rgba(78, 204, 163, 0.93); }
-    .overlay-error { background: rgba(233, 69, 96, 0.93); }
+    .overlay-success { background: rgba(78, 204, 163, 0.95); }
+    .overlay-error { background: rgba(233, 69, 96, 0.95); }
 
     .overlay-number {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(64px, 20vw, 130px);
+      font-size: clamp(64px, 18vw, 130px);
       line-height: 1;
       color: #fff;
       margin-bottom: 8px;
@@ -388,20 +513,20 @@
 
     .overlay-text {
       font-weight: 700;
-      font-size: clamp(18px, 4.5vw, 30px);
+      font-size: clamp(18px, 4vw, 30px);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #fff;
     }
 
     .overlay-sub {
-      font-size: clamp(14px, 3vw, 20px);
+      font-size: clamp(14px, 2.5vw, 20px);
       font-weight: 500;
       color: rgba(255, 255, 255, 0.8);
       margin-top: 6px;
     }
 
-    /* ===== BANNER DISCONNESSIONE ===== */
+    /* ===== BANNERS ===== */
     .offline-banner {
       position: fixed;
       top: 0;
@@ -415,14 +540,13 @@
       font-size: 15px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      z-index: 200;
+      z-index: 2000;
       transform: translateY(-100%);
       transition: transform 300ms ease;
     }
 
     .offline-banner.visible { transform: translateY(0); }
 
-    /* ===== BANNER STAMPANTE OFFLINE ===== */
     .printer-alert {
       position: fixed;
       top: 0;
@@ -436,7 +560,7 @@
       font-size: 13px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      z-index: 190;
+      z-index: 1900;
       transform: translateY(-100%);
       transition: transform 300ms ease;
       display: flex;
@@ -446,10 +570,29 @@
     }
 
     .printer-alert.visible { transform: translateY(0); }
+    .printer-alert .alert-icon { font-size: 16px; line-height: 1; }
 
-    .printer-alert .alert-icon {
-      font-size: 16px;
-      line-height: 1;
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .order-column { min-width: 280px; }
+    }
+
+    @media (max-width: 700px) {
+      .app-shell {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+      .menu-area {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        min-height: 50vh;
+      }
+      .order-column {
+        min-width: 100%;
+        max-width: 100%;
+        min-height: 50vh;
+      }
     }
 
     .btn-esci {
@@ -477,49 +620,61 @@
 <body>
   <button class="btn-esci" onclick="localStorage.removeItem('sagrapp_role');sessionStorage.removeItem('sagrapp_token');window.location.href='/'">Esci</button>
 
-  <!-- Banner disconnessione -->
   <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA</div>
   <div class="printer-alert" id="printerAlert">
     <span class="alert-icon">&#9888;</span>
     <span id="printerAlertText">Stampante offline</span>
   </div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-left">
-      <span class="header-title">Cassa Bar</span>
-      <span class="header-last-order" id="lastOrder"></span>
-    </div>
-    <span class="header-status" id="headerStatus">
-      <span class="status-led" id="statusLed"></span>
-      <span id="statusText">...</span>
-    </span>
-  </header>
+  <div class="app-shell">
 
-  <!-- Lista bevande — singola colonna scrollabile -->
-  <div class="menu-wrapper" id="beverageList"></div>
+    <!-- AREA MENU (70%, sinistra) -->
+    <div class="menu-area">
+      <div class="tab-bar">
+        <span class="tab-title">Cassa Bar</span>
+        <span class="tab-spacer"></span>
+        <span class="tab-status" id="tabStatus">
+          <span class="status-led" id="statusLed"></span>
+          <span id="statusText">...</span>
+        </span>
+      </div>
+      <div class="menu-scroll" id="beverageList"></div>
+    </div>
 
-  <!-- Barra ordine -->
-  <div class="order-bar">
-    <!-- Riga superiore: tavolo + nome -->
-    <div class="order-top">
-      <div class="field-group" id="tableField">
-        <span class="field-label">Tav</span>
-        <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+    <!-- COLONNA ORDINE (30%, destra) -->
+    <div class="order-column">
+      <div class="order-header">
+        <span class="order-number">ORDINE</span>
+        <span class="order-last" id="lastOrder"></span>
       </div>
-      <div class="field-group">
-        <span class="field-label">Nome</span>
-        <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
+
+      <div class="order-form">
+        <div class="form-field flex-1">
+          <span class="field-label">Nome</span>
+          <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
+        </div>
+        <div class="form-field flex-1" id="tableField">
+          <span class="field-label">Tav</span>
+          <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+        </div>
+      </div>
+
+      <div class="order-summary-label">Riepilogo</div>
+      <div class="order-items-scroll" id="orderItemsList">
+        <div class="order-empty">Nessuna bevanda selezionata</div>
+      </div>
+
+      <div class="order-footer">
+        <div class="totals-block">
+          <div class="total-row grand-total">
+            <span class="total-label">Totale</span>
+            <span class="total-value empty" id="grandTotal">&euro; 0,00</span>
+          </div>
+        </div>
+        <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
       </div>
     </div>
-    <!-- Riga inferiore: totale + ordina -->
-    <div class="order-bottom">
-      <div class="order-summary">
-        <span class="order-count" id="orderCount"></span>
-        <span class="order-total empty" id="orderTotal">&euro; 0.00</span>
-      </div>
-      <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
-    </div>
+
   </div>
 
   <!-- Overlay successo -->
@@ -538,24 +693,19 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ===== BEVANDE — stessi ID e prezzi del server (config.js) =====
-    const BEVERAGES = [
-      // Birra
+    // ===== BEVANDE =====
+    var BEVERAGES = [
       { id: 'birra_spina', name: 'Birra alla spina', price: 3.50, group: 'Birra' },
-      // Vini sfusi
       { id: 'vino_bianco_ombra', name: 'Vino ombra bianco', price: 1.00, group: 'Vini sfusi' },
       { id: 'vino_rosso_ombra', name: 'Vino ombra rosso', price: 1.00 },
       { id: 'vino_bianco_mezzo', name: 'Vino bianco sfuso 1/2L', price: 3.00 },
       { id: 'vino_rosso_mezzo', name: 'Vino rosso sfuso 1/2L', price: 3.00 },
       { id: 'vino_bianco_trequarti', name: 'Vino bianco sfuso 3/4L', price: 4.00 },
       { id: 'vino_rosso_trequarti', name: 'Vino rosso sfuso 3/4L', price: 4.00 },
-      // Bottiglie
       { id: 'prosecco', name: 'Prosecco Superiore DOCG', price: 9.00, group: 'Bottiglie' },
       { id: 'cabernet', name: 'Bottiglia Cabernet', price: 7.50 },
-      // Acqua
       { id: 'acqua_naturale', name: 'Acqua naturale 1/2L', price: 1.00, group: 'Acqua' },
       { id: 'acqua_frizzante', name: 'Acqua frizzante 1/2L', price: 1.00 },
-      // Lattine
       { id: 'the_pesca', name: 'The alla pesca', price: 2.30, group: 'Lattine' },
       { id: 'the_limone', name: 'The al limone', price: 2.30 },
       { id: 'coca_cola', name: 'Coca Cola', price: 2.30 },
@@ -563,131 +713,160 @@
       { id: 'fanta', name: 'Fanta', price: 2.30 },
     ];
 
-    // Quantita' per ogni bevanda
-    const quantities = {};
-    BEVERAGES.forEach(b => { quantities[b.id] = 0; });
+    var bevMap = {};
+    BEVERAGES.forEach(function(b) { bevMap[b.id] = b; });
 
-    let connected = false;
-    let submitting = false;
+    var quantities = {};
+    BEVERAGES.forEach(function(b) { quantities[b.id] = 0; });
 
-    // --- Genera HTML della lista bevande ---
+    var connected = false;
+    var submitting = false;
+
+    // ===== RENDER MENU =====
     function renderBeverages() {
-      let html = '';
-      BEVERAGES.forEach(bev => {
-        // Se ha un campo group, inserisci la label del gruppo + separatore prima
+      var html = '';
+      BEVERAGES.forEach(function(bev) {
         if (bev.group) {
-          // Separatore visivo tra gruppi (non prima del primo)
           if (html !== '') html += '<div class="sep"></div>';
-          html += `<div class="group-label">${bev.group}</div>`;
+          html += '<div class="section-header">' + bev.group + '</div>';
         }
-        html += `
-          <div class="menu-row" id="card-${bev.id}">
-            <span class="row-name">${bev.name}</span>
-            <span class="row-price">\u20AC${bev.price.toFixed(2)}</span>
-            <div class="row-stepper">
-              <button class="step-btn step-minus" onclick="changeQty('${bev.id}', -1)">\u2212</button>
-              <span class="step-count zero" id="qty-${bev.id}">0</span>
-              <button class="step-btn step-plus" onclick="changeQty('${bev.id}', 1)">+</button>
-            </div>
-          </div>`;
+        var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
+        html += '<div class="menu-row" id="card-' + bev.id + '">' +
+          '<span class="row-name">' + bev.name + '</span>' +
+          '<span class="row-price">' + priceFormatted + '</span>' +
+          '<div class="row-stepper">' +
+            '<button class="step-btn step-minus" onclick="changeQty(\'' + bev.id + '\', -1)">\u2212</button>' +
+            '<span class="step-count zero" id="qty-' + bev.id + '">0</span>' +
+            '<button class="step-btn step-plus" onclick="changeQty(\'' + bev.id + '\', 1)">+</button>' +
+          '</div>' +
+        '</div>';
       });
       return html;
     }
 
     document.getElementById('beverageList').innerHTML = renderBeverages();
 
-    // --- Logica quantita' ---
+    // ===== LOGICA QUANTITA =====
     function changeQty(id, delta) {
       if (!connected || submitting) return;
       quantities[id] = Math.max(0, quantities[id] + delta);
 
-      const countEl = document.getElementById(`qty-${id}`);
+      var countEl = document.getElementById('qty-' + id);
       countEl.textContent = quantities[id];
       countEl.classList.toggle('zero', quantities[id] === 0);
 
-      const card = document.getElementById(`card-${id}`);
+      var card = document.getElementById('card-' + id);
       card.classList.toggle('active', quantities[id] > 0);
 
-      updateOrderBar();
+      updateOrderColumn();
     }
 
-    // --- Calcola totale ---
+    function removeItem(id) {
+      if (submitting) return;
+      quantities[id] = 0;
+      var countEl = document.getElementById('qty-' + id);
+      if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
+      var card = document.getElementById('card-' + id);
+      if (card) card.classList.remove('active');
+      updateOrderColumn();
+    }
+
+    // ===== CALCOLO TOTALE =====
     function calcOrder() {
-      let totalItems = 0;
-      let total = 0;
-      BEVERAGES.forEach(bev => {
+      var totalItems = 0;
+      var total = 0;
+      BEVERAGES.forEach(function(bev) {
         totalItems += quantities[bev.id];
         total += quantities[bev.id] * bev.price;
       });
-      return { totalItems, total };
+      total = Math.round(total * 100) / 100;
+      return { totalItems: totalItems, total: total };
     }
 
-    function updateOrderBar() {
-      const { totalItems, total } = calcOrder();
-
-      const countEl = document.getElementById('orderCount');
-      const totalEl = document.getElementById('orderTotal');
-      const btnOrder = document.getElementById('btnOrder');
-
-      countEl.textContent = totalItems > 0
-        ? `${totalItems} bevand${totalItems === 1 ? 'a' : 'e'}`
-        : '';
-
-      totalEl.textContent = `\u20AC ${total.toFixed(2)}`;
-      totalEl.classList.toggle('empty', totalItems === 0);
-
-      const tableValue = document.getElementById('tableInput').value;
-      btnOrder.classList.toggle('disabled', totalItems === 0 || !tableValue);
+    function formatPrice(value) {
+      return '\u20AC ' + value.toFixed(2).replace('.', ',');
     }
 
-    // --- Invio ordine ---
+    // ===== AGGIORNA COLONNA ORDINE =====
+    function updateOrderColumn() {
+      var result = calcOrder();
+      var totalItems = result.totalItems;
+      var total = result.total;
+
+      var listEl = document.getElementById('orderItemsList');
+      var selectedItems = BEVERAGES.filter(function(b) { return quantities[b.id] > 0; });
+
+      if (selectedItems.length === 0) {
+        listEl.innerHTML = '<div class="order-empty">Nessuna bevanda selezionata</div>';
+      } else {
+        var html = '';
+        selectedItems.forEach(function(item) {
+          var linePrice = item.price * quantities[item.id];
+          html += '<div class="order-item-row">' +
+            '<span class="order-item-qty">' + quantities[item.id] + 'x</span>' +
+            '<span class="order-item-name">' + item.name + '</span>' +
+            '<span class="order-item-price">' + formatPrice(linePrice) + '</span>' +
+            '<button class="order-item-remove" onclick="removeItem(\'' + item.id + '\')">&times;</button>' +
+          '</div>';
+        });
+        listEl.innerHTML = html;
+      }
+
+      var grandTotal = document.getElementById('grandTotal');
+      grandTotal.textContent = formatPrice(total);
+      grandTotal.classList.toggle('empty', totalItems === 0);
+
+      var tableValue = document.getElementById('tableInput').value;
+      var canOrder = totalItems > 0 && tableValue;
+      document.getElementById('btnOrder').classList.toggle('disabled', !canOrder);
+    }
+
+    // ===== INVIO ORDINE =====
     async function submitOrder() {
       if (!connected || submitting) return;
 
-      const tableInput = document.getElementById('tableInput');
-      const table = parseInt(tableInput.value);
+      var tableInput = document.getElementById('tableInput');
+      var table = parseInt(tableInput.value);
 
       if (!table || table < 1) {
-        const field = document.getElementById('tableField');
+        var field = document.getElementById('tableField');
         field.classList.add('error');
-        setTimeout(() => field.classList.remove('error'), 400);
+        setTimeout(function() { field.classList.remove('error'); }, 400);
         tableInput.focus();
         return;
       }
 
-      const items = BEVERAGES
-        .filter(bev => quantities[bev.id] > 0)
-        .map(bev => ({ id: bev.id, qty: quantities[bev.id] }));
+      var items = BEVERAGES
+        .filter(function(bev) { return quantities[bev.id] > 0; })
+        .map(function(bev) { return { id: bev.id, qty: quantities[bev.id] }; });
 
       if (items.length === 0) return;
 
-      const { total } = calcOrder();
-      const customerName = document.getElementById('nameInput').value.trim() || null;
-
+      var customerName = document.getElementById('nameInput').value.trim() || null;
       submitting = true;
+      document.getElementById('btnOrder').classList.add('disabled');
 
       try {
-        const res = await fetch('/api/orders', {
+        var res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            table,
-            items,
+            table: table,
+            items: items,
             customer_name: customerName,
-            // Identifica l'ordine come proveniente dalla cassa bar
             source: 'bar',
           }),
         });
-        const data = await res.json();
+        var data = await res.json();
 
         if (data.success) {
-          document.getElementById('successNumber').textContent = `#${data.order_number}`;
+          document.getElementById('successNumber').textContent = '#' + data.order_number;
           document.getElementById('successSub').textContent =
-            `Tavolo ${data.table} \u2014 \u20AC ${data.total.toFixed(2)}`;
+            'Tavolo ' + data.table + ' \u2014 ' + formatPrice(data.total);
           showOverlay('success');
 
-          const lastEl = document.getElementById('lastOrder');
-          lastEl.textContent = `Ultimo: #${data.order_number}`;
+          var lastEl = document.getElementById('lastOrder');
+          lastEl.textContent = 'Ultimo: #' + data.order_number;
           lastEl.classList.add('visible');
 
           resetOrder();
@@ -706,83 +885,82 @@
     }
 
     function resetOrder() {
-      BEVERAGES.forEach(bev => {
+      BEVERAGES.forEach(function(bev) {
         quantities[bev.id] = 0;
-        document.getElementById(`qty-${bev.id}`).textContent = '0';
-        document.getElementById(`qty-${bev.id}`).classList.add('zero');
-        document.getElementById(`card-${bev.id}`).classList.remove('active');
+        var qtyEl = document.getElementById('qty-' + bev.id);
+        if (qtyEl) { qtyEl.textContent = '0'; qtyEl.classList.add('zero'); }
+        var cardEl = document.getElementById('card-' + bev.id);
+        if (cardEl) cardEl.classList.remove('active');
       });
       document.getElementById('tableInput').value = '';
       document.getElementById('nameInput').value = '';
-      updateOrderBar();
+      updateOrderColumn();
     }
 
     function showOverlay(type) {
-      const el = document.getElementById(`overlay-${type}`);
+      var el = document.getElementById('overlay-' + type);
       el.classList.add('visible');
-      setTimeout(() => el.classList.remove('visible'), 2500);
+      setTimeout(function() { el.classList.remove('visible'); }, 2500);
     }
 
-    // --- Socket.IO ---
-    const socket = io(window.location.origin, {
+    // ===== SOCKET.IO =====
+    var socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    const offlineBanner = document.getElementById('offlineBanner');
-    const statusLed = document.getElementById('statusLed');
-    const statusText = document.getElementById('statusText');
-    const headerStatus = document.getElementById('headerStatus');
+    var offlineBanner = document.getElementById('offlineBanner');
+    var statusLed = document.getElementById('statusLed');
+    var statusText = document.getElementById('statusText');
+    var tabStatus = document.getElementById('tabStatus');
 
-    socket.on('connect', () => {
+    socket.on('connect', function() {
       connected = true;
       socket.emit('register', { role: 'cassa' });
       offlineBanner.classList.remove('visible');
       statusLed.classList.add('on');
       statusLed.classList.remove('off');
-      headerStatus.classList.add('online');
-      headerStatus.classList.remove('offline');
+      tabStatus.classList.add('online');
+      tabStatus.classList.remove('offline');
       statusText.textContent = 'Connesso';
+      updateOrderColumn();
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', function() {
       connected = false;
       offlineBanner.classList.add('visible');
       statusLed.classList.remove('on');
       statusLed.classList.add('off');
-      headerStatus.classList.remove('online');
-      headerStatus.classList.add('offline');
+      tabStatus.classList.remove('online');
+      tabStatus.classList.add('offline');
       statusText.textContent = 'Offline';
     });
 
-    // --- Stampante offline: alert + beep ---
-    const printerAlert = document.getElementById('printerAlert');
-    const printerAlertText = document.getElementById('printerAlertText');
+    var printerAlert = document.getElementById('printerAlert');
+    var printerAlertText = document.getElementById('printerAlertText');
 
-    // Beep audio per alert stampante (Web Audio API, senza file esterni)
     function beepAlert() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.frequency.value = 800;
         gain.gain.value = 0.3;
         osc.start();
         osc.stop(ctx.currentTime + 0.2);
-      } catch (e) { /* Audio non supportato */ }
+      } catch (e) {}
     }
 
-    // Ascolta lo stato delle stampanti dal proxy
-    // La cassa bar monitora la stampante #4 (ricevuta bar .206) e #2 (comanda bevande .204)
-    socket.on('printers_status_update', (statuses) => {
-      // Filtra solo le stampanti rilevanti per il bar (id 2 e 4)
-      const barPrinterIds = [2, 4];
-      const offlinePrinters = statuses.filter(s => barPrinterIds.includes(s.id) && !s.online);
+    socket.on('printers_status_update', function(statuses) {
+      var barPrinterIds = [2, 4];
+      var offlinePrinters = statuses.filter(function(s) {
+        return barPrinterIds.includes(s.id) && !s.online;
+      });
       if (offlinePrinters.length > 0) {
-        const names = offlinePrinters.map(p => p.name || `Stampante ${p.id}`).join(', ');
+        var names = offlinePrinters.map(function(p) { return p.name || 'Stampante ' + p.id; }).join(', ');
         printerAlertText.textContent = 'Stampante offline: ' + names;
         printerAlert.classList.add('visible');
         beepAlert();
@@ -791,12 +969,11 @@
       }
     });
 
-    // Richiedi controllo stampanti dopo connessione
-    socket.on('connect', () => {
-      setTimeout(() => socket.emit('request_printer_check'), 2000);
+    socket.on('connect', function() {
+      setTimeout(function() { socket.emit('request_printer_check'); }, 2000);
     });
 
-    document.getElementById('tableInput').addEventListener('input', updateOrderBar);
+    document.getElementById('tableInput').addEventListener('input', updateOrderColumn);
   </script>
 </body>
 </html>
