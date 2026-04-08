@@ -846,6 +846,85 @@ function computeRecap() {
   };
 }
 
+// Unisce un nuovo recap dentro uno esistente (stessa giornata, piu' chiusure)
+function mergeRecap(target, source) {
+  target.totalOrders += source.totalOrders;
+  target.totalRevenue += source.totalRevenue;
+  target.discountTotal += source.discountTotal;
+  target.incompleteOrders += source.incompleteOrders;
+  target.incompleteDetails = (target.incompleteDetails || []).concat(source.incompleteDetails || []);
+
+  // Tempo medio evasione: media pesata
+  if (source.avgCompletionTime > 0) {
+    if (target.avgCompletionTime > 0) {
+      const tOld = target.totalOrders - source.totalOrders;
+      target.avgCompletionTime = Math.round(
+        (target.avgCompletionTime * tOld + source.avgCompletionTime * source.totalOrders) / target.totalOrders
+      );
+    } else {
+      target.avgCompletionTime = source.avgCompletionTime;
+    }
+  }
+
+  // Classifica vendite: somma quantita' e ricavi per piatto
+  const salesMap = {};
+  (target.salesRanking || []).forEach(i => { salesMap[i.id] = { ...i }; });
+  (source.salesRanking || []).forEach(i => {
+    if (salesMap[i.id]) {
+      salesMap[i.id].qty += i.qty;
+      salesMap[i.id].revenue += i.revenue;
+    } else {
+      salesMap[i.id] = { ...i };
+    }
+  });
+  target.salesRanking = Object.values(salesMap).sort((a, b) => b.qty - a.qty);
+
+  // Distribuzione oraria: somma ordini per ora
+  Object.entries(source.ordersByHour || {}).forEach(([h, count]) => {
+    target.ordersByHour[h] = (target.ordersByHour[h] || 0) + count;
+  });
+
+  // Incassi per cassa e per pagamento
+  Object.entries(source.revenueByCassa || {}).forEach(([k, v]) => {
+    target.revenueByCassa[k] = (target.revenueByCassa[k] || 0) + v;
+  });
+  Object.entries(source.revenueByPayment || {}).forEach(([k, v]) => {
+    target.revenueByPayment[k] = (target.revenueByPayment[k] || 0) + v;
+  });
+
+  // Magazzino: usa i dati piu' recenti (il source ha lo stato aggiornato)
+  if (source.inventoryReport && source.inventoryReport.length > 0) {
+    const invMap = {};
+    (target.inventoryReport || []).forEach(i => { invMap[i.id] = { ...i }; });
+    source.inventoryReport.forEach(i => {
+      if (invMap[i.id]) {
+        invMap[i.id].sold += i.sold;
+        invMap[i.id].remaining = i.remaining;
+        invMap[i.id].status = i.status;
+      } else {
+        invMap[i.id] = { ...i };
+      }
+    });
+    target.inventoryReport = Object.values(invMap);
+  }
+
+  // Omaggi: somma per tipo
+  const courtesyTypes = ['sponsor', 'don_pierino', 'amici'];
+  courtesyTypes.forEach(type => {
+    if (source.courtesy && source.courtesy[type]) {
+      if (!target.courtesy[type]) target.courtesy[type] = { count: 0, realValue: 0 };
+      target.courtesy[type].count += source.courtesy[type].count;
+      target.courtesy[type].realValue += source.courtesy[type].realValue;
+    }
+  });
+  if (target.courtesy) {
+    target.courtesy.total = {
+      count: courtesyTypes.reduce((sum, t) => sum + (target.courtesy[t] ? target.courtesy[t].count : 0), 0),
+      realValue: courtesyTypes.reduce((sum, t) => sum + (target.courtesy[t] ? target.courtesy[t].realValue : 0), 0),
+    };
+  }
+}
+
 router.get('/admin/stats/recap', requireAdmin, (req, res) => {
   res.json(computeRecap());
 });
@@ -1000,13 +1079,21 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
       ? new Date(orders[0].created_at).toISOString().slice(0, 10)
       : now.toISOString().slice(0, 10);
 
-    archivedSessions.push({
-      id: 'session_' + now.getTime(),
-      date: sessionDate,
-      closed_at: now.getTime(),
-      recap,
-    });
-    console.log(`[Admin] Serata ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
+    // Se esiste gia' un archivio per la stessa data, unisci i dati
+    const existing = archivedSessions.find(s => s.date === sessionDate);
+    if (existing) {
+      mergeRecap(existing.recap, recap);
+      existing.closed_at = now.getTime();
+      console.log(`[Admin] Serata ${sessionDate} aggiornata (${existing.recap.totalOrders} ordini totali, €${existing.recap.totalRevenue.toFixed(2)})`);
+    } else {
+      archivedSessions.push({
+        id: 'session_' + now.getTime(),
+        date: sessionDate,
+        closed_at: now.getTime(),
+        recap,
+      });
+      console.log(`[Admin] Serata ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
+    }
   }
 
   // Azzera ordini
