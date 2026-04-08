@@ -905,31 +905,32 @@
 
     .offline-banner.visible { transform: translateY(0); }
 
-    /* ===== BANNER STAMPANTE OFFLINE ===== */
+    /* ===== STAMPANTE OFFLINE — badge compatto nella tab bar ===== */
     .printer-alert {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 10px 20px;
-      background: #ffd93d;
-      color: #1a1a2e;
-      text-align: center;
-      font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      z-index: 1900;
-      transform: translateY(-100%);
-      transition: transform 300ms ease;
-      display: flex;
+      display: none;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 217, 61, 0.12);
+      border: 1px solid rgba(255, 217, 61, 0.3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #ffd93d;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      animation: pulse-warn 2s ease-in-out infinite;
     }
 
-    .printer-alert.visible { transform: translateY(0); }
-    .printer-alert .alert-icon { font-size: 16px; line-height: 1; }
+    .printer-alert.visible { display: flex; }
+    .printer-alert .alert-icon { font-size: 12px; line-height: 1; }
+
+    @keyframes pulse-warn {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 900px) {
@@ -984,10 +985,6 @@
 
   <!-- Banner disconnessione -->
   <div class="offline-banner" id="offlineBanner">CONNESSIONE PERSA — Riconnessione in corso...</div>
-  <div class="printer-alert" id="printerAlert">
-    <span class="alert-icon">&#9888;</span>
-    <span id="printerAlertText">Stampante offline</span>
-  </div>
 
   <!-- Layout principale 70/30 -->
   <div class="app-shell">
@@ -1013,6 +1010,11 @@
           ORDINI
           <span class="tab-badge hidden" id="tabOrdiniBadge">0</span>
         </button>
+        <!-- Indicatore stampante offline — badge compatto nella tab bar -->
+        <div class="printer-alert" id="printerAlert">
+          <span class="alert-icon">&#9888;</span>
+          <span id="printerAlertText">Stampante offline</span>
+        </div>
         <span class="tab-spacer"></span>
         <span class="tab-status" id="tabStatus">
           <span class="status-led" id="statusLed"></span>
