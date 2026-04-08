@@ -856,9 +856,16 @@ function computeRecap() {
 
   const discountTotal = orders.reduce((sum, o) => sum + (o.discount || 0), 0);
 
+  // Coperti totali (esclusi annullati) e ordini asporto
+  const validOrders = orders.filter(o => o.status !== 'cancelled');
+  const totalCoperti = validOrders.reduce((sum, o) => sum + (o.coperti || 0), 0);
+  const totalAsporto = validOrders.filter(o => o.asporto).length;
+
   return {
     totalOrders,
     totalRevenue,
+    totalCoperti,
+    totalAsporto,
     salesRanking,
     ordersByHour,
     avgCompletionTime: Math.round(avgTime / 1000),
@@ -876,6 +883,8 @@ function computeRecap() {
 function mergeRecap(target, source) {
   target.totalOrders += source.totalOrders;
   target.totalRevenue += source.totalRevenue;
+  target.totalCoperti = (target.totalCoperti || 0) + (source.totalCoperti || 0);
+  target.totalAsporto = (target.totalAsporto || 0) + (source.totalAsporto || 0);
   target.discountTotal += source.discountTotal;
   target.incompleteOrders += source.incompleteOrders;
   target.incompleteDetails = (target.incompleteDetails || []).concat(source.incompleteDetails || []);

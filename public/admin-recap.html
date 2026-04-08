@@ -775,6 +775,14 @@
           <div class="kpi-label">Tempo medio evasione</div>
           <div class="kpi-value cyan" id="kpiAvgTime">—</div>
         </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Coperti totali</div>
+          <div class="kpi-value" id="kpiCoperti">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Ordini asporto</div>
+          <div class="kpi-value" id="kpiAsporto">—</div>
+        </div>
       </div>
     </section>
 
@@ -1115,6 +1123,8 @@
       document.getElementById('kpiRevenue').innerHTML =
         '<span class="kpi-unit">&euro;</span>' + formatCurrency(data.totalRevenue);
       document.getElementById('kpiAvgTime').textContent = formatTime(data.avgCompletionTime);
+      document.getElementById('kpiCoperti').textContent = (data.totalCoperti || 0).toLocaleString('it-IT');
+      document.getElementById('kpiAsporto').textContent = (data.totalAsporto || 0).toLocaleString('it-IT');
 
       // --- Incassi per cassa ---
       renderSummaryTable('tableCassa', data.revenueByCassa);
