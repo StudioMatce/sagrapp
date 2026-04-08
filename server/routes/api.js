@@ -106,6 +106,11 @@ function broadcastOpenOrders() {
   io.to('controllo').emit('open_orders_update', { orders: openOrders });
 }
 
+// --- Helper: calcola coperti totali della serata (ordini non annullati) ---
+function computeTotalCoperti() {
+  return orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.coperti || 0), 0);
+}
+
 // --- Helper: verifica token admin ---
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
@@ -316,6 +321,26 @@ router.post('/printers/:id/test', (req, res) => {
   });
 });
 
+// Lista TUTTI gli ordini della serata (per tab ORDINI in cassa)
+router.get('/orders/all', (req, res) => {
+  const allOrders = orders.map(o => ({
+    id: o.id,
+    table: o.table,
+    customer_name: o.customer_name,
+    items_summary: o.items.map(i => `${i.qty}x ${i.name}`).join(', '),
+    total: o.total,
+    subtotal: o.subtotal,
+    courtesy_type: o.courtesy_type,
+    status: o.status,
+    source: o.cassa,
+    asporto: o.asporto || false,
+    created_at: o.created_at,
+  }));
+  // Dal più recente al più vecchio
+  allOrders.reverse();
+  res.json(allOrders);
+});
+
 // Lista ordini aperti (per tablet operatore fisso)
 router.get('/orders/open', (req, res) => {
   const openOrders = orders
@@ -378,7 +403,7 @@ router.post('/orders/:id/cancel', (req, res) => {
 
   if (io) {
     if (countersChanged) {
-      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
     }
     io.emit('order_cancelled', { order_number: orderId, table: order.table });
     broadcastOpenOrders();
@@ -447,7 +472,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 
   if (io) {
     io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
-    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
     broadcastOpenOrders();
   }
 
@@ -458,7 +483,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 // CREA ORDINE — con composizione pezzi, stampa multipla, e piatti speciali
 // =============================================
 router.post('/orders', (req, res) => {
-  const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type, source, coperti } = req.body;
+  const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type, source, coperti, asporto } = req.body;
 
   if (!table || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
     return res.status(400).json({ error: 'Specificare tavolo e piatti' });
@@ -544,7 +569,8 @@ router.post('/orders', (req, res) => {
     courtesy_type: orderCourtesy,
     customer_name: customer_name || null,
     cassa: source || 'principale',
-    coperti: parseInt(coperti) || 0,
+    coperti: asporto ? 0 : (parseInt(coperti) || 0),
+    asporto: !!asporto,
     payment: payment || 'contanti',
     status: 'in_progress',
     created_at: Date.now(),
@@ -555,7 +581,7 @@ router.post('/orders', (req, res) => {
 
   // Broadcast contatori aggiornati (vendute cambiate → da_cucinare cambia sul monitor)
   if (io) {
-    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
     io.emit('order_created', order);
     io.to('admin').emit('stats_update', { type: 'new_order', order });
     broadcastOpenOrders();
@@ -594,8 +620,8 @@ router.post('/orders', (req, res) => {
   }
 
   // 3. Comanda bevande → Fuhuihe .204 (printer #2)
-  //    STAMPA SEMPRE — anche senza bevande, per il conteggio coperti/posate
-  {
+  //    STAMPA SEMPRE — tranne per ordini ASPORTO (niente bevande, niente coperti)
+  if (!order.asporto) {
     const drinkData = printer.buildDrinkOrder(order);
     const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
     if (io && drinkData && drinkPrinter) {
@@ -1117,7 +1143,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   });
 
   if (io) {
-    io.emit('counters_changed', { counters });
+    io.emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
     io.emit('inventory_reset', Object.values(inventory));
   }
 
@@ -1189,7 +1215,7 @@ router.post('/orders/test', (req, res) => {
   orders.push(order);
 
   if (io) {
-    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
     io.emit('order_created', order);
     io.to('admin').emit('stats_update', { type: 'new_order', order });
   }
@@ -1201,4 +1227,5 @@ module.exports = {
   router, setIO, counters, inventory, orders,
   setActiveProxyId: (id) => { activeProxyId = id; },
   flushPrintQueue,
+  computeTotalCoperti,
 };

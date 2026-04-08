@@ -269,9 +269,9 @@
       { id: 'patate',      label: 'Patate' },
     ];
 
-    // Contatori con struttura a 3 colonne (mostriamo solo "pronto")
+    // Contatori con struttura a 3 colonne — mostriamo "pronto - evasi" = pezzi fisicamente presenti
     const counters = {};
-    ITEMS.forEach(i => { counters[i.id] = { pronto: 0, vendute: 0 }; });
+    ITEMS.forEach(i => { counters[i.id] = { pronto: 0, vendute: 0, evasi: 0 }; });
 
     const DELTAS = [10, 20, 30, 40, 50];
     const lastTap = {};
@@ -334,13 +334,14 @@
       setRowsEnabled(false);
     });
 
-    // Sincronizza contatori dal server
+    // Sincronizza contatori dal server — mostra pronto - evasi (pezzi fisicamente presenti)
     socket.on('counters_changed', ({ counters: newCounters }) => {
       ITEMS.forEach(item => {
         const data = newCounters[item.id];
         if (!data) return;
-        counters[item.id] = { pronto: data.pronto, vendute: data.vendute };
-        document.getElementById(`count-${item.id}`).textContent = data.pronto;
+        counters[item.id] = { pronto: data.pronto, vendute: data.vendute, evasi: data.evasi || 0 };
+        const fisici = Math.max(0, data.pronto - (data.evasi || 0));
+        document.getElementById(`count-${item.id}`).textContent = fisici;
       });
     });
 
@@ -353,10 +354,11 @@
       if (lastTap[key] && now - lastTap[key] < 200) return;
       lastTap[key] = now;
 
-      // Aggiornamento ottimistico (solo "pronto")
+      // Aggiornamento ottimistico — mostra pronto - evasi (pezzi fisicamente presenti)
       counters[itemId].pronto = Math.max(0, counters[itemId].pronto + delta);
       const countEl = document.getElementById(`count-${itemId}`);
-      countEl.textContent = counters[itemId].pronto;
+      const fisici = Math.max(0, counters[itemId].pronto - counters[itemId].evasi);
+      countEl.textContent = fisici;
 
       // Flash sul numero
       const flashClass = delta > 0 ? 'flash-up' : 'flash-down';
@@ -378,20 +380,21 @@
       longPressTimers[itemId] = setTimeout(() => {
         // Cancella il tap normale
         longPressTimers[itemId] = 'fired';
-        const current = counters[itemId].pronto;
+        const fisiciAttuali = Math.max(0, counters[itemId].pronto - counters[itemId].evasi);
         const newVal = prompt(
-          `Imposta valore "pronto" per ${ITEMS.find(i => i.id === itemId).label}\n(attuale: ${current})`,
-          String(current)
+          `Imposta pezzi presenti per ${ITEMS.find(i => i.id === itemId).label}\n(attuale: ${fisiciAttuali})`,
+          String(fisiciAttuali)
         );
         if (newVal === null) return;
         const parsed = parseInt(newVal, 10);
         if (isNaN(parsed) || parsed < 0) return;
 
-        // Calcola il delta necessario per raggiungere il valore desiderato
-        const delta = parsed - counters[itemId].pronto;
+        // Calcola il delta su "pronto" per ottenere il valore desiderato di (pronto - evasi)
+        const targetPronto = parsed + counters[itemId].evasi;
+        const delta = targetPronto - counters[itemId].pronto;
         if (delta === 0) return;
 
-        counters[itemId].pronto = parsed;
+        counters[itemId].pronto = targetPronto;
         const countEl = document.getElementById(`count-${itemId}`);
         countEl.textContent = parsed;
         socket.emit('counter_update', { item: itemId, delta });

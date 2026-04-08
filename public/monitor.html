@@ -19,12 +19,44 @@
       -webkit-font-smoothing: antialiased;
       user-select: none;
       cursor: default;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* La griglia prende tutto lo schermo */
+    /* Header coperti — striscia in alto */
+    .coperti-bar {
+      width: 100%;
+      padding: 1vh 4vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2vw;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .coperti-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(14px, 2vw, 24px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(240, 244, 248, 0.35);
+    }
+
+    .coperti-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+      color: #22d3ee;
+      text-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
+    }
+
+    /* La griglia prende il resto dello schermo */
     .board {
       width: 100vw;
-      height: 100vh;
+      flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -45,15 +77,24 @@
     }
 
     .col-label {
-      width: clamp(120px, 18vw, 280px);
       flex-shrink: 0;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(11px, 1.5vw, 20px);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: rgba(240, 244, 248, 0.35);
+    }
+
+    .col-label.col-cook {
+      width: clamp(160px, 24vw, 380px);
+      font-size: clamp(12px, 1.8vw, 22px);
+    }
+
+    .col-label.col-warm {
+      width: clamp(60px, 8vw, 120px);
+      font-size: clamp(9px, 1vw, 14px);
+      color: rgba(240, 244, 248, 0.2);
     }
 
     /* Ogni riga è un piatto */
@@ -83,18 +124,29 @@
       text-transform: uppercase;
     }
 
-    /* Numeri — 2 colonne a destra, font ≥120px per leggibilità a 3 metri */
+    /* Numero "Da cucinare" — grande, protagonista, leggibile a 3+ metri */
     .dish-count {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: clamp(80px, 10vw, 140px);
       line-height: 1;
       color: #ffffff;
-      width: clamp(120px, 18vw, 280px);
       flex-shrink: 0;
       text-align: center;
       transition: color 200ms ease, text-shadow 200ms ease;
+    }
+
+    .dish-count.count-cook {
+      font-size: clamp(80px, 10vw, 140px);
+      width: clamp(160px, 24vw, 380px);
       text-shadow: 0 0 40px rgba(78, 204, 163, 0.12);
+    }
+
+    /* Numero "Nello scaldavivande" — piccolo, secondario */
+    .dish-count.count-warm {
+      font-size: clamp(24px, 3vw, 40px);
+      width: clamp(60px, 8vw, 120px);
+      color: rgba(255, 255, 255, 0.4);
+      text-shadow: none;
     }
 
     .dish-count.changed {
@@ -214,6 +266,12 @@
   <!-- Indicatore connessione -->
   <div class="conn-dot" id="connDot"></div>
 
+  <!-- Header coperti totali -->
+  <div class="coperti-bar">
+    <span class="coperti-label">Coperti serata</span>
+    <span class="coperti-value" id="copertiValue">0</span>
+  </div>
+
   <!-- Tabellone -->
   <div class="board" id="board">
     <!-- Generato da JS -->
@@ -237,19 +295,19 @@
     const counters = {};
     ITEMS.forEach(i => { counters[i.id] = { pronto: 0, vendute: 0, evasi: 0 }; });
 
-    // Genera il tabellone con header + righe (2 colonne)
+    // Genera il tabellone con header + righe (2 colonne: cook grande, warm piccolo)
     const board = document.getElementById('board');
     board.innerHTML = `
       <div class="header-row">
         <span class="col-spacer"></span>
-        <span class="col-label">Da cucinare</span>
-        <span class="col-label">Nello scaldavivande</span>
+        <span class="col-label col-cook">Da cucinare</span>
+        <span class="col-label col-warm">Scaldav.</span>
       </div>
     ` + ITEMS.map(item => `
       <div class="row" id="row-${item.id}">
         <span class="dish-name">${item.label}</span>
-        <span class="dish-count cook-green" id="cook-${item.id}">0</span>
-        <span class="dish-count" id="warm-${item.id}">0</span>
+        <span class="dish-count count-cook cook-green" id="cook-${item.id}">0</span>
+        <span class="dish-count count-warm" id="warm-${item.id}">0</span>
       </div>
     `).join('');
 
@@ -274,8 +332,12 @@
       lostOverlay.classList.add('visible');
     });
 
-    // Aggiornamento contatori — 2 colonne visibili
-    socket.on('counters_changed', ({ counters: newCounters }) => {
+    // Aggiornamento contatori — 2 colonne visibili + coperti header
+    socket.on('counters_changed', ({ counters: newCounters, total_coperti }) => {
+      // Aggiorna header coperti
+      if (total_coperti !== undefined) {
+        document.getElementById('copertiValue').textContent = total_coperti;
+      }
       ITEMS.forEach(item => {
         const oldData = counters[item.id];
         const newData = newCounters[item.id];

@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId, flushPrintQueue } = require('./routes/api');
+const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti } = require('./routes/api');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,6 +12,9 @@ const server = http.createServer(app);
 // Socket.IO con CORS aperto (per il test, in produzione restringere)
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
+  // Rilevamento offline rapido: ping ogni 3s, timeout dopo 5s
+  pingInterval: 3000,
+  pingTimeout: 5000,
 });
 
 // Passa il riferimento io al modulo API
@@ -130,7 +133,7 @@ io.on('connection', (socket) => {
 
     // Invia i contatori attuali ai nuovi monitor/scaldavivande
     if (role === 'monitor' || role === 'scaldavivande') {
-      socket.emit('counters_changed', { counters });
+      socket.emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
     }
 
     // Invia la lista ordini aperti al tablet operatore
@@ -190,8 +193,8 @@ io.on('connection', (socket) => {
         p._lastCheck = Date.now();
       }
     });
-    // Notifica le dashboard
-    io.to('dashboard').emit('printers_status_update', statuses);
+    // Notifica dashboard e casse (le casse mostrano alert stampante offline)
+    io.to('dashboard').to('cassa').emit('printers_status_update', statuses);
   });
 
   // --- Richiesta ping stampanti (dalla dashboard al proxy) ---

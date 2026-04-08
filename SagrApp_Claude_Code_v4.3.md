@@ -538,7 +538,8 @@ Dopo la scelta → va diretto alla pagina, niente sidebar.
 | GET | /setup | Wizard setup inizio turno |
 | GET | /api/health | Health check del server |
 | GET | /api/menu | Menu completo (piatti, prezzi, disponibilità) |
-| POST | /api/orders | **Crea un nuovo ordine** (piatti, tavolo, coperti, nome, sconto, flag gratis) |
+| POST | /api/orders | **Crea un nuovo ordine** (piatti, tavolo, coperti, nome, sconto, flag gratis, asporto) |
+| GET | /api/orders/all | Lista tutti gli ordini della serata (per tab ORDINI cassa) |
 | GET | /api/orders/:id | Dettaglio ordine |
 | POST | /api/orders/:id/fulfill | Evadi ordine (controlla pezzi griglia, scala scaldavivande) |
 | POST | /api/orders/:id/cancel | Annulla ordine (ripristina scorte magazzino e vendute) |

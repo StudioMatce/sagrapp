@@ -318,10 +318,21 @@ function buildFoodOrder(order) {
     BOLD_OFF,
     text(`Ordine #${order.id}  Tavolo ${order.table}`),
     text(now),
+  ];
+
+  // Banner ASPORTO ben visibile sulla comanda cibo
+  if (order.asporto) {
+    parts.push(text(''));
+    parts.push(BOLD_ON, DOUBLE_BOTH);
+    parts.push(text('>>> ASPORTO <<<'));
+    parts.push(NORMAL_SIZE, BOLD_OFF);
+  }
+
+  parts.push(
     text(LINE),
     ALIGN_LEFT,
     text(''),
-  ];
+  );
 
   foodItems.forEach(item => {
     parts.push(BOLD_ON, DOUBLE_BOTH);

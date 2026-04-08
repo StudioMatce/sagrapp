@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SagrApp v4.1 — Zona Controllo</title>
+  <title>SagrApp — Zona Controllo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
@@ -35,7 +35,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 8px 16px;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
@@ -53,16 +53,6 @@
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: rgba(240, 244, 248, 0.5);
-    }
-
-    .header-version {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      font-weight: 700;
-      color: #4ecca3;
-      background: rgba(78, 204, 163, 0.1);
-      padding: 2px 6px;
-      border-radius: 3px;
     }
 
     .header-status {
@@ -86,46 +76,47 @@
       transition: all 200ms ease;
     }
 
-    .status-led.on {
-      background: #4ecca3;
-      box-shadow: 0 0 6px #4ecca3;
-    }
-
-    .status-led.off {
-      background: #e94560;
-      box-shadow: 0 0 6px #e94560;
-      animation: blink-led 1.2s ease infinite;
-    }
+    .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
+    .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; animation: blink-led 1.2s ease infinite; }
 
     @keyframes blink-led {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.3; }
     }
 
-    /* ===== LAYOUT: due sezioni verticali ===== */
+    /* ===== LAYOUT ORIZZONTALE: ordini a sinistra + tastierino a destra ===== */
     .content {
       flex: 1;
       display: flex;
-      flex-direction: column;
       overflow: hidden;
     }
 
-    /* ===== SEZIONE ORDINI APERTI (meta' superiore) ===== */
-    .orders-section {
-      flex: 1;
+    /* ===== PANNELLO ORDINI (sinistra, collassabile) ===== */
+    .orders-panel {
+      width: 45%;
+      max-width: 480px;
       display: flex;
       flex-direction: column;
-      min-height: 0;
-      border-bottom: 2px solid rgba(78, 204, 163, 0.12);
+      border-right: 2px solid rgba(78, 204, 163, 0.12);
+      transition: width 300ms ease, max-width 300ms ease, opacity 300ms ease;
+      overflow: hidden;
+    }
+
+    .orders-panel.collapsed {
+      width: 0;
+      max-width: 0;
+      border-right: none;
+      opacity: 0;
     }
 
     .orders-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 16px;
+      padding: 8px 14px;
       flex-shrink: 0;
       background: rgba(255, 255, 255, 0.015);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
 
     .orders-label {
@@ -152,14 +143,13 @@
     .orders-list {
       flex: 1;
       overflow-y: auto;
-      padding: 0 10px 10px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
       gap: 6px;
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Stato vuoto */
     .orders-empty {
       flex: 1;
       display: flex;
@@ -171,13 +161,8 @@
       padding: 24px;
     }
 
-    .orders-empty-icon {
-      font-size: 32px;
-      opacity: 0.4;
-    }
-
     .orders-empty-text {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       color: #4a5568;
     }
@@ -186,8 +171,8 @@
     .order-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 8px 10px;
       background: rgba(255, 255, 255, 0.025);
       border: 1px solid rgba(255, 255, 255, 0.04);
       border-left: 3px solid rgba(78, 204, 163, 0.3);
@@ -201,57 +186,53 @@
       to { opacity: 1; transform: translateX(0); }
     }
 
-    .order-info {
-      flex: 1;
-      min-width: 0;
-    }
+    .order-info { flex: 1; min-width: 0; }
 
     .order-meta {
       display: flex;
       align-items: baseline;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 2px;
     }
 
     .order-id {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 16px;
+      font-size: 15px;
       color: #ffffff;
     }
 
     .order-table {
       font-weight: 600;
-      font-size: 13px;
+      font-size: 12px;
       color: #4ecca3;
     }
 
     .order-name {
       font-weight: 500;
-      font-size: 12px;
+      font-size: 11px;
       color: rgba(240, 244, 248, 0.4);
       margin-left: auto;
     }
 
     .order-items {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 400;
-      color: rgba(240, 244, 248, 0.35);
+      color: rgba(240, 244, 248, 0.3);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: calc(100vw - 130px);
     }
 
     .btn-cancel {
       flex-shrink: 0;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 6px;
       border: 1px solid rgba(233, 69, 96, 0.25);
       background: rgba(233, 69, 96, 0.06);
       color: #e94560;
       font-family: 'Outfit', sans-serif;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -266,21 +247,49 @@
       transform: scale(0.93);
     }
 
-    /* ===== SEZIONE TASTIERINO (meta' inferiore) ===== */
-    .keypad-section {
-      flex-shrink: 0;
-      padding: 10px 12px 14px;
+    /* ===== PANNELLO TASTIERINO (destra, prende tutto lo spazio) ===== */
+    .keypad-panel {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.01);
+      justify-content: center;
+      padding: 12px 16px;
+      gap: 10px;
+      position: relative;
+    }
+
+    /* Pulsante mostra/nascondi lista ordini — angolo in alto a sinistra del tastierino */
+    .btn-toggle-orders {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: rgba(240, 244, 248, 0.4);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 150ms ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-toggle-orders:active { transform: scale(0.9); }
+    .btn-toggle-orders.active {
+      border-color: rgba(78, 204, 163, 0.3);
+      color: #4ecca3;
     }
 
     /* Display numero ordine */
     .display-bar {
       width: 100%;
-      max-width: 400px;
+      max-width: 360px;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -317,7 +326,7 @@
     /* Griglia tastierino */
     .keypad-grid {
       width: 100%;
-      max-width: 400px;
+      max-width: 360px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
@@ -346,7 +355,6 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
-    /* Tasto C — cancella */
     .key-c {
       background: rgba(233, 69, 96, 0.08);
       border-color: rgba(233, 69, 96, 0.2);
@@ -362,7 +370,6 @@
       border-color: #e94560;
     }
 
-    /* Tasto EVADI — invio */
     .key-evadi {
       background: rgba(78, 204, 163, 0.1);
       border-color: rgba(78, 204, 163, 0.25);
@@ -394,13 +401,13 @@
       letter-spacing: 0.02em;
     }
 
-    /* ===== FEEDBACK TOAST (barra in basso) ===== */
+    /* ===== FEEDBACK TOAST ===== */
     .toast {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      padding: 16px 20px;
+      padding: 14px 20px;
       text-align: center;
       font-weight: 700;
       font-size: 15px;
@@ -411,23 +418,10 @@
       color: #fff;
     }
 
-    .toast.visible {
-      transform: translateY(0);
-    }
-
-    .toast-success {
-      background: #4ecca3;
-      color: #060a12;
-    }
-
-    .toast-error {
-      background: #e94560;
-    }
-
-    .toast-warning {
-      background: #f0a500;
-      color: #1a1a2e;
-    }
+    .toast.visible { transform: translateY(0); }
+    .toast-success { background: #4ecca3; color: #060a12; }
+    .toast-error { background: #e94560; }
+    .toast-warning { background: #f0a500; color: #1a1a2e; }
 
     .toast-detail {
       display: block;
@@ -456,27 +450,24 @@
       transition: transform 300ms ease;
     }
 
-    .offline-banner.visible {
-      transform: translateY(0);
-    }
+    .offline-banner.visible { transform: translateY(0); }
 
     /* ===== SCROLLBAR ===== */
     .orders-list::-webkit-scrollbar { width: 4px; }
     .orders-list::-webkit-scrollbar-track { background: transparent; }
     .orders-list::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
 
-    /* ===== ANIMAZIONE uscita ordine ===== */
     .order-row.removing {
       animation: row-out 300ms ease forwards;
     }
 
     @keyframes row-out {
-      to { opacity: 0; transform: translateX(40px); height: 0; padding: 0 12px; margin: 0; border-width: 0; overflow: hidden; }
+      to { opacity: 0; transform: translateX(40px); height: 0; padding: 0; margin: 0; border-width: 0; overflow: hidden; }
     }
 
     .btn-esci {
       position: fixed;
-      top: 10px;
+      top: 8px;
       right: 10px;
       z-index: 900;
       padding: 6px 14px;
@@ -506,7 +497,6 @@
   <header class="header">
     <div class="header-left">
       <span class="header-title">Zona Controllo</span>
-      <span class="header-version">v4.1</span>
     </div>
     <span class="header-status" id="headerStatus">
       <span class="status-led" id="statusLed"></span>
@@ -514,25 +504,27 @@
     </span>
   </header>
 
-  <!-- Contenuto principale: ordini sopra, tastierino sotto -->
+  <!-- Layout orizzontale: ordini a sinistra + tastierino a destra -->
   <div class="content">
 
-    <!-- Meta' superiore: lista ordini aperti -->
-    <section class="orders-section">
+    <!-- Pannello ordini aperti (sinistra, collassabile) -->
+    <div class="orders-panel" id="ordersPanel">
       <div class="orders-toolbar">
         <span class="orders-label">Ordini aperti</span>
         <span class="orders-count-badge" id="ordersCount">0</span>
       </div>
       <div class="orders-list" id="ordersList">
         <div class="orders-empty">
-          <div class="orders-empty-icon">&#9744;</div>
           <div class="orders-empty-text">Nessun ordine aperto</div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Meta' inferiore: tastierino numerico -->
-    <section class="keypad-section">
+    <!-- Pannello tastierino (destra) -->
+    <div class="keypad-panel">
+      <!-- Pulsante mostra/nascondi lista ordini -->
+      <button class="btn-toggle-orders active" id="btnToggleOrders" onclick="toggleOrdersPanel()" title="Mostra/nascondi ordini">&#9776;</button>
+
       <!-- Display input -->
       <div class="display-bar">
         <span class="display-label">Evadi #</span>
@@ -557,11 +549,11 @@
 
       <!-- Ultimo evaso -->
       <div class="last-line" id="lastFulfilled"></div>
-    </section>
+    </div>
 
   </div>
 
-  <!-- Toast feedback (singolo, riusato) -->
+  <!-- Toast feedback -->
   <div class="toast" id="toast">
     <span id="toastMsg"></span>
     <span class="toast-detail" id="toastDetail"></span>
@@ -570,27 +562,37 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // === STATO ===
-    let inputBuffer = '';
-    let connected = false;
-    let submitting = false;
-    let toastTimer = null;
+    var inputBuffer = '';
+    var connected = false;
+    var submitting = false;
+    var toastTimer = null;
+    var ordersPanelVisible = true;
 
     // === RIFERIMENTI DOM ===
-    const displayValue = document.getElementById('displayValue');
-    const btnEvadi = document.getElementById('btnEvadi');
-    const ordersList = document.getElementById('ordersList');
-    const ordersCount = document.getElementById('ordersCount');
-    const lastFulfilled = document.getElementById('lastFulfilled');
-    const offlineBanner = document.getElementById('offlineBanner');
-    const statusLed = document.getElementById('statusLed');
-    const statusText = document.getElementById('statusText');
-    const headerStatus = document.getElementById('headerStatus');
-    const toastEl = document.getElementById('toast');
-    const toastMsg = document.getElementById('toastMsg');
-    const toastDetail = document.getElementById('toastDetail');
+    var displayValue = document.getElementById('displayValue');
+    var btnEvadi = document.getElementById('btnEvadi');
+    var ordersList = document.getElementById('ordersList');
+    var ordersCount = document.getElementById('ordersCount');
+    var lastFulfilled = document.getElementById('lastFulfilled');
+    var offlineBanner = document.getElementById('offlineBanner');
+    var statusLed = document.getElementById('statusLed');
+    var statusText = document.getElementById('statusText');
+    var headerStatus = document.getElementById('headerStatus');
+    var toastEl = document.getElementById('toast');
+    var toastMsg = document.getElementById('toastMsg');
+    var toastDetail = document.getElementById('toastDetail');
+    var ordersPanel = document.getElementById('ordersPanel');
+    var btnToggleOrders = document.getElementById('btnToggleOrders');
+
+    // === TOGGLE PANNELLO ORDINI ===
+    function toggleOrdersPanel() {
+      ordersPanelVisible = !ordersPanelVisible;
+      ordersPanel.classList.toggle('collapsed', !ordersPanelVisible);
+      btnToggleOrders.classList.toggle('active', ordersPanelVisible);
+    }
 
     // === SOCKET.IO ===
-    const socket = io(window.location.origin, {
+    var socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -615,7 +617,7 @@
       setKeypadEnabled(false);
     });
 
-    // === LISTA ORDINI APERTI — aggiornamento real-time ===
+    // === LISTA ORDINI APERTI ===
     socket.on('open_orders_update', function (data) {
       renderOpenOrders(data.orders);
     });
@@ -626,19 +628,16 @@
       if (orders.length === 0) {
         ordersList.innerHTML =
           '<div class="orders-empty">' +
-            '<div class="orders-empty-icon">&#9744;</div>' +
             '<div class="orders-empty-text">Nessun ordine aperto</div>' +
           '</div>';
         return;
       }
 
-      // Ordini dal piu' vecchio (primo da evadere) al piu' recente
       var sorted = orders.slice().sort(function (a, b) {
         return (a.created_at || a.id) - (b.created_at || b.id);
       });
 
       ordersList.innerHTML = sorted.map(function (o) {
-        // Abbrevia il sommario piatti se troppo lungo
         var summary = o.items_summary || '';
         var nameTag = o.customer_name ? '<span class="order-name">' + escHTML(o.customer_name) + '</span>' : '';
 
@@ -656,7 +655,6 @@
       }).join('');
     }
 
-    // Helper per evitare injection HTML
     function escHTML(str) {
       var d = document.createElement('div');
       d.textContent = str;
@@ -676,7 +674,6 @@
         var data = await res.json();
 
         if (data.success) {
-          // Animazione uscita prima che il socket aggiorni la lista
           var row = document.querySelector('.order-row[data-id="' + orderId + '"]');
           if (row) row.classList.add('removing');
           showToast('success', 'Ordine #' + data.order_number + ' annullato', data.table ? 'Tav.' + data.table : '');
@@ -731,29 +728,24 @@
         var data = await res.json();
 
         if (data.success) {
-          // Successo — feedback verde
           var tableInfo = data.table ? ' \u2014 Tav.' + data.table : '';
           showToast('success', 'Ordine #' + data.order_number + ' evaso' + tableInfo);
           lastFulfilled.textContent = 'Ultimo evaso: #' + data.order_number + tableInfo + ' \u2713';
         } else if (data.not_ready) {
-          // Scorte insufficienti — feedback rosso con dettaglio pezzi mancanti
           var details = data.missing.map(function (m) {
             return m.piece + ' (servono ' + m.needed + ', disponibili ' + m.available + ')';
           }).join(', ');
           showToast('error', 'Non abbastanza scorte', details);
         } else if (data.already_fulfilled) {
-          // Gia' evaso — feedback giallo
           var tblInfo = data.table ? ' \u2014 Tav.' + data.table : '';
           showToast('warning', 'Ordine #' + data.order_number + ' gia\u0300 evaso' + tblInfo);
         } else {
-          // Non trovato
           showToast('error', 'Ordine non trovato');
         }
       } catch (err) {
         showToast('error', 'Errore di rete');
       }
 
-      // Reset input dopo ogni operazione
       inputBuffer = '';
       updateDisplay();
       submitting = false;
@@ -761,18 +753,11 @@
 
     // === TOAST FEEDBACK ===
     function showToast(type, message, detail) {
-      // Cancella timer precedente
-      if (toastTimer) {
-        clearTimeout(toastTimer);
-        toastTimer = null;
-      }
-
-      // Rimuovi classi tipo precedenti
+      if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
       toastEl.className = 'toast toast-' + type + ' visible';
       toastMsg.textContent = message;
       toastDetail.textContent = detail || '';
       toastDetail.style.display = detail ? 'block' : 'none';
-
       toastTimer = setTimeout(function () {
         toastEl.classList.remove('visible');
         toastTimer = null;
@@ -793,7 +778,7 @@
       }
     }
 
-    // === TASTIERA FISICA (utile per test desktop) ===
+    // === TASTIERA FISICA ===
     document.addEventListener('keydown', function (e) {
       if (!connected || submitting) return;
       if (e.key >= '0' && e.key <= '9') {

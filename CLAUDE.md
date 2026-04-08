@@ -84,23 +84,27 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
 - Socket.IO event `menu_updated` per aggiornare le casse in tempo reale
 
 ## Interfaccia cassa (cassa.html)
-- **Layout 70/30**: area piatti a sinistra (70%) con tab CIBO/BEVANDE, colonna ordine a destra (30%)
+- **Layout 70/30**: area piatti a sinistra (70%) con tab CIBO/BEVANDE/ORDINI, colonna ordine a destra (30%)
 - Tab CIBO: primi → secondi → speciale del giorno → contorni → condimenti
 - Tab BEVANDE: bevande raggruppate con badge contatore
+- Tab ORDINI: storico completo ordini della serata (numero, tavolo, piatti, totale, stato) con pulsante annulla
 - Campi ordine:
   - **Nome cliente** (opzionale, testo)
   - **Tavolo** (obbligatorio, numerico)
   - **Coperti** (obbligatorio, numerico) — stampati sulla comanda bevande (per le posate)
+  - **Toggle Asporto**: quando attivo, coperti = 0 e disabilitato, tab bevande disabilitata, niente stampa comanda bevande, "ASPORTO" stampato sulla comanda cibo
   - **Sconto** (opzionale, € o %)
   - **Flag gratis** (toggle, uno solo alla volta): Sponsor | Don Pierino | Amici
 - Quando un flag gratis è attivo: totale = €0, ma ordine registrato, stampato, scorte scalate normalmente
 - Il piatto speciale del giorno è visibile solo se `available_date` corrisponde alla data corrente
 
-## Monitor cuochi (2 colonne)
+## Monitor cuochi
+**Header**: coperti totali della serata (aggiornamento real-time)
+
 Traccia 6 articoli in pezzi singoli: costicine, salsicce, sovracoscia, pastin, polenta, patate.
 2 colonne visibili sulla TV:
-- **Da cucinare** = vendute − pronto (cosa il cuoco deve ancora cucinare)
-- **Nello scaldavivande** = pronto − evasi (pezzi fisicamente presenti ora)
+- **Da cucinare** = vendute − pronto (GRANDE, protagonista — il cuoco guarda solo questo)
+- **Nello scaldavivande** = pronto − evasi (piccolo, secondario)
 
 Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi totale.
 - "Da cucinare" SALE con nuovi ordini, SCENDE quando il cuoco deposita pezzi
@@ -109,14 +113,14 @@ Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi
 ### Codifica colori monitor
 - **Da cucinare**: verde (0), giallo (1-10), rosso (>10)
 - **Nello scaldavivande**: verde (>10), giallo (1-10), rosso (0)
-- Font ≥120px per leggibilità a 3 metri
 
 ### Scaldavivande
+- Mostra `pronto - evasi` = pezzi fisicamente presenti (scende con evasioni)
 - Pulsanti +10/+20/+30/+40/+50 e -1 per ogni articolo
 - **Long press** sul pulsante meno (600ms) apre input numerico per impostare valore esatto
 
 ## Evasione ordini (regole)
-L'operatore fisso chiude gli ordini dal suo tablet. Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:
+L'operatore fisso chiude gli ordini dal suo tablet (layout orizzontale: lista ordini a sinistra, collassabile; tastierino a destra). Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:
 
 | Situazione | Comportamento |
 |---|---|
@@ -142,9 +146,10 @@ L'operatore può annullare un ordine aperto (con conferma):
 | Cibo + bevande | si | si | si | — |
 | Con piatto speciale | si | si (con speciale) | si | si (solo speciale) |
 
-*La comanda bevande stampa SEMPRE (anche senza bevande) per il conteggio coperti/posate.
+*La comanda bevande stampa SEMPRE (anche senza bevande) per il conteggio coperti/posate — tranne ordini **asporto**.
 - **Coperti** stampati sulla comanda bevande (sempre)
 - **Ricevuta** mostra: subtotale, sconto, omaggio, totale, nome cliente
+- **Asporto**: niente comanda bevande, ">>> ASPORTO <<<" sulla comanda cibo, coperti = 0
 
 ## Admin RECAP
 Il report post-serata (`GET /api/admin/stats/recap`) include:
@@ -171,9 +176,21 @@ Tutte e tre le casse usano il **layout a due pannelli 70/30**:
 
 | Cassa | Tab | Campi ordine | Source |
 |---|---|---|---|
-| Generale | CIBO / BEVANDE | Nome, Tavolo, Coperti, Omaggi, Sconto | `principale` |
+| Generale | CIBO / BEVANDE / ORDINI | Nome, Tavolo, Coperti, Asporto, Omaggi, Sconto | `principale` |
 | Bar | — (solo bevande) | Nome, Tavolo | `bar` |
 | Casetta | CONTORNI / BEVANDE | Tavolo (opzionale) | `casetta` |
+
+## Rilevamento offline
+- Socket.IO configurato con `pingInterval: 3000, pingTimeout: 5000` — disconnessione rilevata in ~5 secondi
+- Tutte le pagine operative (casse, monitor, scaldavivande, controllo) mostrano banner rosso "CONNESSIONE PERSA"
+- Il monitor TV mostra overlay a tutto schermo quando disconnesso
+- Tastierini e pulsanti disabilitati durante la disconnessione
+
+## Zona Controllo (controllo.html)
+- **Layout orizzontale** ottimizzato per tablet in landscape
+- **Sinistra**: lista ordini aperti (scrollabile, collassabile con pulsante toggle)
+- **Destra**: tastierino numerico per evasione ordini
+- Pulsante toggle per nascondere la lista ordini e dare più spazio al tastierino
 
 ## Convenzioni codice
 - Tutti i file frontend sono HTML vanilla con JS inline (no build step)

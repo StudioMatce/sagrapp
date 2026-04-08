@@ -433,6 +433,59 @@
       box-shadow: 0 0 12px rgba(255, 217, 61, 0.08);
     }
 
+    /* ===== TOGGLE ASPORTO ===== */
+    .asporto-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .asporto-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(240, 244, 248, 0.4);
+      flex: 1;
+    }
+
+    .asporto-toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 200ms ease;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+
+    .asporto-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transition: all 200ms ease;
+    }
+
+    .asporto-toggle.active {
+      background: rgba(34, 211, 238, 0.2);
+      border-color: #22d3ee;
+    }
+
+    .asporto-toggle.active::after {
+      left: 22px;
+      background: #22d3ee;
+    }
+
+    .asporto-toggle.active + .asporto-label {
+      color: #22d3ee;
+    }
+
     /* ===== SCONTO ===== */
     .discount-row {
       display: flex;
@@ -713,6 +766,124 @@
       letter-spacing: 0.03em;
     }
 
+    /* ===== TAB ORDINI — lista storico ordini serata ===== */
+    .orders-panel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .order-history-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      border-left: 3px solid rgba(78, 204, 163, 0.3);
+    }
+
+    .order-history-row.cancelled {
+      border-left-color: rgba(233, 69, 96, 0.4);
+      opacity: 0.5;
+    }
+
+    .order-history-row.completed {
+      border-left-color: rgba(108, 122, 137, 0.3);
+    }
+
+    .oh-info { flex: 1; min-width: 0; }
+
+    .oh-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 2px;
+      flex-wrap: wrap;
+    }
+
+    .oh-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    .oh-table {
+      font-weight: 600;
+      font-size: 12px;
+      color: #4ecca3;
+    }
+
+    .oh-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(78, 204, 163, 0.7);
+      margin-left: auto;
+    }
+
+    .oh-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .oh-status.in_progress { background: rgba(78, 204, 163, 0.15); color: #4ecca3; }
+    .oh-status.completed { background: rgba(108, 122, 137, 0.15); color: #6c7a89; }
+    .oh-status.cancelled { background: rgba(233, 69, 96, 0.15); color: #e94560; }
+
+    .oh-items {
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.35);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .oh-btn-cancel {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.25);
+      background: rgba(233, 69, 96, 0.06);
+      color: #e94560;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 120ms ease;
+    }
+
+    .oh-btn-cancel:active {
+      background: rgba(233, 69, 96, 0.3);
+      transform: scale(0.93);
+    }
+
+    .oh-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(240, 244, 248, 0.25);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .oh-courtesy {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #ffd93d;
+    }
+
     /* ===== BANNER DISCONNESSIONE ===== */
     .offline-banner {
       position: fixed;
@@ -838,6 +1009,10 @@
           BEVANDE
           <span class="tab-badge hidden" id="tabBevandeBadge">0</span>
         </button>
+        <button class="tab-btn" id="tabOrdini" onclick="switchTab('ordini')">
+          ORDINI
+          <span class="tab-badge hidden" id="tabOrdiniBadge">0</span>
+        </button>
         <span class="tab-spacer"></span>
         <span class="tab-status" id="tabStatus">
           <span class="status-led" id="statusLed"></span>
@@ -853,6 +1028,12 @@
 
         <!-- TAB BEVANDE: tutte le bevande raggruppate -->
         <div class="tab-panel" id="panelBevande"></div>
+
+        <!-- TAB ORDINI: storico ordini della serata -->
+        <div class="tab-panel" id="panelOrdini">
+          <div class="oh-empty" id="ordiniEmpty">Nessun ordine nella serata</div>
+          <div class="orders-panel-list" id="ordiniList"></div>
+        </div>
 
       </div>
     </div>
@@ -886,6 +1067,12 @@
             <span class="field-label">Cop</span>
             <input type="number" id="copertiInput" inputmode="numeric" min="1" max="50" placeholder="&mdash;">
           </div>
+        </div>
+
+        <!-- Toggle asporto -->
+        <div class="asporto-row">
+          <div class="asporto-toggle" id="asportoToggle" onclick="toggleAsporto()"></div>
+          <span class="asporto-label" id="asportoLabel">Asporto</span>
         </div>
 
         <!-- Flag omaggio -->
@@ -1039,6 +1226,7 @@
     let activeCourtesy = null; // 'sponsor' | 'don_pierino' | 'amici' | null
     let discountIsPercent = false;
     let currentTab = 'cibo';
+    let asportoActive = false;
 
     // Mappa rapida id → item per lookup veloci
     const itemMap = {};
@@ -1093,13 +1281,18 @@
 
     // ===== SWITCH TAB =====
     function switchTab(tab) {
+      if (tab === 'bevande' && asportoActive) return; // Bevande disabilitate in asporto
       currentTab = tab;
       // Aggiorna pulsanti tab
       document.getElementById('tabCibo').classList.toggle('active', tab === 'cibo');
       document.getElementById('tabBevande').classList.toggle('active', tab === 'bevande');
+      document.getElementById('tabOrdini').classList.toggle('active', tab === 'ordini');
       // Aggiorna pannelli
       document.getElementById('panelCibo').classList.toggle('active', tab === 'cibo');
       document.getElementById('panelBevande').classList.toggle('active', tab === 'bevande');
+      document.getElementById('panelOrdini').classList.toggle('active', tab === 'ordini');
+      // Carica ordini quando si apre il tab
+      if (tab === 'ordini') loadAllOrders();
     }
 
     // ===== AGGIORNA BADGE E CHECK SULLE TAB =====
@@ -1148,6 +1341,48 @@
     function toggleDiscountUnit() {
       discountIsPercent = !discountIsPercent;
       document.getElementById('discountToggle').textContent = discountIsPercent ? '%' : '\u20AC';
+      updateOrderColumn();
+    }
+
+    // ===== TOGGLE ASPORTO =====
+    // Quando attivo: coperti = 0 e disabilitato, tab bevande disabilitata, niente stampa bevande
+    function toggleAsporto() {
+      asportoActive = !asportoActive;
+      document.getElementById('asportoToggle').classList.toggle('active', asportoActive);
+
+      var copertiInput = document.getElementById('copertiInput');
+      var tabBevande = document.getElementById('tabBevande');
+
+      if (asportoActive) {
+        // Disabilita coperti e metti a 0
+        copertiInput.value = '0';
+        copertiInput.disabled = true;
+        copertiInput.parentElement.style.opacity = '0.3';
+        // Disabilita tab bevande e resetta quantita' bevande
+        tabBevande.style.opacity = '0.3';
+        tabBevande.style.pointerEvents = 'none';
+        ITEMS.forEach(function(item) {
+          if (item.category === 'bevanda' && quantities[item.id] > 0) {
+            quantities[item.id] = 0;
+            var qtyEl = document.getElementById('qty-' + item.id);
+            if (qtyEl) { qtyEl.textContent = '0'; qtyEl.classList.add('zero'); }
+            var cardEl = document.getElementById('card-' + item.id);
+            if (cardEl) cardEl.classList.remove('active');
+          }
+        });
+        // Se siamo sul tab bevande, torna a cibo
+        if (currentTab === 'bevande') switchTab('cibo');
+      } else {
+        // Riabilita coperti
+        copertiInput.disabled = false;
+        copertiInput.value = '';
+        copertiInput.parentElement.style.opacity = '';
+        // Riabilita tab bevande
+        tabBevande.style.opacity = '';
+        tabBevande.style.pointerEvents = '';
+      }
+
+      updateTabBadges();
       updateOrderColumn();
     }
 
@@ -1291,7 +1526,7 @@
       // Condizioni: almeno 1 piatto, tavolo compilato, coperti compilati
       const tableValue = document.getElementById('tableInput').value;
       const copertiValue = document.getElementById('copertiInput').value;
-      const canOrder = totalItems > 0 && tableValue && copertiValue;
+      const canOrder = totalItems > 0 && tableValue && (asportoActive || copertiValue);
       document.getElementById('btnOrder').classList.toggle('disabled', !canOrder);
     }
 
@@ -1313,8 +1548,8 @@
         return;
       }
 
-      // Validazione coperti
-      if (!coperti || coperti < 1) {
+      // Validazione coperti (non richiesta in asporto)
+      if (!asportoActive && (!coperti || coperti < 1)) {
         const field = document.getElementById('copertiField');
         field.classList.add('error');
         setTimeout(function() { field.classList.remove('error'); }, 400);
@@ -1348,7 +1583,8 @@
             discount_value: discountRaw,
             courtesy_type: courtesyType,
             source: 'principale',
-            coperti: coperti,
+            coperti: asportoActive ? 0 : coperti,
+            asporto: asportoActive,
           }),
         });
         const data = await res.json();
@@ -1420,6 +1656,16 @@
         activeCourtesy = null;
       }
 
+      // Reset asporto
+      if (asportoActive) {
+        asportoActive = false;
+        document.getElementById('asportoToggle').classList.remove('active');
+        document.getElementById('copertiInput').disabled = false;
+        document.getElementById('copertiInput').parentElement.style.opacity = '';
+        document.getElementById('tabBevande').style.opacity = '';
+        document.getElementById('tabBevande').style.pointerEvents = '';
+      }
+
       // Reset sconto
       discountIsPercent = false;
       document.getElementById('discountToggle').textContent = '\u20AC';
@@ -1435,6 +1681,86 @@
       var el = document.getElementById('overlay-' + type);
       el.classList.add('visible');
       setTimeout(function() { el.classList.remove('visible'); }, 2500);
+    }
+
+    // ===== TAB ORDINI — carica e mostra tutti gli ordini della serata =====
+    async function loadAllOrders() {
+      try {
+        const res = await fetch('/api/orders/all');
+        const data = await res.json();
+        renderAllOrders(data);
+      } catch (e) {
+        document.getElementById('ordiniList').innerHTML = '';
+        document.getElementById('ordiniEmpty').textContent = 'Errore caricamento ordini';
+        document.getElementById('ordiniEmpty').style.display = 'block';
+      }
+    }
+
+    function renderAllOrders(orderList) {
+      const listEl = document.getElementById('ordiniList');
+      const emptyEl = document.getElementById('ordiniEmpty');
+      // Aggiorna badge contatore
+      const badge = document.getElementById('tabOrdiniBadge');
+      if (orderList.length > 0) {
+        badge.textContent = orderList.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      if (orderList.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      listEl.innerHTML = orderList.map(function(o) {
+        var statusClass = o.status;
+        var statusLabel = o.status === 'in_progress' ? 'APERTO' : o.status === 'completed' ? 'EVASO' : 'ANNULLATO';
+        var courtesyTag = o.courtesy_type ? '<span class="oh-courtesy">OMAGGIO</span>' : '';
+        var asportoTag = o.asporto ? '<span class="oh-courtesy" style="color:#22d3ee">ASPORTO</span>' : '';
+        var cancelBtn = o.status === 'in_progress'
+          ? '<button class="oh-btn-cancel" onclick="cancelOrderFromCassa(' + o.id + ')">Annulla</button>'
+          : '';
+        return '<div class="order-history-row ' + statusClass + '">' +
+          '<div class="oh-info">' +
+            '<div class="oh-meta">' +
+              '<span class="oh-id">#' + o.id + '</span>' +
+              '<span class="oh-table">Tav.' + o.table + '</span>' +
+              '<span class="oh-status ' + statusClass + '">' + statusLabel + '</span>' +
+              courtesyTag + asportoTag +
+              '<span class="oh-total">' + formatPrice(o.total) + '</span>' +
+            '</div>' +
+            '<div class="oh-items">' + escHTML(o.items_summary) + '</div>' +
+          '</div>' +
+          cancelBtn +
+        '</div>';
+      }).join('');
+    }
+
+    function escHTML(str) {
+      var d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    async function cancelOrderFromCassa(orderId) {
+      if (!confirm('Annullare l\'ordine #' + orderId + '?\nScorte e contatori verranno ripristinati.')) return;
+      try {
+        var res = await fetch('/api/orders/' + orderId + '/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        var data = await res.json();
+        if (data.success) {
+          loadAllOrders(); // Ricarica la lista
+        } else {
+          alert(data.error || 'Errore annullamento');
+        }
+      } catch (e) {
+        alert('Errore di rete');
+      }
     }
 
     // ===== SOCKET.IO =====
@@ -1507,6 +1833,17 @@
     // Richiedi controllo stampanti dopo connessione
     socket.on('connect', function() {
       setTimeout(function() { socket.emit('request_printer_check'); }, 2000);
+    });
+
+    // Aggiorna tab ordini in tempo reale quando cambiano gli ordini
+    socket.on('order_created', function() {
+      if (currentTab === 'ordini') loadAllOrders();
+    });
+    socket.on('order_cancelled', function() {
+      if (currentTab === 'ordini') loadAllOrders();
+    });
+    socket.on('order_fulfilled_broadcast', function() {
+      if (currentTab === 'ordini') loadAllOrders();
     });
 
     // Ascolta aggiornamenti inventario dal server per segnalare piatti esauriti
