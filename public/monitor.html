@@ -23,34 +23,40 @@
       flex-direction: column;
     }
 
-    /* Header coperti — allineato a destra */
+    /* Header coperti — allineato a destra, stessa griglia delle righe sotto */
     .coperti-bar {
       width: 100%;
-      padding: 1vh 4vw;
+      padding: 1vh 2vw;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 2vw;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
 
+    /* Spacer che occupa lo stesso spazio di dish-name + col-warm */
+    .coperti-spacer { flex: 1; }
+
     .coperti-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(14px, 2vw, 24px);
+      font-size: clamp(11px, 1.5vw, 18px);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: rgba(240, 244, 248, 0.35);
+      color: rgba(240, 244, 248, 0.3);
+      margin-right: 1.5vw;
     }
 
+    /* Stessa width della colonna "Da cucinare" per allineamento perfetto */
     .coperti-value {
       font-family: 'JetBrains Mono', monospace;
       font-size: clamp(28px, 4vw, 48px);
       font-weight: 800;
       color: #22d3ee;
       text-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
+      width: clamp(160px, 24vw, 380px);
+      text-align: center;
+      flex-shrink: 0;
     }
 
     /* La griglia prende il resto dello schermo */
@@ -268,7 +274,8 @@
 
   <!-- Header coperti totali -->
   <div class="coperti-bar">
-    <span class="coperti-label">Coperti serata</span>
+    <span class="coperti-spacer"></span>
+    <span class="coperti-label">Coperti</span>
     <span class="coperti-value" id="copertiValue">0</span>
   </div>
 
