@@ -23,13 +23,13 @@
       flex-direction: column;
     }
 
-    /* Header coperti — striscia in alto */
+    /* Header coperti — allineato a destra */
     .coperti-bar {
       width: 100%;
       padding: 1vh 4vw;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       gap: 2vw;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -300,14 +300,14 @@
     board.innerHTML = `
       <div class="header-row">
         <span class="col-spacer"></span>
-        <span class="col-label col-cook">Da cucinare</span>
         <span class="col-label col-warm">Scaldav.</span>
+        <span class="col-label col-cook">Da cucinare</span>
       </div>
     ` + ITEMS.map(item => `
       <div class="row" id="row-${item.id}">
         <span class="dish-name">${item.label}</span>
-        <span class="dish-count count-cook cook-green" id="cook-${item.id}">0</span>
         <span class="dish-count count-warm" id="warm-${item.id}">0</span>
+        <span class="dish-count count-cook cook-green" id="cook-${item.id}">0</span>
       </div>
     `).join('');
 
