@@ -26,8 +26,8 @@ print-proxy/
 public/
   index.html        # Login unificato con PIN (tastierino + scelta ruolo per operatore)
   cassa.html        # Cassa ordini — 70/30 layout con tab CIBO/BEVANDE
-  cassa-bar.html    # Cassa bar (solo bevande, source: 'bar')
-  cassa-casetta.html # Cassa casetta aperitivi (source: 'casetta')
+  cassa-bar.html    # Cassa bar — layout 70/30 come generale (solo bevande, source: 'bar')
+  cassa-casetta.html # Cassa casetta — layout 70/30, tab CONTORNI/BEVANDE (source: 'casetta')
   monitor.html      # Monitor TV cuochi (accesso diretto senza PIN)
   scaldavivande.html # Tablet scaldavivande (+10/+20/+30/+40/+50)
   controllo.html    # Tablet operatore fisso (lista ordini + tastierino evasione)
@@ -156,6 +156,24 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - **Omaggi**: conteggio e valore economico reale per tipo (sponsor, don_pierino, amici)
 - **Sconti**: totale sconti applicati
 - Ordini incompleti
+
+### Archivio serate
+- **Selettore serate** nell'header del recap per visualizzare lo storico
+- Alla chiusura turno (`POST /admin/reset`), lo snapshot viene salvato in `archivedSessions`
+- Se si chiude più volte nella stessa giornata, i dati vengono **aggregati** in un'unica sessione (merge di ordini, vendite, omaggi, scorte)
+- API: `GET /api/admin/sessions` (lista serate), `GET /api/admin/sessions/:id/recap` (recap archiviato)
+
+## Layout casse
+Tutte e tre le casse usano il **layout a due pannelli 70/30**:
+- **70% sinistra**: area menu con piatti/bevande e stepper quantità
+- **30% destra**: colonna ordine con form, riepilogo, totale e bottone ORDINA
+- Responsive: sotto 700px si impila verticalmente
+
+| Cassa | Tab | Campi ordine | Source |
+|---|---|---|---|
+| Generale | CIBO / BEVANDE | Nome, Tavolo, Coperti, Omaggi, Sconto | `principale` |
+| Bar | — (solo bevande) | Nome, Tavolo | `bar` |
+| Casetta | CONTORNI / BEVANDE | Tavolo (opzionale) | `casetta` |
 
 ## Convenzioni codice
 - Tutti i file frontend sono HTML vanilla con JS inline (no build step)
