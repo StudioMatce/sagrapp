@@ -19,6 +19,8 @@ const CODEPAGE_CP437 = Buffer.from([ESC, 0x74, 0x00]);
 
 // Separatore largo 32 caratteri (80mm standard)
 const LINE = '================================';
+// Riquadro in DOUBLE mode (16 chars = tutta la larghezza 80mm)
+const BOX = '****************';
 
 // Converte una stringa in Buffer (encoding latin1 per caratteri speciali)
 function text(str) {
@@ -242,7 +244,10 @@ function buildReceipt(order) {
     NORMAL_SIZE, BOLD_OFF,
     text(LINE),
     BOLD_ON, DOUBLE_BOTH,
-    text(`#${order.id}  TAV.${order.table}  COP.${order.coperti || 0}`),
+    text(BOX),
+    text(`#${order.id}  TAV.${order.table}`),
+    text(`COP.${order.coperti || 0}`),
+    text(BOX),
     NORMAL_SIZE, BOLD_OFF,
     text(now),
     text(LINE),
@@ -334,20 +339,18 @@ function buildFoodOrder(order) {
     BOLD_OFF,
   ];
 
-  // Ordine, tavolo e coperti ben visibili in DOUBLE
+  // Riquadro con ordine, tavolo, coperti e asporto
   parts.push(BOLD_ON, DOUBLE_BOTH);
+  parts.push(text(BOX));
   parts.push(text(`#${order.id}  TAV.${order.table}`));
   if (coperti > 0) {
     parts.push(text(`COPERTI: ${coperti}`));
   }
-  parts.push(NORMAL_SIZE, BOLD_OFF);
-
-  // Banner ASPORTO ben visibile
   if (order.asporto) {
-    parts.push(BOLD_ON, DOUBLE_BOTH);
     parts.push(text('>>> ASPORTO <<<'));
-    parts.push(NORMAL_SIZE, BOLD_OFF);
   }
+  parts.push(text(BOX));
+  parts.push(NORMAL_SIZE, BOLD_OFF);
 
   parts.push(
     text(LINE),
@@ -393,12 +396,14 @@ function buildDrinkOrder(order) {
     BOLD_OFF,
   ];
 
-  // Ordine, tavolo e coperti ben visibili in DOUBLE
+  // Riquadro con ordine, tavolo e coperti
   parts.push(BOLD_ON, DOUBLE_BOTH);
+  parts.push(text(BOX));
   parts.push(text(`#${order.id}  TAV.${order.table}`));
   if (coperti > 0) {
     parts.push(text(`COPERTI: ${coperti}`));
   }
+  parts.push(text(BOX));
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
   parts.push(text(LINE), ALIGN_LEFT, text(''));
@@ -443,9 +448,11 @@ function buildSpecialOrder(order) {
     BOLD_OFF,
   ];
 
-  // Ordine e tavolo ben visibili in DOUBLE
+  // Riquadro con ordine e tavolo
   parts.push(BOLD_ON, DOUBLE_BOTH);
+  parts.push(text(BOX));
   parts.push(text(`#${order.id}  TAV.${order.table}`));
+  parts.push(text(BOX));
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
   parts.push(
