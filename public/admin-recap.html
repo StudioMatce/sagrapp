@@ -1320,7 +1320,7 @@
         details.forEach(function (order) {
           var itemNames = (order.items || []).map(function (i) { return i.name; }).join(', ');
           html += '<div class="anomaly-item">' +
-            '<span class="order-id">#' + order.id + '</span>' +
+            '<span class="order-id">' + order.id + '</span>' +
             '<span class="order-info">Tav.' + order.table + ' — ' + itemNames + '</span>' +
             '<span class="order-total">&euro; ' + formatCurrency(order.total) + '</span>' +
             '</div>';

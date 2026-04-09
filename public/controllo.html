@@ -644,7 +644,7 @@
         return '<div class="order-row" data-id="' + o.id + '">' +
           '<div class="order-info">' +
             '<div class="order-meta">' +
-              '<span class="order-id">#' + o.id + '</span>' +
+              '<span class="order-id">' + o.id + '</span>' +
               '<span class="order-table">Tav.' + o.table + '</span>' +
               nameTag +
             '</div>' +
@@ -664,7 +664,7 @@
     // === ANNULLAMENTO ORDINE ===
     async function cancelOrder(orderId) {
       if (!connected) return;
-      if (!confirm('Annullare l\'ordine #' + orderId + '?')) return;
+      if (!confirm('Annullare l\'ordine ' + orderId + '?')) return;
 
       try {
         var res = await fetch('/api/orders/' + orderId + '/cancel', {
@@ -676,9 +676,9 @@
         if (data.success) {
           var row = document.querySelector('.order-row[data-id="' + orderId + '"]');
           if (row) row.classList.add('removing');
-          showToast('success', 'Ordine #' + data.order_number + ' annullato', data.table ? 'Tav.' + data.table : '');
+          showToast('success', 'Ordine ' + data.order_number + ' annullato', data.table ? 'Tav.' + data.table : '');
         } else if (data.already_cancelled) {
-          showToast('warning', 'Ordine #' + orderId + ' gia\u0300 annullato');
+          showToast('warning', 'Ordine ' + orderId + ' gia\u0300 annullato');
         } else {
           showToast('error', data.error || 'Errore annullamento');
         }
@@ -729,8 +729,8 @@
 
         if (data.success) {
           var tableInfo = data.table ? ' \u2014 Tav.' + data.table : '';
-          showToast('success', 'Ordine #' + data.order_number + ' evaso' + tableInfo);
-          lastFulfilled.textContent = 'Ultimo evaso: #' + data.order_number + tableInfo + ' \u2713';
+          showToast('success', 'Ordine ' + data.order_number + ' evaso' + tableInfo);
+          lastFulfilled.textContent = 'Ultimo evaso: ' + data.order_number + tableInfo + ' \u2713';
         } else if (data.not_ready) {
           var details = data.missing.map(function (m) {
             return m.piece + ' (servono ' + m.needed + ', disponibili ' + m.available + ')';
@@ -738,7 +738,7 @@
           showToast('error', 'Non abbastanza scorte', details);
         } else if (data.already_fulfilled) {
           var tblInfo = data.table ? ' \u2014 Tav.' + data.table : '';
-          showToast('warning', 'Ordine #' + data.order_number + ' gia\u0300 evaso' + tblInfo);
+          showToast('warning', 'Ordine ' + data.order_number + ' gia\u0300 evaso' + tblInfo);
         } else {
           showToast('error', 'Ordine non trovato');
         }

@@ -325,7 +325,7 @@ function buildReceipt(order) {
 
   // --- Sezione ordine ---
   parts.push(
-    textInline('Ordine nr: '), BOLD_ON, text(`#${order.id}`), BOLD_OFF,
+    textInline('Ordine nr: '), BOLD_ON, text(`${order.id}`), BOLD_OFF,
     text(`Giorno:    ${now}`),
     text(DASH),
   );
@@ -428,7 +428,7 @@ function buildFoodOrder(order) {
   // Riquadro con ordine, tavolo, coperti e asporto
   parts.push(BOLD_ON, DOUBLE_BOTH);
   parts.push(text(BOX));
-  parts.push(text(`#${order.id}  TAV.${order.table}`));
+  parts.push(text(`${order.id}  TAV.${order.table}`));
   if (coperti > 0) {
     parts.push(text(`COPERTI: ${coperti}`));
   }
@@ -485,7 +485,7 @@ function buildDrinkOrder(order) {
   // Riquadro con ordine, tavolo e coperti
   parts.push(BOLD_ON, DOUBLE_BOTH);
   parts.push(text(BOX));
-  parts.push(text(`#${order.id}  TAV.${order.table}`));
+  parts.push(text(`${order.id}  TAV.${order.table}`));
   if (coperti > 0) {
     parts.push(text(`COPERTI: ${coperti}`));
   }
@@ -537,7 +537,7 @@ function buildSpecialOrder(order) {
   // Riquadro con ordine e tavolo
   parts.push(BOLD_ON, DOUBLE_BOTH);
   parts.push(text(BOX));
-  parts.push(text(`#${order.id}  TAV.${order.table}`));
+  parts.push(text(`${order.id}  TAV.${order.table}`));
   parts.push(text(BOX));
   parts.push(NORMAL_SIZE, BOLD_OFF);
 

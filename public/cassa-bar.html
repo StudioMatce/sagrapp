@@ -921,13 +921,13 @@
         var data = await res.json();
 
         if (data.success) {
-          document.getElementById('successNumber').textContent = '#' + data.order_number;
+          document.getElementById('successNumber').textContent = data.order_number;
           document.getElementById('successSub').textContent =
             'Tavolo ' + data.table + ' \u2014 ' + formatPrice(data.total);
           showOverlay('success');
 
           var lastEl = document.getElementById('lastOrder');
-          lastEl.textContent = 'Ultimo: #' + data.order_number;
+          lastEl.textContent = 'Ultimo: ' + data.order_number;
           lastEl.classList.add('visible');
 
           resetOrder();

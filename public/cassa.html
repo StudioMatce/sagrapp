@@ -1390,6 +1390,9 @@
       document.getElementById('asportoToggle').classList.toggle('active', asportoActive);
 
       var copertiInput = document.getElementById('copertiInput');
+      var tableField = document.getElementById('tableField');
+      var tableInput = document.getElementById('tableInput');
+      var nameInput = document.getElementById('nameInput');
       var tabBevande = document.getElementById('tabBevande');
 
       if (asportoActive) {
@@ -1397,6 +1400,11 @@
         copertiInput.value = '0';
         copertiInput.disabled = true;
         copertiInput.parentElement.style.opacity = '0.3';
+        // Nascondi tavolo e svuota
+        tableField.style.display = 'none';
+        tableInput.value = '';
+        // Nome diventa obbligatorio
+        nameInput.placeholder = 'obbligatorio';
         // Disabilita tab bevande e resetta quantita' bevande
         tabBevande.style.opacity = '0.3';
         tabBevande.style.pointerEvents = 'none';
@@ -1416,6 +1424,10 @@
         copertiInput.disabled = false;
         copertiInput.value = '';
         copertiInput.parentElement.style.opacity = '';
+        // Rimostra tavolo
+        tableField.style.display = '';
+        // Nome torna opzionale
+        nameInput.placeholder = 'opzionale';
         // Riabilita tab bevande
         tabBevande.style.opacity = '';
         tabBevande.style.pointerEvents = '';
@@ -1568,10 +1580,17 @@
       grandTotal.classList.toggle('courtesy', hasCourtesy);
 
       // Abilita/disabilita bottone ORDINA
-      // Condizioni: almeno 1 piatto, tavolo compilato, coperti compilati
       const tableValue = document.getElementById('tableInput').value;
       const copertiValue = document.getElementById('copertiInput').value;
-      const canOrder = totalItems > 0 && tableValue && (asportoActive || copertiValue);
+      const nameValue = document.getElementById('nameInput').value.trim();
+      var canOrder;
+      if (asportoActive) {
+        // Asporto: nome obbligatorio, no tavolo/coperti
+        canOrder = totalItems > 0 && nameValue;
+      } else {
+        // Normale: tavolo e coperti obbligatori
+        canOrder = totalItems > 0 && tableValue && copertiValue;
+      }
       document.getElementById('btnOrder').classList.toggle('disabled', !canOrder);
     }
 
@@ -1581,25 +1600,34 @@
 
       const tableInput = document.getElementById('tableInput');
       const copertiInputEl = document.getElementById('copertiInput');
-      const table = parseInt(tableInput.value);
+      const nameInputEl = document.getElementById('nameInput');
+      const table = parseInt(tableInput.value) || 0;
       const coperti = parseInt(copertiInputEl.value);
 
-      // Validazione tavolo
-      if (!table || table < 1) {
-        const field = document.getElementById('tableField');
-        field.classList.add('error');
-        setTimeout(function() { field.classList.remove('error'); }, 400);
-        tableInput.focus();
-        return;
-      }
-
-      // Validazione coperti (non richiesta in asporto)
-      if (!asportoActive && (!coperti || coperti < 1)) {
-        const field = document.getElementById('copertiField');
-        field.classList.add('error');
-        setTimeout(function() { field.classList.remove('error'); }, 400);
-        copertiInputEl.focus();
-        return;
+      if (asportoActive) {
+        // Asporto: nome obbligatorio
+        if (!nameInputEl.value.trim()) {
+          nameInputEl.parentElement.classList.add('error');
+          setTimeout(function() { nameInputEl.parentElement.classList.remove('error'); }, 400);
+          nameInputEl.focus();
+          return;
+        }
+      } else {
+        // Normale: tavolo e coperti obbligatori
+        if (!table || table < 1) {
+          const field = document.getElementById('tableField');
+          field.classList.add('error');
+          setTimeout(function() { field.classList.remove('error'); }, 400);
+          tableInput.focus();
+          return;
+        }
+        if (!coperti || coperti < 1) {
+          const field = document.getElementById('copertiField');
+          field.classList.add('error');
+          setTimeout(function() { field.classList.remove('error'); }, 400);
+          copertiInputEl.focus();
+          return;
+        }
       }
 
       const items = ITEMS
@@ -1649,17 +1677,20 @@
 
         if (data.success) {
           // Feedback inline
-          let msg = '#' + data.order_number + '  Tav.' + data.table + '  ' + formatPrice(data.total);
+          let msg = data.order_number;
+          if (data.table > 0) msg += '  Tav.' + data.table;
           if (data.courtesy_type) {
             const names = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
-            msg = '#' + data.order_number + '  OMAGGIO ' + names[data.courtesy_type];
+            msg += '  OMAGGIO ' + names[data.courtesy_type];
+          } else {
+            msg += '  ' + formatPrice(data.total);
           }
           feedback.textContent = msg;
           feedback.classList.add('visible', 'success');
 
           // Aggiorna "ultimo ordine" nel header
           const lastEl = document.getElementById('lastOrder');
-          lastEl.textContent = 'Ultimo: #' + data.order_number;
+          lastEl.textContent = 'Ultimo: ' + data.order_number;
           lastEl.classList.add('visible');
 
           resetOrder();
@@ -1723,6 +1754,8 @@
         document.getElementById('asportoToggle').classList.remove('active');
         document.getElementById('copertiInput').disabled = false;
         document.getElementById('copertiInput').parentElement.style.opacity = '';
+        document.getElementById('tableField').style.display = '';
+        document.getElementById('nameInput').placeholder = 'opzionale';
         document.getElementById('tabBevande').style.opacity = '';
         document.getElementById('tabBevande').style.pointerEvents = '';
       }
@@ -1778,7 +1811,7 @@
         return '<div class="order-history-row ' + statusClass + '">' +
           '<div class="oh-info">' +
             '<div class="oh-meta">' +
-              '<span class="oh-id">#' + o.id + '</span>' +
+              '<span class="oh-id">' + o.id + '</span>' +
               '<span class="oh-table">Tav.' + o.table + '</span>' +
               '<span class="oh-status ' + statusClass + '">' + statusLabel + '</span>' +
               courtesyTag + asportoTag +
@@ -1910,6 +1943,7 @@
     // ===== INPUT LISTENER per aggiornamento in tempo reale =====
     document.getElementById('tableInput').addEventListener('input', updateOrderColumn);
     document.getElementById('copertiInput').addEventListener('input', updateOrderColumn);
+    document.getElementById('nameInput').addEventListener('input', updateOrderColumn);
     document.getElementById('discountInput').addEventListener('input', updateOrderColumn);
 
     // Init
