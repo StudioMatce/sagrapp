@@ -664,9 +664,12 @@
             '<button class="btn btn-next" onclick="completeStep(1)">Passo successivo</button>';
         } else {
           var list = orders.map(function(o) {
+            var asportoTag = o.asporto ? ' <span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;background:rgba(34,211,238,0.15);color:#22d3ee">ASPORTO</span>' : '';
+            var tableInfo = o.table > 0 ? 'Tav. ' + o.table : '';
             return '<div class="oo-row">' +
               '<span class="oo-id">' + o.id + '</span>' +
-              '<span class="oo-info">Tav. ' + o.table + ' — ' + (o.items_summary || '') + '</span>' +
+              asportoTag +
+              '<span class="oo-info">' + tableInfo + (tableInfo ? ' — ' : '') + (o.items_summary || '') + '</span>' +
             '</div>';
           }).join('');
 

@@ -1812,7 +1812,7 @@
           '<div class="oh-info">' +
             '<div class="oh-meta">' +
               '<span class="oh-id">' + o.id + '</span>' +
-              '<span class="oh-table">Tav.' + o.table + '</span>' +
+              (o.table > 0 ? '<span class="oh-table">Tav.' + o.table + '</span>' : '') +
               '<span class="oh-status ' + statusClass + '">' + statusLabel + '</span>' +
               courtesyTag + asportoTag +
               '<span class="oh-total">' + formatPrice(o.total) + '</span>' +

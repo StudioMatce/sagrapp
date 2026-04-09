@@ -239,6 +239,7 @@ function sendOpenOrders(target) {
       customer_name: o.customer_name,
       items_summary: o.items.map(i => `${i.qty}x ${i.name}`).join(', '),
       total: o.total,
+      asporto: o.asporto || false,
       created_at: o.created_at,
     }));
   (target || io.to('controllo')).emit('open_orders_update', { orders: openOrders });

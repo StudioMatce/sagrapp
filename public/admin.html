@@ -929,7 +929,7 @@
           <div class="or-info">
             <div class="or-meta">
               <span class="or-id">${o.id}</span>
-              <span class="or-table">Tav.${o.table}</span>
+              ${o.table > 0 ? '<span class="or-table">Tav.' + o.table + '</span>' : ''}
               <span class="or-status ${o.status}">${statusLabel}</span>
               ${courtesyTag}${asportoTag}
               <span class="or-time">${formatTime(o.created_at)}</span>
