@@ -57,7 +57,6 @@ async function pngToRaster(filePath, maxWidth) {
   if (!sharp) return null;
   const { data, info } = await sharp(filePath)
     .flatten({ background: { r: 255, g: 255, b: 255 } })
-    .trim()  // Rimuove margini bianchi dal PNG (evita carta vuota)
     .resize(maxWidth, null, { fit: 'inside', withoutEnlargement: true })
     .grayscale()
     .raw()
