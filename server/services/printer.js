@@ -25,12 +25,12 @@ const FEED = Buffer.from([ESC, 0x64, 0x05]);
 // Selezione code page — la Fuhuihe ne ha bisogno per stampare testo
 const CODEPAGE_CP437 = Buffer.from([ESC, 0x74, 0x00]);
 
-// Separatore largo 32 caratteri (80mm standard)
-const LINE = '================================';
-// Riquadro in DOUBLE mode (16 chars = tutta la larghezza 80mm)
-const BOX = '****************';
+// Larghezza 80mm = 48 caratteri normali, 24 in DOUBLE
+const LINE = '================================================';
+// Riquadro in DOUBLE mode (24 chars = tutta la larghezza 80mm)
+const BOX = '************************';
 // Separatore tratteggiato (usato nella ricevuta per sotto-sezioni)
-const DASH = '--------------------------------';
+const DASH = '------------------------------------------------';
 
 // Converte una stringa in Buffer con newline (encoding latin1)
 function text(str) {
@@ -281,9 +281,9 @@ function buildTestPage(printerId) {
 
 // --- Generazione stampe per ordini reali ---
 
-// Allinea due stringhe ai bordi opposti su 32 caratteri (larghezza 80mm)
+// Allinea due stringhe ai bordi opposti su 48 caratteri (larghezza 80mm)
 function padLine(left, right) {
-  const space = 32 - left.length - right.length;
+  const space = 48 - left.length - right.length;
   return left + ' '.repeat(Math.max(1, space)) + right;
 }
 
@@ -319,8 +319,7 @@ function buildReceipt(order) {
     ALIGN_LEFT,
     BOLD_ON, DOUBLE_BOTH, text('Sagra M.D.G.'),
     NORMAL_SIZE, BOLD_OFF,
-    text('54^ festa della comunita tra'),
-    text('altare e tavola'),
+    text('54^ festa della comunita tra altare e tavola'),
     text(LINE),
   );
 
@@ -354,7 +353,7 @@ function buildReceipt(order) {
     const qty = String(item.qty).padStart(2, ' ');
     const price = (item.price * item.qty).toFixed(2);
     const left = `${qty}  ${item.name}`;
-    const space = 32 - left.length - price.length;
+    const space = 48 - left.length - price.length;
     parts.push(text(left + ' '.repeat(Math.max(1, space)) + price));
   });
 
