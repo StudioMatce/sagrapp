@@ -493,7 +493,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 router.post('/orders', (req, res) => {
   const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type, source, coperti, asporto } = req.body;
 
-  if (!table || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+  if ((!asporto && !table) || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
     return res.status(400).json({ error: 'Specificare tavolo e piatti' });
   }
 
