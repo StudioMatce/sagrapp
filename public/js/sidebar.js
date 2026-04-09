@@ -60,9 +60,9 @@
       }\
       .sa-sidebar.collapsed { transform: translateX(-220px); }\
       .sa-page-content {\
-        margin-left: 220px; transition: margin-left 250ms ease; min-height: 100vh;\
+        margin-left: 220px; padding-left: 52px; transition: margin-left 250ms ease; min-height: 100vh;\
       }\
-      .sa-page-content.sidebar-collapsed { margin-left: 0; padding-left: 52px; }\
+      .sa-page-content.sidebar-collapsed { margin-left: 0; }\
       .sa-sidebar-header {\
         display: flex; align-items: center; justify-content: space-between;\
         padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;\
