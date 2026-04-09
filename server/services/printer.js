@@ -89,9 +89,9 @@ async function pngToRaster(filePath, maxWidth) {
 // Carica e converte i loghi all'avvio del server (chiamato da index.js)
 async function loadLogos() {
   try {
-    const root = path.join(__dirname, '..', '..');
-    logoMdgBuffer = await pngToRaster(path.join(root, 'mdg_logo_thermal.png'), 384);
-    logoVendraminiBuffer = await pngToRaster(path.join(root, 'vendramini_logo_thermal.png'), 384);
+    const publicDir = path.join(__dirname, '..', '..', 'public');
+    logoMdgBuffer = await pngToRaster(path.join(publicDir, 'mdg_logo_thermal.png'), 384);
+    logoVendraminiBuffer = await pngToRaster(path.join(publicDir, 'vendramini_logo_thermal.png'), 384);
     if (logoMdgBuffer && logoVendraminiBuffer) {
       console.log('[Printer] Loghi caricati per ricevuta');
     }
