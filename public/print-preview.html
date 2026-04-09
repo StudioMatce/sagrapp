@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Anteprima Stampe</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      padding: 40px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      justify-content: center;
+    }
+    .receipt-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .receipt-label {
+      color: #8892b0;
+      font-family: sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .receipt-sublabel {
+      color: #4ecca3;
+      font-family: sans-serif;
+      font-size: 10px;
+      margin-bottom: 12px;
+    }
+    /* Simula carta termica 80mm = 32 caratteri normali, 16 in DOUBLE */
+    .receipt {
+      background: #faf9f6;
+      width: 302px; /* 32 chars * ~9.4px */
+      padding: 18px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+      border-radius: 0 0 10px 10px;
+      position: relative;
+      letter-spacing: 0.02em;
+    }
+    .receipt::before {
+      content: '';
+      position: absolute;
+      top: -6px; left: 0; right: 0; height: 6px;
+      background: repeating-linear-gradient(90deg, #faf9f6 0px, #faf9f6 3px, transparent 3px, transparent 6px);
+    }
+    .c { text-align: center; }
+    .b { font-weight: bold; }
+    /* DOUBLE_BOTH = 2x larghezza + 2x altezza */
+    .dbl { font-size: 22px; font-weight: bold; line-height: 1.4; }
+    .line { text-align: center; letter-spacing: -0.5px; color: #666; }
+    .sp { height: 6px; }
+    .row { display: flex; justify-content: space-between; }
+    .sep { margin: 4px 0; }
+    .small { font-size: 11px; color: #555; }
+  </style>
+</head>
+<body>
+
+<!-- ========================================= -->
+<!-- RICEVUTA CASSA GENERALE — vretti .203     -->
+<!-- ========================================= -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Ricevuta Cassa (.203 vretti)</div>
+  <div class="receipt-sublabel">Ordine normale con cibo + bevande</div>
+  <div class="receipt">
+    <div class="c dbl">SAGRA M.D.G.</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#247  TAV.12  COP.4</div>
+    <div class="c small">09/04/2026, 20:15:32</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="row"><span>2x Costicine polenta</span><span>14.60</span></div>
+    <div class="row"><span>1x Pasta al ragu</span><span>4.50</span></div>
+    <div class="row"><span>1x Funghi misto bosco</span><span>3.20</span></div>
+    <div class="row"><span>2x Birra alla spina</span><span>7.00</span></div>
+    <div class="row"><span>1x Acqua naturale 1/2L</span><span>1.00</span></div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+    <div class="row b"><span>TOTALE</span><span>30.30</span></div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="c">Cliente: Marco</div>
+    <div class="c">Grazie e buon appetito!</div>
+  </div>
+</div>
+
+<!-- Ricevuta con SCONTO -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Ricevuta (.203 vretti)</div>
+  <div class="receipt-sublabel">Con sconto applicato</div>
+  <div class="receipt">
+    <div class="c dbl">SAGRA M.D.G.</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#248  TAV.5  COP.2</div>
+    <div class="c small">09/04/2026, 20:18:05</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="row"><span>1x Grigliata mista</span><span>11.00</span></div>
+    <div class="row"><span>1x Salsiccia polenta</span><span>6.80</span></div>
+    <div class="row"><span>2x Vino rosso ombra</span><span>2.00</span></div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+    <div class="row"><span>SUBTOTALE</span><span>19.80</span></div>
+    <div class="row"><span>SCONTO</span><span>-2.00</span></div>
+    <div class="row b"><span>TOTALE</span><span>17.80</span></div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="c">Grazie e buon appetito!</div>
+  </div>
+</div>
+
+<!-- Ricevuta OMAGGIO -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Ricevuta (.203 vretti)</div>
+  <div class="receipt-sublabel">Omaggio sponsor</div>
+  <div class="receipt">
+    <div class="c dbl">SAGRA M.D.G.</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#249  TAV.1  COP.2</div>
+    <div class="c small">09/04/2026, 20:22:10</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="row"><span>1x Costicine polenta</span><span>7.30</span></div>
+    <div class="row"><span>1x Pasta al ragu</span><span>4.50</span></div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+    <div class="row"><span>SUBTOTALE</span><span>11.80</span></div>
+    <div class="c b">OMAGGIO SPONSOR</div>
+    <div class="row b"><span>TOTALE</span><span>0.00</span></div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="c">Grazie e buon appetito!</div>
+  </div>
+</div>
+
+<!-- ========================================= -->
+<!-- COMANDA CIBO — Fuhuihe .205              -->
+<!-- ========================================= -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Comanda Cibo (.205)</div>
+  <div class="receipt-sublabel">Nomi abbreviati, no contorni</div>
+  <div class="receipt">
+    <div class="line">================================</div>
+    <div class="c dbl">COMANDA CIBO</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#247  TAV.12</div>
+    <div class="c dbl">COPERTI: 4</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="dbl">&nbsp; 2x Costicine</div>
+    <div class="dbl">&nbsp; 1x Pasta ragu</div>
+    <div class="sp"></div>
+    <div class="c small">Funghi, patate ecc. non stampati</div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+  </div>
+</div>
+
+<!-- Comanda cibo ASPORTO -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Comanda Cibo (.205)</div>
+  <div class="receipt-sublabel">Asporto</div>
+  <div class="receipt">
+    <div class="line">================================</div>
+    <div class="c dbl">COMANDA CIBO</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#250  TAV.99</div>
+    <div class="c dbl">>>> ASPORTO <<<</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="dbl">&nbsp; 3x Costicine</div>
+    <div class="dbl">&nbsp; 2x Pasta ragu</div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+  </div>
+</div>
+
+<!-- Comanda con piatto speciale -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Comanda Cibo (.205)</div>
+  <div class="receipt-sublabel">Con piatto speciale (asterisco)</div>
+  <div class="receipt">
+    <div class="line">================================</div>
+    <div class="c dbl">COMANDA CIBO</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#252  TAV.3</div>
+    <div class="c dbl">COPERTI: 3</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="dbl">&nbsp; 1x Salsiccia</div>
+    <div class="dbl">* 2x Pesce fritto</div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+  </div>
+</div>
+
+<!-- ========================================= -->
+<!-- COMANDA BEVANDE — Fuhuihe .204            -->
+<!-- ========================================= -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Comanda Bevande (.204)</div>
+  <div class="receipt-sublabel">Con bevande</div>
+  <div class="receipt">
+    <div class="line">================================</div>
+    <div class="c dbl">COMANDA BEVANDE</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#247  TAV.12</div>
+    <div class="c dbl">COPERTI: 4</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="dbl">&nbsp; 2x Birra alla spina</div>
+    <div class="dbl">&nbsp; 1x Acqua naturale 1/2L</div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+  </div>
+</div>
+
+<!-- Comanda bevande SOLO POSATE -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Comanda Bevande (.204)</div>
+  <div class="receipt-sublabel">Solo posate (no bevande)</div>
+  <div class="receipt">
+    <div class="line">================================</div>
+    <div class="c dbl">COMANDA BEVANDE</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#251  TAV.8</div>
+    <div class="c dbl">COPERTI: 2</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div>&nbsp; (nessuna bevanda)</div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+  </div>
+</div>
+
+<!-- ========================================= -->
+<!-- PIATTO SPECIALE — Fuhuihe .207            -->
+<!-- ========================================= -->
+<div class="receipt-wrapper">
+  <div class="receipt-label">Piatto Speciale (.207)</div>
+  <div class="receipt-sublabel">Doppia stampa (va anche su .205)</div>
+  <div class="receipt">
+    <div class="line">================================</div>
+    <div class="c dbl">PIATTO SPECIALE</div>
+    <div class="line">================================</div>
+    <div class="c dbl">#252  TAV.3</div>
+    <div class="line">================================</div>
+    <div class="sp"></div>
+    <div class="dbl">&nbsp; 2x Pesce fritto</div>
+    <div class="sp"></div>
+    <div class="line">================================</div>
+  </div>
+</div>
+
+</body>
+</html>

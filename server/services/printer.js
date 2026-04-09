@@ -217,6 +217,21 @@ function padLine(left, right) {
   return left + ' '.repeat(Math.max(1, space)) + right;
 }
 
+// Abbrevia i nomi dei piatti per la comanda cibo (stampante 80mm, testo DOUBLE)
+function shortName(name) {
+  return name
+    .replace(/ con polenta$/i, '')
+    .replace(/ con patate fritte$/i, '')
+    .replace(/ con patate$/i, '')
+    .replace(/ di pollo$/i, '')
+    .replace(/ al ragù$/i, ' ragu')
+    .replace(/ alla spina$/i, '')
+    .replace(/ in bianco$/i, ' bianco')
+    .replace(/ burro e salvia$/i, ' burro')
+    .replace(/ mista$/i, '')
+    .replace(/Formaggio cotto/, 'Form. cotto');
+}
+
 // Ricevuta cassa generale — vretti .203 (printer #1)
 function buildReceipt(order) {
   const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
@@ -226,9 +241,9 @@ function buildReceipt(order) {
     BOLD_ON, DOUBLE_BOTH, text('SAGRA M.D.G.'),
     NORMAL_SIZE, BOLD_OFF,
     text(LINE),
-    BOLD_ON, text(`ORDINE #${order.id}`),
-    BOLD_OFF,
-    text(`Tavolo: ${order.table}`),
+    BOLD_ON, DOUBLE_BOTH,
+    text(`#${order.id}  TAV.${order.table}  COP.${order.coperti || 0}`),
+    NORMAL_SIZE, BOLD_OFF,
     text(now),
     text(LINE),
     ALIGN_LEFT,
@@ -298,15 +313,16 @@ function buildReceipt(order) {
 }
 
 // Comanda cibo — Fuhuihe .205 (printer #3)
-// Filtra per print_to che include 'cibo' (include anche i piatti speciali)
-// Testo in DOUBLE per leggibilità in cucina
+// Filtra per print_to 'cibo', esclude contorni e condimenti (tutti sanno)
+// Nomi abbreviati, testo DOUBLE per leggibilità in cucina
 function buildFoodOrder(order) {
   const foodItems = order.items.filter(i =>
-    i.print_to && i.print_to.includes('cibo')
+    i.print_to && i.print_to.includes('cibo') &&
+    i.category !== 'contorno' && i.category !== 'condimento'
   );
   if (foodItems.length === 0) return null;
 
-  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+  const coperti = order.coperti || 0;
   const parts = [
     INIT,
     CODEPAGE_CP437,
@@ -316,13 +332,18 @@ function buildFoodOrder(order) {
     NORMAL_SIZE, BOLD_ON,
     text(LINE),
     BOLD_OFF,
-    text(`Ordine #${order.id}  Tavolo ${order.table}`),
-    text(now),
   ];
 
-  // Banner ASPORTO ben visibile sulla comanda cibo
+  // Ordine, tavolo e coperti ben visibili in DOUBLE
+  parts.push(BOLD_ON, DOUBLE_BOTH);
+  parts.push(text(`#${order.id}  TAV.${order.table}`));
+  if (coperti > 0) {
+    parts.push(text(`COPERTI: ${coperti}`));
+  }
+  parts.push(NORMAL_SIZE, BOLD_OFF);
+
+  // Banner ASPORTO ben visibile
   if (order.asporto) {
-    parts.push(text(''));
     parts.push(BOLD_ON, DOUBLE_BOTH);
     parts.push(text('>>> ASPORTO <<<'));
     parts.push(NORMAL_SIZE, BOLD_OFF);
@@ -336,9 +357,8 @@ function buildFoodOrder(order) {
 
   foodItems.forEach(item => {
     parts.push(BOLD_ON, DOUBLE_BOTH);
-    // Evidenzia i piatti speciali con asterisco
     const prefix = item.special ? '* ' : '  ';
-    parts.push(text(`${prefix}${item.qty}x ${item.name}`));
+    parts.push(text(`${prefix}${item.qty}x ${shortName(item.name)}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
   });
 
@@ -371,17 +391,15 @@ function buildDrinkOrder(order) {
     NORMAL_SIZE, BOLD_ON,
     text(LINE),
     BOLD_OFF,
-    text(`Ordine #${order.id}  Tavolo ${order.table}`),
-    text(now),
   ];
 
-  // Stampa sempre i coperti (per le posate del cameriere)
+  // Ordine, tavolo e coperti ben visibili in DOUBLE
+  parts.push(BOLD_ON, DOUBLE_BOTH);
+  parts.push(text(`#${order.id}  TAV.${order.table}`));
   if (coperti > 0) {
-    parts.push(text(''));
-    parts.push(BOLD_ON, DOUBLE_BOTH);
-    parts.push(text(`  COPERTI: ${coperti}`));
-    parts.push(NORMAL_SIZE, BOLD_OFF);
+    parts.push(text(`COPERTI: ${coperti}`));
   }
+  parts.push(NORMAL_SIZE, BOLD_OFF);
 
   parts.push(text(LINE), ALIGN_LEFT, text(''));
 
@@ -423,12 +441,18 @@ function buildSpecialOrder(order) {
     NORMAL_SIZE, BOLD_ON,
     text(LINE),
     BOLD_OFF,
-    text(`Ordine #${order.id}  Tavolo ${order.table}`),
-    text(now),
+  ];
+
+  // Ordine e tavolo ben visibili in DOUBLE
+  parts.push(BOLD_ON, DOUBLE_BOTH);
+  parts.push(text(`#${order.id}  TAV.${order.table}`));
+  parts.push(NORMAL_SIZE, BOLD_OFF);
+
+  parts.push(
     text(LINE),
     ALIGN_LEFT,
     text(''),
-  ];
+  );
 
   specialItems.forEach(item => {
     parts.push(BOLD_ON, DOUBLE_BOTH);
