@@ -259,8 +259,111 @@
     init();
   }
 
+  // --- Navigazione soft (PJAX) — sidebar fissa tra pagine admin ---
+  // Intercetta i click sui link admin, carica solo il contenuto senza refresh completo.
+  // Le pagine non-admin (casse, monitor, ecc.) fanno navigazione normale.
+
+  function isAdminPage(path) {
+    return path.startsWith('/admin') || path === '/setup';
+  }
+
+  function setupSoftNav() {
+    // Intercetta click sui link della sidebar
+    document.getElementById('saNav').addEventListener('click', function(e) {
+      var link = e.target.closest('.sa-nav-item');
+      if (!link || !link.href) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+      var targetPath = new URL(link.href).pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+
+      // Solo pagine admin usano soft navigation
+      if (!isAdminPage(targetPath)) return;
+
+      // Già sulla stessa pagina
+      if (targetPath === currentPath) { e.preventDefault(); return; }
+
+      e.preventDefault();
+      softNavigate(link.href);
+    });
+
+    // Back/forward del browser
+    window.addEventListener('popstate', function() {
+      if (isAdminPage(window.location.pathname)) {
+        softNavigate(window.location.href, true);
+      }
+    });
+  }
+
+  function softNavigate(url, isPopState) {
+    var content = document.getElementById('saPageContent');
+    if (!content) { window.location.href = url; return; }
+
+    // Fade out durante il caricamento
+    content.style.opacity = '0.3';
+    content.style.transition = 'opacity 100ms ease';
+
+    fetch(url).then(function(r) { return r.text(); }).then(function(html) {
+      // 1. Disconnetti Socket.IO della pagina precedente
+      if (typeof io !== 'undefined' && io.managers) {
+        Object.keys(io.managers).forEach(function(key) {
+          io.managers[key].disconnect();
+          delete io.managers[key];
+        });
+      }
+
+      // 2. Parsa la nuova pagina
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      document.title = doc.title;
+
+      // 3. Sostituisci gli stili della pagina (non quelli della sidebar)
+      document.querySelectorAll('head style:not(#sagrapp-sidebar-css)').forEach(function(s) { s.remove(); });
+      doc.querySelectorAll('head style').forEach(function(s) {
+        document.head.appendChild(s.cloneNode(true));
+      });
+
+      // 4. Sostituisci il contenuto (body senza script)
+      var body = doc.body.cloneNode(true);
+      body.querySelectorAll('script').forEach(function(s) { s.remove(); });
+      content.innerHTML = body.innerHTML;
+
+      // Rimuovi vecchi script iniettati da navigazioni precedenti
+      document.querySelectorAll('script[data-pjax]').forEach(function(s) { s.remove(); });
+
+      // 5. Esegui gli script inline della nuova pagina
+      //    Ogni script è wrappato in IIFE per evitare conflitti di variabili
+      //    Skip socket.io.js (già caricato) e sidebar.js (già in esecuzione)
+      doc.body.querySelectorAll('script').forEach(function(s) {
+        if (s.src && (s.src.includes('sidebar') || s.src.includes('socket.io'))) return;
+        var newScript = document.createElement('script');
+        newScript.setAttribute('data-pjax', 'true');
+        if (s.src) {
+          newScript.src = s.src;
+        } else {
+          newScript.textContent = '(function(){' + s.textContent + '})();';
+        }
+        content.appendChild(newScript);
+      });
+
+      // 6. Fade in
+      requestAnimationFrame(function() { content.style.opacity = '1'; });
+
+      // 7. Aggiorna URL e voce attiva
+      if (!isPopState) history.pushState(null, '', url);
+      currentPath = new URL(url).pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+      document.querySelectorAll('.sa-nav-item').forEach(function(item) {
+        var p = item.getAttribute('href').replace(/\/$/, '') || '/';
+        item.classList.toggle('active', currentPath === p);
+      });
+
+    }).catch(function(err) {
+      console.error('[Sidebar] Soft nav fallita:', err);
+      window.location.href = url; // Fallback a navigazione normale
+    });
+  }
+
   function init() {
     injectStyles();
     buildSidebar();
+    setupSoftNav();
   }
 })();
