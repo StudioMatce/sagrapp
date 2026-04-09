@@ -4,9 +4,14 @@
 // ma ogni modifica viene scritta anche su DB per persistenza.
 
 const Database = require('better-sqlite3');
+const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'data', 'sagrapp.db');
+// Crea la cartella data/ se non esiste (es. primo deploy su Railway)
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const DB_PATH = path.join(DATA_DIR, 'sagrapp.db');
 const db = new Database(DB_PATH);
 
 // WAL mode: più veloce per letture concorrenti e crash-safe
