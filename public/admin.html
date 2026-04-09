@@ -395,92 +395,133 @@
       font-weight: 500;
     }
 
-    /* ===== TABELLA ORDINI ===== */
-    .orders-table {
-      width: 100%;
-      border-collapse: collapse;
+    /* ===== LISTA ORDINI ===== */
+    .order-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 500px;
+      overflow-y: auto;
     }
 
-    .orders-table th {
-      text-align: left;
-      font-size: 10px;
+    .order-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      border-left: 3px solid rgba(78, 204, 163, 0.3);
+    }
+
+    .order-row.cancelled {
+      border-left-color: rgba(233, 69, 96, 0.4);
+      opacity: 0.5;
+    }
+
+    .order-row.completed {
+      border-left-color: rgba(108, 122, 137, 0.3);
+    }
+
+    .or-info { flex: 1; min-width: 0; }
+
+    .or-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 2px;
+      flex-wrap: wrap;
+    }
+
+    .or-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    .or-table {
+      font-weight: 600;
+      font-size: 12px;
+      color: #4ecca3;
+    }
+
+    .or-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(78, 204, 163, 0.7);
+      margin-left: auto;
+    }
+
+    .or-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .or-status.in_progress { background: rgba(78, 204, 163, 0.15); color: #4ecca3; }
+    .or-status.completed { background: rgba(108, 122, 137, 0.15); color: #6c7a89; }
+    .or-status.cancelled { background: rgba(233, 69, 96, 0.15); color: #e94560; }
+
+    .or-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .or-items {
+      font-size: 12px;
+      color: rgba(240, 244, 248, 0.35);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .or-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
       color: #6c7a89;
-      padding: 8px 12px;
-      border-bottom: 1px solid #1e293b;
     }
 
-    .orders-table th:last-child {
-      text-align: right;
+    .or-btn-cancel {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.25);
+      background: rgba(233, 69, 96, 0.06);
+      color: #e94560;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 120ms ease;
     }
 
-    .orders-table td {
-      padding: 10px 12px;
+    .or-btn-cancel:active {
+      background: rgba(233, 69, 96, 0.3);
+      transform: scale(0.93);
+    }
+
+    .orders-empty {
+      padding: 20px;
+      text-align: center;
       font-size: 13px;
-      border-bottom: 1px solid rgba(30, 41, 59, 0.5);
-      vertical-align: middle;
-    }
-
-    .orders-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .orders-table .col-id {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 12px;
-      color: rgba(226, 232, 240, 0.5);
-    }
-
-    .orders-table .col-table {
-      font-weight: 600;
-      color: rgba(226, 232, 240, 0.75);
-    }
-
-    .orders-table .col-amount {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 14px;
-      color: #ffffff;
-    }
-
-    .orders-table .col-time {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      font-weight: 600;
       color: #6c7a89;
-      text-align: right;
+      font-weight: 500;
     }
-
-    /* Status badge inline */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-    }
-
-    .status-dot.completed {
-      background: #4ecca3;
-      box-shadow: 0 0 5px rgba(78, 204, 163, 0.4);
-    }
-
-    .status-dot.in_progress {
-      background: #ffd93d;
-      box-shadow: 0 0 5px rgba(255, 217, 61, 0.4);
-    }
-
-    .status-text.completed { color: #4ecca3; }
-    .status-text.in_progress { color: #ffd93d; }
 
     /* ===== GRIGLIA SPRECHI ===== */
     .waste-grid {
@@ -573,9 +614,6 @@
         grid-template-columns: 1fr;
         gap: 12px;
       }
-
-      .orders-table { font-size: 12px; }
-      .orders-table th, .orders-table td { padding: 8px 8px; }
 
       .waste-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -677,26 +715,15 @@
       </div>
     </section>
 
-    <!-- Ultimi ordini -->
+    <!-- Ordini della serata -->
     <section class="card">
       <div class="card-header">
-        <span class="card-label">Ultimi Ordini</span>
+        <span class="card-label">Ordini della serata</span>
       </div>
       <div class="card-body">
-        <table class="orders-table">
-          <thead>
-            <tr>
-              <th>#ID</th>
-              <th>Tavolo</th>
-              <th>Importo</th>
-              <th>Stato</th>
-              <th style="text-align:right">Ora</th>
-            </tr>
-          </thead>
-          <tbody id="ordersBody">
-            <tr><td colspan="5" class="stock-empty">Nessun ordine</td></tr>
-          </tbody>
-        </table>
+        <div class="order-list" id="orderList">
+          <div class="orders-empty">Nessun ordine</div>
+        </div>
       </div>
     </section>
 
@@ -823,8 +850,8 @@
       // --- Scorte in esaurimento ---
       renderStock(data.lowStockItems);
 
-      // --- Ultimi ordini ---
-      renderOrders(data.lastOrders);
+      // --- Ordini ---
+      // Non ricarica qui — gestito da socket events e caricamento iniziale
 
       // --- Griglia sprechi ---
       renderWaste(data.grilla);
@@ -873,30 +900,72 @@
       }).join('');
     }
 
-    // Genera la tabella degli ultimi ordini
-    function renderOrders(orders) {
-      const tbody = document.getElementById('ordersBody');
+    // Carica tutti gli ordini della serata
+    async function loadAllOrders() {
+      try {
+        const res = await fetch('/api/orders/all');
+        const data = await res.json();
+        renderOrderList(data);
+      } catch (e) {
+        document.getElementById('orderList').innerHTML = '<div class="orders-empty">Errore caricamento</div>';
+      }
+    }
+
+    // Genera la lista ordini con pulsante annulla
+    function renderOrderList(orders) {
+      const container = document.getElementById('orderList');
       if (!orders || orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="stock-empty">Nessun ordine</td></tr>';
+        container.innerHTML = '<div class="orders-empty">Nessun ordine</div>';
         return;
       }
-      tbody.innerHTML = orders.map(o => {
-        const statusLabel = o.status === 'completed' ? 'Completato' : 'In corso';
-        return `
-          <tr>
-            <td class="col-id">#${o.id}</td>
-            <td class="col-table">Tav. ${o.table}</td>
-            <td class="col-amount">${formatCurrency(o.total)}</td>
-            <td>
-              <span class="status-badge">
-                <span class="status-dot ${o.status}"></span>
-                <span class="status-text ${o.status}">${statusLabel}</span>
-              </span>
-            </td>
-            <td class="col-time">${formatTime(o.created_at)}</td>
-          </tr>
-        `;
+      container.innerHTML = orders.map(o => {
+        const statusLabel = o.status === 'in_progress' ? 'APERTO' : o.status === 'completed' ? 'EVASO' : 'ANNULLATO';
+        const courtesyTag = o.courtesy_type ? '<span class="or-tag" style="background:rgba(251,191,36,0.15);color:#fbbf24">OMAGGIO</span>' : '';
+        const asportoTag = o.asporto ? '<span class="or-tag" style="background:rgba(34,211,238,0.15);color:#22d3ee">ASPORTO</span>' : '';
+        const cancelBtn = o.status === 'in_progress'
+          ? `<button class="or-btn-cancel" onclick="cancelOrder(${o.id})">Annulla</button>`
+          : '';
+        return `<div class="order-row ${o.status}">
+          <div class="or-info">
+            <div class="or-meta">
+              <span class="or-id">#${o.id}</span>
+              <span class="or-table">Tav.${o.table}</span>
+              <span class="or-status ${o.status}">${statusLabel}</span>
+              ${courtesyTag}${asportoTag}
+              <span class="or-time">${formatTime(o.created_at)}</span>
+              <span class="or-total">${formatCurrency(o.total)}</span>
+            </div>
+            <div class="or-items">${escHTML(o.items_summary)}</div>
+          </div>
+          ${cancelBtn}
+        </div>`;
       }).join('');
+    }
+
+    function escHTML(str) {
+      const d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    // Annulla un ordine dalla dashboard
+    async function cancelOrder(orderId) {
+      if (!confirm('Annullare l\'ordine #' + orderId + '?\nScorte e contatori verranno ripristinati.')) return;
+      try {
+        const res = await fetch('/api/orders/' + orderId + '/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadAllOrders();
+          fetchStats();
+        } else {
+          alert(data.error || 'Errore annullamento');
+        }
+      } catch (e) {
+        alert('Errore di rete');
+      }
     }
 
     // Genera la griglia sprechi (ordinato vs prodotto vs delta)
@@ -1023,6 +1092,7 @@
           headers: { 'X-Admin-Token': TOKEN },
         });
         fetchStats();
+        loadAllOrders();
       } catch (err) {}
     });
 
@@ -1030,6 +1100,7 @@
     // POLLING — recupera i dati ogni 5 secondi
     // =============================================
     fetchStats();
+    loadAllOrders();
     setInterval(fetchStats, 5000);
 
     // =============================================
@@ -1083,8 +1154,11 @@
         renderWaste({ ordered, produced });
       }
     });
-    // Nuovo ordine: ricarica per aggiornare KPI e tabella
-    socket.on('order_created', () => fetchStats());
+    // Nuovo ordine: ricarica per aggiornare KPI e lista ordini
+    socket.on('order_created', () => { fetchStats(); loadAllOrders(); });
+    // Ordine evaso o annullato: ricarica lista ordini
+    socket.on('order_fulfilled_broadcast', () => { fetchStats(); loadAllOrders(); });
+    socket.on('order_cancelled', () => { fetchStats(); loadAllOrders(); });
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

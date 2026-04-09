@@ -1044,7 +1044,6 @@
         </button>
         <button class="tab-btn" id="tabOrdini" onclick="switchTab('ordini')">
           ORDINI
-          <span class="tab-badge hidden" id="tabOrdiniBadge">0</span>
         </button>
         <!-- Indicatore stampante offline — badge compatto nella tab bar -->
         <div class="printer-alert" id="printerAlert">
@@ -1757,15 +1756,6 @@
     function renderAllOrders(orderList) {
       const listEl = document.getElementById('ordiniList');
       const emptyEl = document.getElementById('ordiniEmpty');
-      // Aggiorna badge contatore
-      const badge = document.getElementById('tabOrdiniBadge');
-      if (orderList.length > 0) {
-        badge.textContent = orderList.length;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-
       if (orderList.length === 0) {
         listEl.innerHTML = '';
         emptyEl.style.display = 'block';
