@@ -8,6 +8,9 @@
     "dev": "node server/index.js",
     "proxy": "node print-proxy/index.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
     "cors": "^2.8",
