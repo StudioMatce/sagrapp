@@ -1,5 +1,13 @@
 // Servizio di stampa ESC/POS — comandi raw via Buffer
-// NON usiamo librerie esterne, tutto implementato direttamente
+// sharp usato solo per conversione loghi PNG → raster bitmap
+
+const path = require('path');
+let sharp;
+try {
+  sharp = require('sharp');
+} catch (e) {
+  console.warn('[Printer] sharp non disponibile — i loghi non verranno stampati');
+}
 
 const ESC = 0x1B;
 const GS = 0x1D;
@@ -21,15 +29,75 @@ const CODEPAGE_CP437 = Buffer.from([ESC, 0x74, 0x00]);
 const LINE = '================================';
 // Riquadro in DOUBLE mode (16 chars = tutta la larghezza 80mm)
 const BOX = '****************';
+// Separatore tratteggiato (usato nella ricevuta per sotto-sezioni)
+const DASH = '--------------------------------';
 
-// Converte una stringa in Buffer (encoding latin1 per caratteri speciali)
+// Converte una stringa in Buffer con newline (encoding latin1)
 function text(str) {
   return Buffer.from(str + '\n', 'latin1');
+}
+
+// Testo senza newline — per formattazione mista (bold/normal) sulla stessa riga
+function textInline(str) {
+  return Buffer.from(str, 'latin1');
 }
 
 // Concatena più Buffer in uno solo
 function concat(...parts) {
   return Buffer.concat(parts);
+}
+
+// --- Loghi per ricevuta cassa (convertiti PNG → ESC/POS raster all'avvio) ---
+let logoMdgBuffer = null;
+let logoVendraminiBuffer = null;
+
+// Converte un PNG in comando ESC/POS raster (GS v 0)
+// Il printer interpreta i byte come bitmap: 1 bit = 1 dot, MSB a sinistra
+async function pngToRaster(filePath, maxWidth) {
+  if (!sharp) return null;
+  const { data, info } = await sharp(filePath)
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .resize(maxWidth, null, { fit: 'inside', withoutEnlargement: true })
+    .grayscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height } = info;
+  const bytesPerRow = Math.ceil(width / 8);
+
+  // Converti grayscale → 1-bit (soglia 128: sotto = nero = dot stampato)
+  const bitmap = Buffer.alloc(bytesPerRow * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (data[y * width + x] < 128) {
+        const byteIdx = y * bytesPerRow + Math.floor(x / 8);
+        bitmap[byteIdx] |= (1 << (7 - (x % 8)));
+      }
+    }
+  }
+
+  // GS v 0 m xL xH yL yH [data]
+  const header = Buffer.from([
+    0x1D, 0x76, 0x30, 0x00,
+    bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF,
+    height & 0xFF, (height >> 8) & 0xFF,
+  ]);
+
+  return Buffer.concat([header, bitmap]);
+}
+
+// Carica e converte i loghi all'avvio del server (chiamato da index.js)
+async function loadLogos() {
+  try {
+    const root = path.join(__dirname, '..', '..');
+    logoMdgBuffer = await pngToRaster(path.join(root, 'mdg_logo_thermal.png'), 300);
+    logoVendraminiBuffer = await pngToRaster(path.join(root, 'vendramini_logo_thermal.png'), 300);
+    if (logoMdgBuffer && logoVendraminiBuffer) {
+      console.log('[Printer] Loghi caricati per ricevuta');
+    }
+  } catch (err) {
+    console.error('[Printer] Errore caricamento loghi:', err.message);
+  }
 }
 
 // --- Pagine di stampa di test per ogni stampante ---
@@ -235,85 +303,104 @@ function shortName(name) {
 }
 
 // Ricevuta cassa generale — vretti .203 (printer #1)
+// Layout identico a Ricevuta_01.png: logo, sezioni separate, bold misto
 function buildReceipt(order) {
   const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
-  const parts = [
-    INIT,
-    ALIGN_CENTER,
-    BOLD_ON, DOUBLE_BOTH, text('SAGRA M.D.G.'),
-    NORMAL_SIZE, BOLD_OFF,
-    text(LINE),
-    BOLD_ON, DOUBLE_BOTH,
-    text(BOX),
-    text(`#${order.id}  TAV.${order.table}`),
-    text(`COP.${order.coperti || 0}`),
-    text(BOX),
-    NORMAL_SIZE, BOLD_OFF,
-    text(now),
-    text(LINE),
-    ALIGN_LEFT,
-    text(''),
-  ];
+  const coperti = order.coperti || 0;
+  const parts = [INIT];
 
-  order.items.forEach(item => {
-    const desc = `${item.qty}x ${item.name}`;
-    const price = (item.price * item.qty).toFixed(2);
-    parts.push(text(padLine(desc, price)));
-  });
+  // --- Logo MDG centrato in alto ---
+  if (logoMdgBuffer) {
+    parts.push(ALIGN_CENTER, logoMdgBuffer, text(''));
+  }
 
-  const subtotal = order.subtotal !== undefined ? order.subtotal : order.total;
-
+  // --- Intestazione ---
   parts.push(
-    text(''),
+    ALIGN_LEFT,
+    BOLD_ON, DOUBLE_BOTH, text('Sagra M.D.G.'),
+    NORMAL_SIZE, BOLD_OFF,
+    text('54^ festa della comunita tra'),
+    text('altare e tavola'),
     text(LINE),
   );
 
-  // Mostra subtotale se c'è sconto o omaggio
-  if (order.discount > 0 || order.courtesy_type) {
-    parts.push(text(padLine('SUBTOTALE', subtotal.toFixed(2))));
+  // --- Sezione ordine ---
+  parts.push(
+    textInline('Ordine nr: '), BOLD_ON, text(`#${order.id}`), BOLD_OFF,
+    text(`Giorno:    ${now}`),
+    text(DASH),
+  );
+
+  // Nome cliente
+  if (order.customer_name) {
+    parts.push(textInline('Nome:      '), BOLD_ON, text(order.customer_name), BOLD_OFF);
+  } else {
+    parts.push(text('Nome:      -'));
   }
 
-  // Sconto
+  // Tavolo e coperto (bold misto sulla stessa riga)
+  parts.push(
+    textInline('Tavolo:    '),
+    BOLD_ON, textInline(String(order.table)), BOLD_OFF,
+    textInline('    Coperto: '),
+    BOLD_ON, text(String(coperti)), BOLD_OFF,
+    text(LINE),
+  );
+
+  // --- Articoli ---
+  parts.push(text(''), text('Ordine:'), text(''));
+
+  order.items.forEach(item => {
+    const qty = String(item.qty).padStart(2, ' ');
+    const price = (item.price * item.qty).toFixed(2);
+    const left = `${qty}  ${item.name}`;
+    const space = 32 - left.length - price.length;
+    parts.push(text(left + ' '.repeat(Math.max(1, space)) + price));
+  });
+
+  // --- Subtotale / Sconto / Omaggio ---
+  const subtotal = order.subtotal !== undefined ? order.subtotal : order.total;
+  parts.push(text(DASH), text(''));
+
+  if (order.discount > 0 || order.courtesy_type) {
+    parts.push(text(padLine('Subtotale', subtotal.toFixed(2))));
+  }
+
   if (order.discount > 0) {
     const discountLabel = order.discount_type === 'percent'
-      ? `SCONTO (${order.discount_value}%)`
-      : 'SCONTO';
+      ? `Sconto (${order.discount_value}%)`
+      : 'Sconto';
     parts.push(text(padLine(discountLabel, `-${order.discount.toFixed(2)}`)));
   }
 
-  // Omaggio
   const courtesyLabels = {
     sponsor: 'OMAGGIO SPONSOR',
     don_pierino: 'OMAGGIO DON PIERINO',
     amici: 'OMAGGIO AMICI',
   };
   if (order.courtesy_type && courtesyLabels[order.courtesy_type]) {
-    parts.push(BOLD_ON);
+    parts.push(ALIGN_CENTER, BOLD_ON);
     parts.push(text(courtesyLabels[order.courtesy_type]));
-    parts.push(BOLD_OFF);
+    parts.push(BOLD_OFF, ALIGN_LEFT);
   }
 
-  // Totale
+  // --- Totale ---
   parts.push(
     BOLD_ON,
-    text(padLine('TOTALE', order.total.toFixed(2))),
+    text(padLine('   Totale', order.total.toFixed(2))),
     BOLD_OFF,
     text(LINE),
-    ALIGN_CENTER,
-    text(''),
   );
 
-  // Nome cliente se presente
-  if (order.customer_name) {
-    parts.push(text(`Cliente: ${order.customer_name}`));
+  // --- Footer ---
+  parts.push(text(''), text('   Scontrino non fiscale'), text(''));
+
+  // --- Logo Vendramini centrato in fondo ---
+  if (logoVendraminiBuffer) {
+    parts.push(ALIGN_CENTER, logoVendraminiBuffer, text(''));
   }
 
-  parts.push(
-    text('Grazie e buon appetito!'),
-    text(''),
-    FEED, CUT,
-  );
-
+  parts.push(FEED, CUT);
   return Buffer.concat(parts);
 }
 
@@ -478,6 +565,7 @@ function buildSpecialOrder(order) {
 }
 
 module.exports = {
+  loadLogos,
   buildTestPage,
   buildReceipt,
   buildFoodOrder,

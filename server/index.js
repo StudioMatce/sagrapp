@@ -5,6 +5,10 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
 const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti, persistCounter } = require('./routes/api');
+const { loadLogos } = require('./services/printer');
+
+// Carica loghi PNG per ricevuta cassa (conversione async, fire-and-forget)
+loadLogos();
 
 const app = express();
 const server = http.createServer(app);
