@@ -90,8 +90,8 @@ async function pngToRaster(filePath, maxWidth) {
 async function loadLogos() {
   try {
     const publicDir = path.join(__dirname, '..', '..', 'public');
-    logoMdgBuffer = await pngToRaster(path.join(publicDir, 'mdg_logo_thermal.png'), 384);
-    logoVendraminiBuffer = await pngToRaster(path.join(publicDir, 'vendramini_logo_thermal.png'), 384);
+    logoMdgBuffer = await pngToRaster(path.join(publicDir, 'mdg_logo_thermal.png'), 576);
+    logoVendraminiBuffer = await pngToRaster(path.join(publicDir, 'vendramini_logo_thermal.png'), 576);
     if (logoMdgBuffer && logoVendraminiBuffer) {
       console.log('[Printer] Loghi caricati per ricevuta');
     }
@@ -311,8 +311,9 @@ function buildReceipt(order) {
 
   // --- Logo MDG centrato in alto ---
   if (logoMdgBuffer) {
-    parts.push(ALIGN_CENTER, logoMdgBuffer, text(''));
+    parts.push(ALIGN_CENTER, logoMdgBuffer);
   }
+  parts.push(text(''));
 
   // --- Intestazione ---
   parts.push(
@@ -320,14 +321,18 @@ function buildReceipt(order) {
     BOLD_ON, DOUBLE_BOTH, text('Sagra M.D.G.'),
     NORMAL_SIZE, BOLD_OFF,
     text('54^ festa della comunita tra altare e tavola'),
+    text(''),
     text(LINE),
+    text(''),
   );
 
   // --- Sezione ordine ---
   parts.push(
     textInline('Ordine nr: '), BOLD_ON, text(`${order.id}`), BOLD_OFF,
     text(`Giorno:    ${now}`),
+    text(''),
     text(DASH),
+    text(''),
   );
 
   // Nome cliente
@@ -338,16 +343,20 @@ function buildReceipt(order) {
   }
 
   // Tavolo e coperto (bold misto sulla stessa riga)
-  parts.push(
-    textInline('Tavolo:    '),
-    BOLD_ON, textInline(String(order.table)), BOLD_OFF,
-    textInline('    Coperto: '),
-    BOLD_ON, text(String(coperti)), BOLD_OFF,
-    text(LINE),
-  );
+  if (order.asporto) {
+    parts.push(BOLD_ON, text('>>> ASPORTO <<<'), BOLD_OFF);
+  } else {
+    parts.push(
+      textInline('Tavolo:    '),
+      BOLD_ON, textInline(String(order.table)), BOLD_OFF,
+      textInline('    Coperto: '),
+      BOLD_ON, text(String(coperti)), BOLD_OFF,
+    );
+  }
+  parts.push(text(''), text(LINE), text(''));
 
   // --- Articoli ---
-  parts.push(text(''), text('Ordine:'), text(''));
+  parts.push(text('Ordine:'), text(''));
 
   order.items.forEach(item => {
     const qty = String(item.qty).padStart(2, ' ');
@@ -359,7 +368,7 @@ function buildReceipt(order) {
 
   // --- Subtotale / Sconto / Omaggio ---
   const subtotal = order.subtotal !== undefined ? order.subtotal : order.total;
-  parts.push(text(DASH), text(''));
+  parts.push(text(''), text(DASH), text(''));
 
   if (order.discount > 0 || order.courtesy_type) {
     parts.push(text(padLine('Subtotale', subtotal.toFixed(2))));
@@ -385,9 +394,11 @@ function buildReceipt(order) {
 
   // --- Totale ---
   parts.push(
+    text(''),
     BOLD_ON,
     text(padLine('   Totale', order.total.toFixed(2))),
     BOLD_OFF,
+    text(''),
     text(LINE),
   );
 
@@ -396,10 +407,10 @@ function buildReceipt(order) {
 
   // --- Logo Vendramini centrato in fondo ---
   if (logoVendraminiBuffer) {
-    parts.push(ALIGN_CENTER, logoVendraminiBuffer, text(''));
+    parts.push(ALIGN_CENTER, logoVendraminiBuffer);
   }
 
-  parts.push(FEED, CUT);
+  parts.push(text(''), FEED, CUT);
   return Buffer.concat(parts);
 }
 
