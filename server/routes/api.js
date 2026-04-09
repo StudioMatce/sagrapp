@@ -2,54 +2,51 @@ const express = require('express');
 const crypto = require('crypto');
 const config = require('../config');
 const printer = require('../services/printer');
+const db = require('../db');
 
 const router = express.Router();
 
-// --- Stato in-memory (per la piattaforma di test) ---
-
-// Contatori monitor cuochi — pezzi singoli dalla griglia/scaldavivande
-// vendute = totale pezzi ordinati dalla cassa (solo cresce)
-// pronto = totale pezzi depositati dal cuoco nello scaldavivande (solo cresce)
-// evasi = totale pezzi rimossi alla chiusura ordini (solo cresce)
-// Colonne visibili sul monitor TV (calcolate lato client):
-//   "Da cucinare" = vendute - pronto
-//   "Nello scaldavivande" = pronto - evasi
-const counters = {};
-config.MONITOR_ITEMS.forEach(item => {
-  counters[item] = { pronto: 0, vendute: 0, evasi: 0 };
-});
+// --- Stato in-memory con persistenza SQLite (write-through cache) ---
+// I dati restano in memoria per velocità. Ogni modifica viene scritta anche su DB.
+// Al riavvio, i dati vengono caricati dal DB.
 
 // Inizializza campi runtime sui piatti del menu (casses, available)
 config.MENU.forEach(item => {
   if (item.available === undefined) item.available = true;
   if (!item.casses) {
-    // Default: bevande → cassa bar, tutto il resto → cassa generale
     item.casses = item.category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale'];
   }
 });
 
-// Inventario / scorte — un record per ogni piatto del menu
-const inventory = {};
-config.MENU.forEach(item => {
-  inventory[item.id] = {
-    id: item.id,
-    name: item.name,
-    station: item.station,
-    price: item.price,
-    category: item.category,
-    stock: item.initial_stock || 999,
-    initial_stock: item.initial_stock || 999,
-    alert_threshold: item.alert_threshold || 20,
-    status: 'available',
-  };
+// Contatori monitor cuochi — caricati da DB, seed se primo avvio
+db.seedCounters(config.MONITOR_ITEMS);
+const counters = db.getCounters();
+// Assicura che tutti gli item di config siano presenti in memoria
+config.MONITOR_ITEMS.forEach(item => {
+  if (!counters[item]) counters[item] = { pronto: 0, vendute: 0, evasi: 0 };
 });
 
-// Ordini
-const orders = [];
-let orderCounter = 0;
+// Inventario / scorte — caricato da DB, seed piatti nuovi dal menu
+db.seedInventory(config.MENU);
+const inventory = db.getInventory();
+// Assicura che tutti i piatti del menu siano in inventario
+config.MENU.forEach(item => {
+  if (!inventory[item.id]) {
+    inventory[item.id] = {
+      id: item.id, name: item.name, station: item.station, price: item.price,
+      category: item.category, stock: item.initial_stock || 999,
+      initial_stock: item.initial_stock || 999, alert_threshold: item.alert_threshold || 20,
+      status: 'available',
+    };
+  }
+});
 
-// Archivio serate chiuse — ogni elemento contiene il recap completo
-const archivedSessions = [];
+// Ordini — caricati da DB
+const orders = db.getAllOrders();
+let orderCounter = db.getOrderCounter();
+
+// Archivio serate chiuse — caricato da DB
+const archivedSessions = db.getArchivedSessions();
 
 // Sessioni admin attive
 const adminSessions = new Map();
@@ -147,6 +144,9 @@ function updateInventoryStatus(itemId) {
   } else {
     item.status = 'available';
   }
+
+  // Persiste su DB
+  db.updateInventoryStock(itemId, item.stock, item.status);
 
   if (io) {
     io.emit('inventory_updated', {
@@ -372,6 +372,7 @@ router.post('/orders/:id/cancel', (req, res) => {
   const wasFulfilled = order.status === 'completed';
   order.status = 'cancelled';
   order.cancelled_at = Date.now();
+  db.updateOrderStatus(order.id, 'cancelled', null, order.cancelled_at);
 
   // Ripristina le scorte magazzino (come se l'ordine non fosse mai stato fatto)
   order.items.forEach(item => {
@@ -400,6 +401,11 @@ router.post('/orders/:id/cancel', (req, res) => {
       }
     }
   });
+
+  // Persiste contatori modificati su DB
+  if (countersChanged) {
+    config.MONITOR_ITEMS.forEach(item => { if (counters[item]) db.saveCounter(item, counters[item]); });
+  }
 
   if (io) {
     if (countersChanged) {
@@ -456,6 +462,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 
   order.status = 'completed';
   order.completed_at = Date.now();
+  db.updateOrderStatus(order.id, 'completed', order.completed_at, null);
 
   // Incrementa "evasi" — i pezzi escono dallo scaldavivande
   // Questo fa scendere "nello scaldavivande" (pronto - evasi) sul monitor
@@ -465,6 +472,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].evasi += count * item.qty;
+          db.saveCounter(piece, counters[piece]);
         }
       }
     }
@@ -490,6 +498,7 @@ router.post('/orders', (req, res) => {
   }
 
   orderCounter++;
+  db.setOrderCounter(orderCounter);
 
   // Costruisce l'ordine con info dal menu
   const items = [];
@@ -524,6 +533,7 @@ router.post('/orders', (req, res) => {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].vendute += count * q;
+          db.saveCounter(piece, counters[piece]);
         }
       }
     }
@@ -578,6 +588,7 @@ router.post('/orders', (req, res) => {
   };
 
   orders.push(order);
+  db.insertOrder(order);
 
   // Broadcast contatori aggiornati (vendute cambiate → da_cucinare cambia sul monitor)
   if (io) {
@@ -1046,8 +1057,8 @@ router.post('/inventory/reset', requireAdmin, (req, res) => {
 // INVENTARIO — PRESET (salva/carica configurazioni scorte)
 // =============================================
 
-// Preset in memoria (in produzione: salvare su file/DB)
-const inventoryPresets = {};
+// Preset caricati da DB
+const inventoryPresets = db.getPresets();
 
 // Salva preset: snapshot delle scorte attuali con un nome
 router.post('/inventory/presets', requireAdmin, (req, res) => {
@@ -1061,7 +1072,9 @@ router.post('/inventory/presets', requireAdmin, (req, res) => {
     snapshot[item.id] = item.stock;
   });
 
-  inventoryPresets[name] = { name, stocks: snapshot, saved_at: Date.now() };
+  const savedAt = Date.now();
+  inventoryPresets[name] = { name, stocks: snapshot, saved_at: savedAt };
+  db.savePreset(name, snapshot, savedAt);
   res.json({ success: true, preset: inventoryPresets[name] });
 });
 
@@ -1097,6 +1110,7 @@ router.delete('/inventory/presets/:name', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Preset non trovato' });
   }
   delete inventoryPresets[req.params.name];
+  db.deletePreset(req.params.name);
   res.json({ success: true });
 });
 
@@ -1119,14 +1133,17 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
     if (existing) {
       mergeRecap(existing.recap, recap);
       existing.closed_at = now.getTime();
+      db.updateArchivedSession(existing.id, existing.closed_at, existing.recap);
       console.log(`[Admin] Serata ${sessionDate} aggiornata (${existing.recap.totalOrders} ordini totali, €${existing.recap.totalRevenue.toFixed(2)})`);
     } else {
-      archivedSessions.push({
+      const session = {
         id: 'session_' + now.getTime(),
         date: sessionDate,
         closed_at: now.getTime(),
         recap,
-      });
+      };
+      archivedSessions.push(session);
+      db.insertArchivedSession(session);
       console.log(`[Admin] Serata ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
     }
   }
@@ -1134,6 +1151,8 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   // Azzera ordini
   orders.length = 0;
   orderCounter = 0;
+  db.deleteAllOrders();
+  db.setOrderCounter(0);
 
   // Azzera contatori monitor cuochi
   config.MONITOR_ITEMS.forEach(item => {
@@ -1141,6 +1160,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
     counters[item].vendute = 0;
     counters[item].evasi = 0;
   });
+  db.resetCounters();
 
   // Resetta scorte ai valori iniziali
   config.MENU.forEach(menuItem => {
@@ -1148,6 +1168,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
     if (item) {
       item.stock = menuItem.initial_stock || 999;
       item.status = 'available';
+      db.updateInventoryStock(menuItem.id, item.stock, item.status);
     }
   });
 
@@ -1166,6 +1187,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
 
 router.post('/orders/test', (req, res) => {
   orderCounter++;
+  db.setOrderCounter(orderCounter);
 
   // Seleziona 1-3 piatti random dal menu (escluse bevande e condimenti per semplicità)
   const foodMenu = config.MENU.filter(i =>
@@ -1195,6 +1217,7 @@ router.post('/orders/test', (req, res) => {
       for (const [piece, count] of Object.entries(item.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].vendute += count * qty;
+          db.saveCounter(piece, counters[piece]);
         }
       }
     }
@@ -1222,6 +1245,7 @@ router.post('/orders/test', (req, res) => {
   }
 
   orders.push(order);
+  db.insertOrder(order);
 
   if (io) {
     io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
@@ -1232,9 +1256,15 @@ router.post('/orders/test', (req, res) => {
   res.json({ success: true, order });
 });
 
+// Funzione per persistere un contatore su DB (chiamata da index.js per lo scaldavivande)
+function persistCounter(item) {
+  if (counters[item]) db.saveCounter(item, counters[item]);
+}
+
 module.exports = {
   router, setIO, counters, inventory, orders,
   setActiveProxyId: (id) => { activeProxyId = id; },
   flushPrintQueue,
   computeTotalCoperti,
+  persistCounter,
 };

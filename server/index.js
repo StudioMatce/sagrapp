@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti } = require('./routes/api');
+const { router: apiRouter, setIO, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti, persistCounter } = require('./routes/api');
 
 const app = express();
 const server = http.createServer(app);
@@ -146,6 +146,7 @@ io.on('connection', (socket) => {
   socket.on('counter_update', ({ item, delta }) => {
     if (counters[item] !== undefined) {
       counters[item].pronto = Math.max(0, counters[item].pronto + delta);
+      persistCounter(item);
       // Broadcast a monitor e scaldavivande
       io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters });
     }
