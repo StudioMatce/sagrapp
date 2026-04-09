@@ -5,7 +5,7 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 
 ## Stack
 - **Backend:** Node.js + Express + Socket.IO
-- **Database:** In-memory (SQLite previsto per produzione)
+- **Database:** In-memory (migrazione a SQLite via better-sqlite3 in corso)
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
 - **Accesso:** Login unificato con PIN (config.js → PINS). Sidebar solo per admin
@@ -29,7 +29,7 @@ public/
   cassa-bar.html    # Cassa bar — layout 70/30 come generale (solo bevande, source: 'bar')
   cassa-casetta.html # Cassa casetta — layout 70/30, tab CONTORNI/BEVANDE (source: 'casetta')
   monitor.html      # Monitor TV cuochi (accesso diretto senza PIN)
-  scaldavivande.html # Tablet scaldavivande (+10/+20/+30/+40/+50)
+  scaldavivande.html # Tablet scaldavivande (−10/−5/+5/+10)
   controllo.html    # Tablet operatore fisso (lista ordini + tastierino evasione)
   admin.html        # Dashboard admin LIVE (con sidebar)
   admin-recap.html  # Report post-serata (con omaggi e sconti)
@@ -159,6 +159,8 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Report magazzino (iniziale → venduto → rimanente)
 - **Omaggi**: conteggio e valore economico reale per tipo (sponsor, don_pierino, amici)
 - **Sconti**: totale sconti applicati
+- **Coperti totali** della serata (esclusi annullati)
+- **Ordini asporto** totali
 - Ordini incompleti
 
 ### Archivio serate
@@ -197,7 +199,7 @@ Tutte e tre le casse usano il **layout a due pannelli 70/30**:
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
 - Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.3.md`
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.3.md` (aggiornato al 09/04/2026)
 
 ## Comandi
 ```bash

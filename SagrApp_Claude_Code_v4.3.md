@@ -29,7 +29,7 @@ Il codice prodotto in questa fase **non è usa e getta**: il server, la connessi
 | **Stampante 4** | **Fuhuihe POS** | **LAN** | Ricevuta cassa bar — IP 192.168.1.206 |
 | **Stampante 5** | **Fuhuihe POS** | **LAN** | Piatti speciali — IP 192.168.1.207 |
 | **Stampante 6** | **Fuhuihe POS** | **LAN** | Casetta aperitivi — IP 192.168.1.208 |
-| **Tablet 1** | Android | Wi-Fi | Scaldavivande: registra pezzi a decine (+10/+20/+30/+40/+50 e −) |
+| **Tablet 1** | Android | Wi-Fi | Scaldavivande: registra pezzi (−10/−5/+5/+10) |
 | **Tablet 2** | Android | Wi-Fi | Zona controllo: tastierino numerico evasione ordini |
 | **PC/Tablet** | — | Wi-Fi | Casetta aperitivi (cassa indipendente) |
 | **Router 4G/5G** | — | Wi-Fi + LAN | Rete locale + internet |
@@ -363,7 +363,7 @@ sagrapp/
 │   ├── cassa-bar.html        # Interfaccia cassa bar (solo bevande)
 │   ├── cassa-casetta.html    # Interfaccia cassa casetta aperitivi
 │   ├── monitor.html          # Monitor cuochi — 2 colonne (da cucinare / nello scaldavivande)
-│   ├── scaldavivande.html    # Tablet scaldavivande — pulsanti +10/+20/+30/+40/+50 e −
+│   ├── scaldavivande.html    # Tablet scaldavivande — pulsanti −10/−5/+5/+10
 │   ├── controllo.html        # Tablet operatore fisso — lista ordini + tastierino evasione
 │   ├── admin.html            # Dashboard admin LIVE (monitoraggio durante servizio)
 │   ├── admin-recap.html      # Dashboard admin RECAP (report post servizio)
@@ -569,7 +569,7 @@ Dopo la scelta → va diretto alla pagina, niente sidebar.
 | `print` | Server → Proxy | `{ printer_ip, data, job_id }` | Comando stampa al proxy (tutte LAN) |
 | `print_result` | Proxy → Server | `{ job_id, success, error? }` | Risultato stampa |
 | `order_created` | Server → All | `{ order_id, table, items, total, flag_gratis? }` | Nuovo ordine creato — aggiorna monitor "da cucinare" |
-| `counter_update` | Scaldavivande → Server | `{ item, delta }` | Scaldavivande aggiorna un contatore (+10, +20, ecc. o -1) |
+| `counter_update` | Scaldavivande → Server | `{ item, delta }` | Scaldavivande aggiorna un contatore (−10, −5, +5, +10) |
 | `counters_changed` | Server → Monitor | `{ counters: { item: { da_cucinare, nello_scaldavivande } } }` | Broadcast contatori aggiornati (2 colonne) |
 | `order_fulfilled` | Controllo → Server | `{ order_number }` | Operatore fisso evade ordine → scala pezzi scaldavivande |
 | `order_fulfilled_result` | Server → Controllo | `{ success, order_number, table?, reason?, details? }` | Risultato evasione (successo o blocco con dettaglio pezzi mancanti) |
@@ -674,7 +674,7 @@ Questa pagina viene aperta sulla TV della griglia (via mini-PC). Mostra **2 colo
 
 ### 5.6 — Componente: Tablet Scaldavivande (public/scaldavivande.html)
 
-Questa pagina viene aperta sul tablet allo scalda vivande della griglia. L'addetto registra i pezzi cucinati a **decine**.
+Questa pagina viene aperta sul tablet allo scalda vivande della griglia. L'addetto registra i pezzi cucinati.
 
 **Layout (pulsanti grandi, touch-friendly) — usa /frontend-design:**
 
@@ -682,19 +682,20 @@ Questa pagina viene aperta sul tablet allo scalda vivande della griglia. L'addet
 ╔════════════════════════════════════════════════════════════╗
 ║  SCALDAVIVANDE                          ● Connesso        ║
 ║                                                            ║
-║  Bistecca     [−]   30   [+10] [+20] [+30] [+40] [+50]  ║
-║  Costine      [−]   22   [+10] [+20] [+30] [+40] [+50]  ║
-║  Salsiccia    [−]   47   [+10] [+20] [+30] [+40] [+50]  ║
-║  Spiedini     [−]   18   [+10] [+20] [+30] [+40] [+50]  ║
+║  Costicine     [−10] [−5]   30   [+5] [+10]              ║
+║  Salsicce      [−10] [−5]   22   [+5] [+10]              ║
+║  Sovracoscia   [−10] [−5]   47   [+5] [+10]              ║
+║  Pastin        [−10] [−5]   18   [+5] [+10]              ║
+║  Polenta       [−10] [−5]   35   [+5] [+10]              ║
+║  Patate        [−10] [−5]   12   [+5] [+10]              ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
 ```
 
 **Comportamento:**
 - Si connette via Socket.IO con ruolo `scaldavivande`
-- Per ogni piatto: pulsanti **+10, +20, +30, +40, +50** per aggiungere velocemente i pezzi cucinati
-- Pulsante **−** per correggere errori (toglie 1 alla volta, o tenendo premuto apre input numerico per togliere N pezzi)
-- Il contatore al centro mostra il totale "pronto" per quel piatto
+- Per ogni piatto: 4 pulsanti simmetrici **−10, −5, +5, +10**
+- Il contatore al centro mostra il totale "pronto - evasi" (pezzi fisicamente presenti)
 - Ogni tap invia `counter_update` al server con il delta
 - Il server fa broadcast → la colonna "pronto" del monitor cuochi si aggiorna in tempo reale
 - Feedback visivo immediato al tap (pulsante lampeggia per 200ms)
@@ -1025,13 +1026,14 @@ Report completo post-servizio. Dati statici (non real-time), calcolati alla chiu
 
 **Sezioni:**
 1. **Riepilogo incassi** — Totale, per cassa, per metodo pagamento
-2. **Classifica vendite** — Piatti ordinati dal più al meno venduto, con quantità e incasso
-3. **Performance** — Tempo medio evasione, distribuzione ordini nel tempo (grafico orario)
-4. **Magazzino** — Per ogni piatto: scorta iniziale → venduto → rimanente. Piatti esauriti con timestamp
-5. **Omaggi** — Totale omaggi suddiviso per tipo (Sponsor, Don Pierino, Amici), con valore economico reale di ciò che è stato regalato, numero ordini per tipo, dettaglio piatti omaggiati
-6. **Sconti** — Totale sconti applicati, numero ordini con sconto
-7. **Anomalie** — Ordini incompleti, sprechi griglia (prodotto vs venduto)
-8. **Pulsante esportazione** — CSV per importazione in Excel
+2. **KPI principali** — Ordini totali, incasso, tempo medio evasione, coperti totali, ordini asporto
+3. **Classifica vendite** — Piatti ordinati dal più al meno venduto, con quantità e incasso
+4. **Performance** — Tempo medio evasione, distribuzione ordini nel tempo (grafico orario)
+5. **Magazzino** — Per ogni piatto: scorta iniziale → venduto → rimanente. Piatti esauriti con timestamp
+6. **Omaggi** — Totale omaggi suddiviso per tipo (Sponsor, Don Pierino, Amici), con valore economico reale di ciò che è stato regalato, numero ordini per tipo, dettaglio piatti omaggiati
+7. **Sconti** — Totale sconti applicati, numero ordini con sconto
+8. **Anomalie** — Ordini incompleti, sprechi griglia (prodotto vs venduto)
+9. **Pulsante esportazione** — CSV per importazione in Excel
 
 **Layout:** usa /frontend-design — stile report, card per ogni sezione, numeri grandi per i KPI principali
 
