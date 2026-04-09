@@ -162,11 +162,11 @@
 
     .btn-counter:active { transform: scale(0.93); }
 
-    /* Pulsante meno — grande */
+    /* Pulsanti meno */
     .btn-minus {
-      width: clamp(56px, 12vw, 80px);
-      height: clamp(56px, 12vw, 80px);
-      font-size: clamp(28px, 6vw, 40px);
+      width: clamp(60px, 14vw, 85px);
+      height: clamp(56px, 12vw, 75px);
+      font-size: clamp(16px, 3.5vw, 22px);
       background: rgba(233, 69, 96, 0.1);
       border-color: rgba(233, 69, 96, 0.25);
       color: #e94560;
@@ -177,11 +177,11 @@
       border-color: #e94560;
     }
 
-    /* Pulsanti più — più piccoli per stare in 5 */
+    /* Pulsanti più */
     .btn-plus {
-      width: clamp(52px, 10vw, 70px);
-      height: clamp(52px, 10vw, 70px);
-      font-size: clamp(14px, 3vw, 20px);
+      width: clamp(60px, 14vw, 85px);
+      height: clamp(56px, 12vw, 75px);
+      font-size: clamp(16px, 3.5vw, 22px);
       background: rgba(78, 204, 163, 0.1);
       border-color: rgba(78, 204, 163, 0.25);
       color: #4ecca3;
@@ -273,11 +273,10 @@
     const counters = {};
     ITEMS.forEach(i => { counters[i.id] = { pronto: 0, vendute: 0, evasi: 0 }; });
 
-    const DELTAS = [10, 20, 30, 40, 50];
     const lastTap = {};
     let connected = false;
 
-    // Genera la lista con pulsanti +10/+20/+30/+40/+50 e −
+    // Genera la lista con pulsanti −10, −5, +5, +10
     const dishList = document.getElementById('dishList');
     dishList.innerHTML = ITEMS.map(item => `
       <div class="dish-row" id="row-${item.id}">
@@ -285,16 +284,11 @@
           <span class="dish-name">${item.label}</span>
         </div>
         <div class="dish-controls">
-          <button class="btn-counter btn-minus" ontouchstart="startLongPress('${item.id}', this)"
-                  ontouchend="endLongPress('${item.id}')" ontouchcancel="endLongPress('${item.id}')"
-                  onmousedown="startLongPress('${item.id}', this)" onmouseup="endLongPress('${item.id}')"
-                  onmouseleave="endLongPress('${item.id}')"
-                  onclick="if(longPressTimers['${item.id}'] !== 'fired') handleTap('${item.id}', -1, this)">&minus;</button>
+          <button class="btn-counter btn-minus" onclick="handleTap('${item.id}', -10, this)">&minus;10</button>
+          <button class="btn-counter btn-minus" onclick="handleTap('${item.id}', -5, this)">&minus;5</button>
           <span class="dish-count" id="count-${item.id}">0</span>
-          ${DELTAS.map(d => `
-            <button class="btn-counter btn-plus" ontouchstart=""
-                    onclick="handleTap('${item.id}', ${d}, this)">+${d}</button>
-          `).join('')}
+          <button class="btn-counter btn-plus" onclick="handleTap('${item.id}', 5, this)">+5</button>
+          <button class="btn-counter btn-plus" onclick="handleTap('${item.id}', 10, this)">+10</button>
         </div>
       </div>
     `).join('');
@@ -371,41 +365,6 @@
 
       // Invia al server
       socket.emit('counter_update', { item: itemId, delta });
-    }
-
-    // Long press sul pulsante meno → apre input numerico per impostare valore esatto
-    const longPressTimers = {};
-
-    function startLongPress(itemId, btnEl) {
-      longPressTimers[itemId] = setTimeout(() => {
-        // Cancella il tap normale
-        longPressTimers[itemId] = 'fired';
-        const fisiciAttuali = Math.max(0, counters[itemId].pronto - counters[itemId].evasi);
-        const newVal = prompt(
-          `Imposta pezzi presenti per ${ITEMS.find(i => i.id === itemId).label}\n(attuale: ${fisiciAttuali})`,
-          String(fisiciAttuali)
-        );
-        if (newVal === null) return;
-        const parsed = parseInt(newVal, 10);
-        if (isNaN(parsed) || parsed < 0) return;
-
-        // Calcola il delta su "pronto" per ottenere il valore desiderato di (pronto - evasi)
-        const targetPronto = parsed + counters[itemId].evasi;
-        const delta = targetPronto - counters[itemId].pronto;
-        if (delta === 0) return;
-
-        counters[itemId].pronto = targetPronto;
-        const countEl = document.getElementById(`count-${itemId}`);
-        countEl.textContent = parsed;
-        socket.emit('counter_update', { item: itemId, delta });
-      }, 600);
-    }
-
-    function endLongPress(itemId) {
-      if (longPressTimers[itemId] && longPressTimers[itemId] !== 'fired') {
-        clearTimeout(longPressTimers[itemId]);
-      }
-      delete longPressTimers[itemId];
     }
 
     function setRowsEnabled(enabled) {

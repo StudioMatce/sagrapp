@@ -116,8 +116,7 @@ Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi
 
 ### Scaldavivande
 - Mostra `pronto - evasi` = pezzi fisicamente presenti (scende con evasioni)
-- Pulsanti +10/+20/+30/+40/+50 e -1 per ogni articolo
-- **Long press** sul pulsante meno (600ms) apre input numerico per impostare valore esatto
+- Pulsanti −10, −5, +5, +10 per ogni articolo (4 pulsanti simmetrici)
 
 ## Evasione ordini (regole)
 L'operatore fisso chiude gli ordini dal suo tablet (layout orizzontale: lista ordini a sinistra, collassabile; tastierino a destra). Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:
