@@ -93,6 +93,7 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
   - **Tavolo** (obbligatorio, numerico)
   - **Coperti** (obbligatorio, numerico) — stampati sulla comanda bevande (per le posate)
   - **Toggle Asporto**: quando attivo, coperti = 0 e disabilitato, tab bevande disabilitata, niente stampa comanda bevande, "ASPORTO" stampato sulla comanda cibo
+  - **Toggle POS**: pagamento con carta (giallo, default: contanti). Commissione 0.2% tracciata nel recap
   - **Sconto** (opzionale, € o %)
   - **Flag gratis** (toggle, uno solo alla volta): Sponsor | Don Pierino | Amici
 - Quando un flag gratis è attivo: totale = €0, ma ordine registrato, stampato, scorte scalate normalmente
@@ -177,9 +178,9 @@ Tutte e tre le casse usano il **layout a due pannelli 70/30**:
 
 | Cassa | Tab | Campi ordine | Source |
 |---|---|---|---|
-| Generale | CIBO / BEVANDE / ORDINI | Nome, Tavolo, Coperti, Asporto, Omaggi, Sconto | `principale` |
-| Bar | — (solo bevande) | Nome, Tavolo | `bar` |
-| Casetta | CONTORNI / BEVANDE | Tavolo (opzionale) | `casetta` |
+| Generale | CIBO / BEVANDE / ORDINI | Nome, Tavolo, Coperti, Asporto, POS, Omaggi, Sconto | `principale` |
+| Bar | — (solo bevande) | Nome, Tavolo, POS | `bar` |
+| Casetta | CONTORNI / BEVANDE | Tavolo (opzionale), POS | `casetta` |
 
 ## Rilevamento offline
 - Socket.IO configurato con `pingInterval: 3000, pingTimeout: 5000` — disconnessione rilevata in ~5 secondi

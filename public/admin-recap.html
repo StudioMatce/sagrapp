@@ -797,6 +797,9 @@
         <div class="card">
           <div class="card-title">Per pagamento</div>
           <table class="summary-table" id="tablePayment"><tbody></tbody></table>
+          <div id="posCommissionInfo" style="margin-top:10px; padding:8px 10px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); border-radius:6px; font-size:12px; color:#fbbf24; display:none;">
+            <span id="posCommissionText"></span>
+          </div>
         </div>
       </div>
     </section>
@@ -1132,6 +1135,17 @@
       // --- Incassi per pagamento ---
       renderSummaryTable('tablePayment', data.revenueByPayment);
 
+      // --- Commissioni POS ---
+      var commBox = document.getElementById('posCommissionInfo');
+      if (data.posCommission > 0) {
+        var pct = ((data.posCommissionRate || 0.002) * 100).toFixed(1);
+        document.getElementById('posCommissionText').textContent =
+          'Commissioni POS (' + pct + '%): \u20AC ' + formatCurrency(data.posCommission);
+        commBox.style.display = 'block';
+      } else {
+        commBox.style.display = 'none';
+      }
+
       // --- Classifica vendite ---
       renderRanking(data.salesRanking);
 
@@ -1348,6 +1362,9 @@
       Object.entries(data.revenueByPayment || {}).forEach(function (entry) {
         lines.push(entry[0] + ',"' + formatCurrency(entry[1]) + '"');
       });
+      if (data.posCommission > 0) {
+        lines.push('Commissioni POS (' + ((data.posCommissionRate || 0.002) * 100).toFixed(1) + '%),"' + formatCurrency(data.posCommission) + '"');
+      }
       lines.push('');
 
       // Sezione 4: Classifica vendite

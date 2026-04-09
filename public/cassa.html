@@ -486,6 +486,42 @@
       color: #22d3ee;
     }
 
+    /* ===== TOGGLE POS ===== */
+    .pos-toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 200ms ease;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .pos-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transition: all 200ms ease;
+    }
+    .pos-toggle.active {
+      background: rgba(251, 191, 36, 0.2);
+      border-color: #fbbf24;
+    }
+    .pos-toggle.active::after {
+      left: 22px;
+      background: #fbbf24;
+    }
+    .pos-toggle.active + .asporto-label {
+      color: #fbbf24;
+    }
+
     /* ===== SCONTO ===== */
     .discount-row {
       display: flex;
@@ -1077,6 +1113,12 @@
           <span class="asporto-label" id="asportoLabel">Asporto</span>
         </div>
 
+        <!-- Toggle POS -->
+        <div class="asporto-row">
+          <div class="pos-toggle" id="posToggle" onclick="togglePos()"></div>
+          <span class="asporto-label" id="posLabel">POS</span>
+        </div>
+
         <!-- Flag omaggio -->
         <div class="courtesy-section">
           <div class="courtesy-flags">
@@ -1229,6 +1271,7 @@
     let discountIsPercent = false;
     let currentTab = 'cibo';
     let asportoActive = false;
+    let posActive = false;
 
     // Mappa rapida id → item per lookup veloci
     const itemMap = {};
@@ -1386,6 +1429,12 @@
 
       updateTabBadges();
       updateOrderColumn();
+    }
+
+    // ===== TOGGLE POS =====
+    function togglePos() {
+      posActive = !posActive;
+      document.getElementById('posToggle').classList.toggle('active', posActive);
     }
 
     // ===== CALCOLA TOTALE CON SCONTO E OMAGGIO =====
@@ -1587,6 +1636,7 @@
             source: 'principale',
             coperti: asportoActive ? 0 : coperti,
             asporto: asportoActive,
+            payment: posActive ? 'pos' : 'contanti',
           }),
         });
         const data = await res.json();
@@ -1666,6 +1716,12 @@
         document.getElementById('copertiInput').parentElement.style.opacity = '';
         document.getElementById('tabBevande').style.opacity = '';
         document.getElementById('tabBevande').style.pointerEvents = '';
+      }
+
+      // Reset POS
+      if (posActive) {
+        posActive = false;
+        document.getElementById('posToggle').classList.remove('active');
       }
 
       // Reset sconto

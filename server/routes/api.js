@@ -867,6 +867,11 @@ function computeRecap() {
 
   const discountTotal = orders.reduce((sum, o) => sum + (o.discount || 0), 0);
 
+  // Commissioni POS (0.2%)
+  const posRevenue = revenueByPayment['pos'] || 0;
+  const posCommissionRate = config.POS_COMMISSION_RATE || 0.002;
+  const posCommission = Math.round(posRevenue * posCommissionRate * 100) / 100;
+
   // Coperti totali (esclusi annullati) e ordini asporto
   const validOrders = orders.filter(o => o.status !== 'cancelled');
   const totalCoperti = validOrders.reduce((sum, o) => sum + (o.coperti || 0), 0);
@@ -882,6 +887,8 @@ function computeRecap() {
     avgCompletionTime: Math.round(avgTime / 1000),
     revenueByCassa,
     revenueByPayment,
+    posCommission,
+    posCommissionRate,
     inventoryReport,
     incompleteOrders: incomplete.length,
     incompleteDetails: incomplete,
@@ -937,6 +944,12 @@ function mergeRecap(target, source) {
   Object.entries(source.revenueByPayment || {}).forEach(([k, v]) => {
     target.revenueByPayment[k] = (target.revenueByPayment[k] || 0) + v;
   });
+
+  // Ricalcola commissioni POS dopo merge
+  const posRev = target.revenueByPayment['pos'] || 0;
+  const rate = config.POS_COMMISSION_RATE || 0.002;
+  target.posCommission = Math.round(posRev * rate * 100) / 100;
+  target.posCommissionRate = rate;
 
   // Magazzino: usa i dati piu' recenti (il source ha lo stato aggiornato)
   if (source.inventoryReport && source.inventoryReport.length > 0) {

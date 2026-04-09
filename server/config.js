@@ -2,6 +2,9 @@ module.exports = {
   // Railway/Render impostano PORT automaticamente
   PORT: process.env.PORT || 3000,
 
+  // Commissione POS (0.2% = 0.002)
+  POS_COMMISSION_RATE: 0.002,
+
   // PIN di accesso per ruolo
   // Ogni PIN corrisponde a un ruolo specifico
   PINS: {
