@@ -10,13 +10,24 @@ const router = express.Router();
 // I dati restano in memoria per velocità. Ogni modifica viene scritta anche su DB.
 // Al riavvio, i dati vengono caricati dal DB.
 
-// Inizializza campi runtime sui piatti del menu (casses, available)
-config.MENU.forEach(item => {
-  if (item.available === undefined) item.available = true;
-  if (!item.casses) {
-    item.casses = item.category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale'];
-  }
-});
+// Menu piatti — caricato da DB, seed da config.js se primo avvio
+const dbMenu = db.getMenuItems();
+if (dbMenu.length > 0) {
+  // DB ha gia' il menu (con tutte le modifiche fatte via admin) — lo usa
+  config.MENU.length = 0;
+  dbMenu.forEach(item => config.MENU.push(item));
+  console.log(`[Menu] Caricati ${dbMenu.length} piatti dal database`);
+} else {
+  // Primo avvio: seed da config.js → salva nel DB
+  config.MENU.forEach(item => {
+    if (item.available === undefined) item.available = true;
+    if (!item.casses) {
+      item.casses = item.category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale'];
+    }
+    db.saveMenuItem(item);
+  });
+  console.log(`[Menu] Primo avvio — salvati ${config.MENU.length} piatti da config.js nel database`);
+}
 
 // Contatori monitor cuochi — caricati da DB, seed se primo avvio
 db.seedCounters(config.MONITOR_ITEMS);
@@ -228,6 +239,9 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
     }
   }
 
+  // Persisti su SQLite (write-through)
+  db.saveMenuItem(menuItem);
+
   // Notifica le casse in tempo reale
   if (io) io.emit('menu_updated', { item: menuItem });
 
@@ -268,8 +282,9 @@ router.post('/menu', requireAdmin, (req, res) => {
     if (available_date) newItem.available_date = available_date;
   }
 
-  // Aggiungi al menu e all'inventario
+  // Aggiungi al menu, persisti su SQLite e aggiorna inventario
   config.MENU.push(newItem);
+  db.saveMenuItem(newItem);
   inventory[id] = {
     id, name: newItem.name, station, price: newItem.price, category,
     stock: newItem.initial_stock, initial_stock: newItem.initial_stock,
@@ -289,6 +304,7 @@ router.delete('/menu/:id', requireAdmin, (req, res) => {
   }
 
   const removed = config.MENU.splice(idx, 1)[0];
+  db.deleteMenuItem(req.params.id);
   delete inventory[req.params.id];
 
   if (io) io.emit('menu_updated', { item: removed, action: 'deleted' });
