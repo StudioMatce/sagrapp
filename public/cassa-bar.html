@@ -789,7 +789,6 @@
         var allItems = await res.json();
 
         BEVERAGES = allItems.filter(function(item) {
-          if (item.available === false) return false;
           if (!item.casses || !item.casses.includes('cassa_bar')) return false;
           return true;
         });
@@ -825,11 +824,13 @@
       var html = '<div class="section-header">Bevande</div>';
       BEVERAGES.forEach(function(bev) {
         var exhausted = bev.status === 'exhausted';
+        var disabled = bev.available === false;
         var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
-        var exhaustedTag = exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
-        html += '<div class="menu-row' + (exhausted ? ' exhausted' : '') + '" id="card-' + bev.id + '">' +
+        var tag = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
+          : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
+        html += '<div class="menu-row' + ((exhausted || disabled) ? ' exhausted' : '') + '" id="card-' + bev.id + '">' +
           '<span class="row-name">' + bev.name + '</span>' +
-          exhaustedTag +
+          tag +
           '<span class="row-price">' + priceFormatted + '</span>' +
           '<div class="row-stepper">' +
             '<button class="step-btn step-minus" onclick="changeQty(\'' + bev.id + '\', -1)">\u2212</button>' +

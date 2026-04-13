@@ -1228,7 +1228,6 @@
         const today = new Date().toISOString().slice(0, 10);
 
         ITEMS = allItems.filter(function(item) {
-          if (item.available === false) return false;
           if (!item.casses || !item.casses.includes('cassa_generale')) return false;
           // Speciali: mostra solo quello del giorno
           if (item.special && item.available_date && item.available_date !== today) return false;
@@ -1250,10 +1249,10 @@
       }
     }
 
-    // Ripristina stato quantita' dopo re-render (esaurito gia' gestito in renderItemRow)
+    // Ripristina stato quantita' dopo re-render (esaurito/disattivato gia' gestiti in renderItemRow)
     function restoreQuantityUI() {
       ITEMS.forEach(function(item) {
-        if (item.status === 'exhausted') return;
+        if (item.status === 'exhausted' || item.available === false) return;
         var countEl = document.getElementById('qty-' + item.id);
         var cardEl = document.getElementById('card-' + item.id);
         if (quantities[item.id] > 0) {
@@ -1277,12 +1276,14 @@
       const item = itemMap[itemId];
       if (!item) return '';
       const exhausted = item.status === 'exhausted';
+      const disabled = item.available === false;
       const priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
-      const exhaustedTag = exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
+      const tag = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
+        : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
       return `
-        <div class="menu-row${exhausted ? ' exhausted' : ''}" id="card-${item.id}">
+        <div class="menu-row${(exhausted || disabled) ? ' exhausted' : ''}" id="card-${item.id}">
           <span class="row-name">${item.name}</span>
-          ${exhaustedTag}
+          ${tag}
           <span class="row-price">${priceFormatted}</span>
           <div class="row-stepper">
             <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>

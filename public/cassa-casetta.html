@@ -871,7 +871,6 @@
 
         // Filtra: disponibile + assegnato a cassa casetta + solo contorni e bevande
         menuItems = allItems.filter(function(item) {
-          if (item.available === false) return false;
           if (!item.casses || !item.casses.includes('cassa_casetta')) return false;
           return item.category === 'contorno' || item.category === 'bevanda';
         });
@@ -911,9 +910,11 @@
       var html = '<div class="section-header">' + label + '</div>';
       items.forEach(function(item) {
         var exhausted = item.status === 'exhausted';
+        var disabled = item.available === false;
         var lowStock = item.status === 'low';
-        var extraClass = exhausted ? ' exhausted' : '';
-        var statusBadge = exhausted ? '<span class="row-exhausted-tag">Esaurito</span>'
+        var extraClass = (exhausted || disabled) ? ' exhausted' : '';
+        var statusBadge = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
+          : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>'
           : lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
         var priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
 
