@@ -79,6 +79,15 @@ db.exec(`
     stocks   TEXT NOT NULL,
     saved_at INTEGER NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS warehouse (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    quantity        INTEGER NOT NULL DEFAULT 0,
+    total           INTEGER NOT NULL DEFAULT 0,
+    alert_threshold INTEGER,
+    created_at      INTEGER NOT NULL
+  );
 `);
 
 // =============================================
@@ -126,6 +135,15 @@ const stmtUpdateSession = db.prepare('UPDATE archived_sessions SET closed_at = ?
 const stmtGetPresets = db.prepare('SELECT * FROM inventory_presets');
 const stmtUpsertPreset = db.prepare('INSERT OR REPLACE INTO inventory_presets (name, stocks, saved_at) VALUES (?, ?, ?)');
 const stmtDeletePreset = db.prepare('DELETE FROM inventory_presets WHERE name = ?');
+
+// --- Warehouse (materiali e consumabili) ---
+const stmtGetWarehouse = db.prepare('SELECT * FROM warehouse ORDER BY name ASC');
+const stmtUpsertWarehouse = db.prepare(`
+  INSERT OR REPLACE INTO warehouse (id, name, quantity, total, alert_threshold, created_at)
+  VALUES (@id, @name, @quantity, @total, @alert_threshold, @created_at)
+`);
+const stmtUpdateWarehouseQty = db.prepare('UPDATE warehouse SET quantity = ? WHERE id = ?');
+const stmtDeleteWarehouse = db.prepare('DELETE FROM warehouse WHERE id = ?');
 
 // =============================================
 // FUNZIONI HELPER ESPORTATE
@@ -315,6 +333,27 @@ function deletePreset(name) {
   stmtDeletePreset.run(name);
 }
 
+// --- Warehouse ---
+function getWarehouse() {
+  const result = {};
+  stmtGetWarehouse.all().forEach(row => {
+    result[row.id] = { ...row };
+  });
+  return result;
+}
+
+function saveWarehouseItem(item) {
+  stmtUpsertWarehouse.run(item);
+}
+
+function updateWarehouseQty(id, quantity) {
+  stmtUpdateWarehouseQty.run(quantity, id);
+}
+
+function deleteWarehouseItem(id) {
+  stmtDeleteWarehouse.run(id);
+}
+
 // =============================================
 // EXPORT
 // =============================================
@@ -332,4 +371,6 @@ module.exports = {
   getArchivedSessions, getArchivedSessionByDate, insertArchivedSession, updateArchivedSession,
   // Presets
   getPresets, savePreset, deletePreset,
+  // Warehouse (materiali/consumabili)
+  getWarehouse, saveWarehouseItem, updateWarehouseQty, deleteWarehouseItem,
 };

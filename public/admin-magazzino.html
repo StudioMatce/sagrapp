@@ -3,27 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SagrApp — Magazzino</title>
+  <title>SagrApp — Magazzino Materiali</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #060a12;
+      --card: #111827;
+      --border: #1e293b;
+      --green: #4ecca3;
+      --red: #e94560;
+      --yellow: #ffd93d;
+      --gray: #6c7a89;
+      --cyan: #22d3ee;
+      --text: #e2e8f0;
+      --text-dim: rgba(226, 232, 240, 0.45);
+      --text-mid: rgba(226, 232, 240, 0.65);
+    }
+
     html {
-      height: 100%;
-      background: #060a12;
-      color: #e2e8f0;
+      background: var(--bg);
+      color: var(--text);
       font-family: 'Outfit', sans-serif;
       -webkit-font-smoothing: antialiased;
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      min-height: 100%;
+      min-height: 100vh;
       background:
         radial-gradient(ellipse at 50% 0%, rgba(78, 204, 163, 0.03) 0%, transparent 50%),
-        #060a12;
+        var(--bg);
     }
 
     /* ===== HEADER ===== */
@@ -33,7 +46,7 @@
       justify-content: space-between;
       padding: 14px 20px;
       background: rgba(6, 10, 18, 0.92);
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 50;
@@ -47,28 +60,16 @@
       gap: 12px;
     }
 
-    .logo-mark {
-      width: 32px;
-      height: 32px;
-      background: #4ecca3;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 16px;
-      color: #060a12;
-      flex-shrink: 0;
-    }
-
     .header-title {
       font-weight: 700;
       font-size: 18px;
     }
 
     .header-title span {
-      color: rgba(226, 232, 240, 0.45);
+      color: var(--text-dim);
       font-weight: 400;
+      font-size: 13px;
+      margin-left: 6px;
     }
 
     .header-right {
@@ -77,7 +78,14 @@
       gap: 8px;
     }
 
-    /* Indicatore connessione nel header */
+    .item-count-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
     .conn-indicator {
       display: flex;
       align-items: center;
@@ -89,12 +97,12 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #6c7a89;
+      background: var(--gray);
       transition: all 300ms ease;
     }
 
     .conn-dot.online {
-      background: #4ecca3;
+      background: var(--green);
       box-shadow: 0 0 6px rgba(78, 204, 163, 0.5);
     }
 
@@ -104,51 +112,18 @@
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: #6c7a89;
+      color: var(--gray);
     }
 
-    /* ===== ACTION BAR ===== */
-    .action-bar {
-      padding: 14px 20px;
-      border-bottom: 1px solid #1e293b;
-      display: flex;
-      flex-wrap: wrap;
+    .btn-add {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
-    }
-
-    .btn-reset {
-      height: 44px;
-      padding: 0 18px;
-      border-radius: 8px;
-      border: 1px solid rgba(233, 69, 96, 0.3);
-      background: rgba(233, 69, 96, 0.08);
-      color: #e94560;
-      font-family: 'Outfit', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 150ms ease;
-      white-space: nowrap;
-    }
-
-    .btn-reset:hover {
-      background: rgba(233, 69, 96, 0.15);
-      border-color: rgba(233, 69, 96, 0.5);
-    }
-
-    .btn-reset:active {
-      transform: scale(0.97);
-    }
-
-    /* Pulsante salva preset (verde) */
-    .btn-preset {
-      height: 44px;
-      padding: 0 18px;
-      border-radius: 8px;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
       border: 1px solid rgba(78, 204, 163, 0.3);
       background: rgba(78, 204, 163, 0.08);
-      color: #4ecca3;
+      color: var(--green);
       font-family: 'Outfit', sans-serif;
       font-size: 13px;
       font-weight: 700;
@@ -157,360 +132,368 @@
       white-space: nowrap;
     }
 
-    .btn-preset:hover {
+    .btn-add:hover {
       background: rgba(78, 204, 163, 0.15);
-      border-color: rgba(78, 204, 163, 0.5);
+      border-color: var(--green);
     }
 
-    .btn-preset:active {
-      transform: scale(0.97);
+    .btn-add:active { transform: scale(0.97); }
+
+    /* ===== PAGE CONTENT ===== */
+    .page-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 16px 80px;
     }
 
-    .filter-group {
-      display: flex;
-      gap: 6px;
-      margin-left: auto;
-    }
-
-    .filter-btn {
-      height: 38px;
-      padding: 0 14px;
-      border-radius: 6px;
-      border: 1px solid #1e293b;
-      background: transparent;
-      color: #6c7a89;
-      font-family: 'Outfit', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 150ms ease;
-      white-space: nowrap;
-    }
-
-    .filter-btn:hover {
-      border-color: rgba(226, 232, 240, 0.2);
-      color: #e2e8f0;
-    }
-
-    .filter-btn.active {
-      background: rgba(78, 204, 163, 0.1);
-      border-color: rgba(78, 204, 163, 0.3);
-      color: #4ecca3;
-    }
-
-    /* ===== INVENTORY LIST ===== */
-    .inventory-list {
-      padding: 0 12px 120px;
-    }
-
-    /* Singola riga inventario */
-    .inv-row {
-      border-bottom: 1px solid rgba(30, 41, 59, 0.6);
-      padding: 16px 8px;
-      transition: background 200ms ease;
-    }
-
-    .inv-row.hidden {
-      display: none;
-    }
-
-    /* Flash verde quando cambia lo stock */
-    .inv-row.flash {
-      background: rgba(78, 204, 163, 0.08);
-    }
-
-    /* Flash giallo per soglia */
-    .inv-row.flash-warn {
-      background: rgba(255, 217, 61, 0.06);
-    }
-
-    /* Flash rosso per esaurito */
-    .inv-row.flash-danger {
-      background: rgba(233, 69, 96, 0.08);
-    }
-
-    /* -- Riga superiore: nome + badge + stock -- */
-    .inv-top {
+    /* ===== ITEM ROW ===== */
+    .item-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    .inv-name {
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: -0.01em;
-      flex-shrink: 0;
-    }
-
-    .inv-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      padding: 3px 8px;
-      border-radius: 4px;
-      flex-shrink: 0;
-    }
-
-    .inv-badge.available {
-      background: rgba(78, 204, 163, 0.12);
-      color: #4ecca3;
-    }
-
-    .inv-badge.low {
-      background: rgba(255, 217, 61, 0.12);
-      color: #ffd93d;
-    }
-
-    .inv-badge.exhausted {
-      background: rgba(233, 69, 96, 0.12);
-      color: #e94560;
-    }
-
-    .inv-stock {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 15px;
-      font-weight: 700;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
-
-    .inv-stock .current {
-      color: #e2e8f0;
-    }
-
-    .inv-stock .separator {
-      color: #6c7a89;
-      margin: 0 2px;
-    }
-
-    .inv-stock .initial {
-      color: #6c7a89;
-    }
-
-    /* -- Barra di progresso -- */
-    .progress-wrapper {
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .progress-track {
-      flex: 1;
-      height: 6px;
-      border-radius: 3px;
-      background: rgba(255, 255, 255, 0.06);
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 300ms ease, background 300ms ease;
-      min-width: 0;
-    }
-
-    .progress-fill.green { background: #4ecca3; }
-    .progress-fill.yellow { background: #ffd93d; }
-    .progress-fill.red { background: #e94560; }
-
-    .progress-pct {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: #6c7a89;
-      width: 36px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    /* -- Riga inferiore: soglia + pulsanti azione -- */
-    .inv-bottom {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .threshold-group {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      flex-shrink: 0;
-    }
-
-    .threshold-label {
-      font-size: 11px;
-      color: #6c7a89;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .threshold-input {
-      width: 52px;
-      height: 30px;
-      border-radius: 4px;
-      border: 1px solid #1e293b;
-      background: rgba(0, 0, 0, 0.3);
-      color: #ffd93d;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-      outline: none;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
       transition: border-color 200ms ease;
     }
 
-    .threshold-input:focus {
-      border-color: #ffd93d;
+    .item-row:hover { border-color: rgba(226, 232, 240, 0.1); }
+
+    .item-row.flash {
+      border-color: rgba(78, 204, 163, 0.4);
     }
 
-    /* Pulsanti azione */
-    .actions {
-      display: flex;
-      gap: 5px;
-      margin-left: auto;
-      flex-wrap: wrap;
-      justify-content: flex-end;
+    .item-row.flash-warn {
+      border-color: rgba(255, 217, 61, 0.4);
     }
 
-    .act-btn {
-      min-width: 44px;
-      height: 38px;
-      padding: 0 10px;
-      border-radius: 6px;
-      border: 1px solid #1e293b;
-      background: rgba(255, 255, 255, 0.03);
-      color: #e2e8f0;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 120ms ease;
-      touch-action: manipulation;
+    .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-name {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-meta {
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 8px;
+      margin-top: 3px;
     }
 
-    .act-btn:active {
-      transform: scale(0.93);
+    .item-threshold-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 0.02em;
     }
 
-    /* Pulsanti di decremento (rossi) */
-    .act-btn.minus {
-      border-color: rgba(233, 69, 96, 0.2);
-      color: #e94560;
-    }
-
-    .act-btn.minus:hover {
-      background: rgba(233, 69, 96, 0.1);
-    }
-
-    /* Pulsanti di incremento (verdi) */
-    .act-btn.plus {
-      border-color: rgba(78, 204, 163, 0.2);
-      color: #4ecca3;
-    }
-
-    .act-btn.plus:hover {
-      background: rgba(78, 204, 163, 0.1);
-    }
-
-    /* Pulsanti medi (+10, +50) */
-    .act-btn.medium {
-      min-width: 50px;
-      font-size: 13px;
-    }
-
-    /* Pulsante Imposta (ciano) */
-    .act-btn.set {
-      border-color: rgba(34, 211, 238, 0.2);
-      color: #22d3ee;
-      font-family: 'Outfit', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-    }
-
-    .act-btn.set:hover {
-      background: rgba(34, 211, 238, 0.1);
-    }
-
-    /* Pulsante Riattiva (giallo, solo su esauriti) */
-    .act-btn.reactivate {
-      border-color: rgba(255, 217, 61, 0.3);
-      background: rgba(255, 217, 61, 0.08);
-      color: #ffd93d;
-      font-family: 'Outfit', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      min-width: 80px;
-    }
-
-    .act-btn.reactivate:hover {
-      background: rgba(255, 217, 61, 0.15);
-    }
-
-    /* ===== LEGENDA ===== */
-    .legend {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 40;
-      background: rgba(6, 10, 18, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-top: 1px solid #1e293b;
-      padding: 12px 20px;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
+    /* Quantita' */
+    .item-qty {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #6c7a89;
+      flex-shrink: 0;
     }
 
-    .legend-dot {
-      width: 8px;
-      height: 8px;
+    .qty-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
+      flex-shrink: 0;
     }
 
-    .legend-dot.green { background: #4ecca3; }
-    .legend-dot.yellow { background: #ffd93d; }
-    .legend-dot.red { background: #e94560; }
+    .qty-dot.green { background: var(--green); }
+    .qty-dot.yellow { background: var(--yellow); }
+    .qty-dot.red { background: var(--red); }
+
+    .qty-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .qty-display:hover {
+      border-color: rgba(226, 232, 240, 0.15);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .qty-display .sep { color: var(--gray); margin: 0 1px; }
+    .qty-display .total { color: var(--gray); }
+
+    .qty-input {
+      width: 60px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--cyan);
+      background: var(--bg);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+    }
+
+    /* Pulsanti +/- */
+    .qty-controls {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .qty-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+    }
+
+    .qty-btn:active { transform: scale(0.93); }
+
+    .qty-btn.minus {
+      color: var(--red);
+      border-color: rgba(233, 69, 96, 0.2);
+    }
+
+    .qty-btn.minus:hover { background: rgba(233, 69, 96, 0.08); }
+
+    .qty-btn.plus {
+      color: var(--green);
+      border-color: rgba(78, 204, 163, 0.2);
+    }
+
+    .qty-btn.plus:hover { background: rgba(78, 204, 163, 0.08); }
+
+    /* Azioni (modifica, elimina) */
+    .item-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .act-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms ease;
+    }
+
+    .act-icon:hover {
+      border-color: rgba(226, 232, 240, 0.2);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .act-icon.delete:hover {
+      border-color: rgba(233, 69, 96, 0.3);
+      color: var(--red);
+      background: rgba(233, 69, 96, 0.06);
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+      padding: 20px;
+    }
+
+    .modal-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 440px;
+      transform: translateY(20px);
+      transition: transform 200ms ease;
+    }
+
+    .modal-overlay.visible .modal { transform: translateY(0); }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 150ms ease;
+    }
+
+    .modal-close:hover { color: var(--red); border-color: rgba(233, 69, 96, 0.3); }
+
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .field-row .field { flex: 1; }
+
+    .field-input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 150ms ease;
+    }
+
+    .field-input:focus { border-color: var(--green); }
+
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn-cancel {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-cancel:hover { border-color: rgba(226, 232, 240, 0.2); color: var(--text); }
+
+    .btn-save {
+      padding: 10px 24px;
+      border-radius: 6px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: var(--bg);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-save:hover { box-shadow: 0 0 16px rgba(78, 204, 163, 0.3); }
+    .btn-save:disabled { opacity: 0.4; pointer-events: none; }
 
     /* ===== EMPTY STATE ===== */
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
-      color: #6c7a89;
-    }
-
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-      opacity: 0.5;
+      padding: 80px 20px;
+      color: var(--gray);
     }
 
     .empty-state-text {
       font-size: 15px;
       font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-sub {
+      font-size: 13px;
+      color: var(--text-dim);
     }
 
     /* ===== OVERLAY CONNESSIONE PERSA ===== */
@@ -522,7 +505,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 200;
+      z-index: 300;
       opacity: 0;
       pointer-events: none;
       transition: opacity 300ms ease;
@@ -539,7 +522,6 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #fff;
-      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
     }
 
     .lost-sub {
@@ -550,32 +532,11 @@
     }
 
     /* ===== RESPONSIVE ===== */
-    @media (max-width: 480px) {
-      .inv-name { font-size: 15px; }
-      .inv-stock { font-size: 14px; }
-      .actions { gap: 4px; }
-      .act-btn { min-width: 40px; height: 36px; font-size: 13px; padding: 0 8px; }
-      .act-btn.medium { min-width: 46px; font-size: 12px; }
-      .act-btn.set, .act-btn.reactivate { font-size: 11px; }
-      .filter-btn { height: 36px; padding: 0 10px; font-size: 12px; }
-      .btn-preset { height: 40px; padding: 0 14px; font-size: 12px; }
-      .action-bar { padding: 10px 12px; gap: 8px; }
-      .inventory-list { padding: 0 6px 100px; }
-    }
-
-    /* Desktop: griglia 2 colonne inventario */
-    @media (min-width: 960px) {
-      .inventory-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
-    }
-
-    /* Tablet / desktop: layout piu' spaziato */
-    @media (min-width: 768px) {
-      .inventory-list { max-width: 1200px; margin: 0 auto; }
-      .action-bar { max-width: 1200px; margin: 0 auto; padding: 16px 0; border-bottom: none; }
-      .page-header { padding: 14px 32px; }
-      .inv-row { padding: 18px 12px; }
-      .inv-name { font-size: 17px; }
-      .act-btn { min-width: 48px; height: 40px; }
+    @media (max-width: 640px) {
+      .item-row { gap: 8px; padding: 12px; flex-wrap: wrap; }
+      .item-info { flex-basis: 100%; order: -1; }
+      .qty-btn { min-width: 40px; height: 40px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
     }
   </style>
 </head>
@@ -584,37 +545,60 @@
   <!-- Header -->
   <header class="page-header">
     <div class="header-left">
-      <div class="header-title">Magazzino</div>
+      <div class="header-title">Magazzino<span>Materiali e consumabili</span></div>
     </div>
     <div class="header-right">
+      <span class="item-count-badge" id="itemCountBadge">--</span>
       <div class="conn-indicator">
         <div class="conn-dot" id="connDot"></div>
         <span class="conn-label" id="connLabel">Offline</span>
       </div>
+      <button class="btn-add" id="btnAdd">+ Nuovo</button>
     </div>
   </header>
 
-  <!-- Action Bar -->
-  <div class="action-bar">
-    <button class="btn-reset" id="btnReset">Reset scorte inizio serata</button>
-    <button class="btn-preset" id="btnSavePreset">Salva preset</button>
-    <div class="filter-group">
-      <button class="filter-btn active" data-filter="all">Tutti</button>
-      <button class="filter-btn" data-filter="low">In esaurimento</button>
-      <button class="filter-btn" data-filter="exhausted">Esauriti</button>
+  <div class="page-wrap">
+    <div id="itemList">
+      <div class="empty-state">
+        <div class="empty-state-text">Nessun articolo in magazzino</div>
+        <div class="empty-state-sub">Usa "+ Nuovo" per aggiungere materiali e consumabili</div>
+      </div>
     </div>
   </div>
 
-  <!-- Inventory List -->
-  <div class="inventory-list" id="inventoryList">
-    <!-- Generato da JS -->
-  </div>
-
-  <!-- Legenda -->
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot green"></div> Disponibile</div>
-    <div class="legend-item"><div class="legend-dot yellow"></div> In esaurimento</div>
-    <div class="legend-item"><div class="legend-dot red"></div> Esaurito</div>
+  <!-- MODAL: Nuovo / Modifica articolo -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Nuovo articolo</div>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label">Nome articolo</label>
+          <input class="field-input" id="fName" type="text" placeholder="es. Bicchieri plastica">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Quantita attuale</label>
+            <input class="field-input" id="fQty" type="number" min="0" value="0" style="font-family: 'JetBrains Mono', monospace;">
+          </div>
+          <div class="field">
+            <label class="field-label">Quantita totale</label>
+            <input class="field-input" id="fTotal" type="number" min="0" value="0" style="font-family: 'JetBrains Mono', monospace;">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Soglia allarme</label>
+          <input class="field-input" id="fThreshold" type="number" min="0" placeholder="Opzionale" style="font-family: 'JetBrains Mono', monospace;">
+          <span class="field-hint">Lascia vuoto per nessun allarme</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnCancel">Annulla</button>
+        <button class="btn-save" id="btnSave">Salva</button>
+      </div>
+    </div>
   </div>
 
   <!-- Overlay connessione persa -->
@@ -626,498 +610,417 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // =============================================
-    //  AUTH — Verifica token admin
+    //  AUTH
     // =============================================
-    const TOKEN = sessionStorage.getItem('admin_token');
-    if (!TOKEN) {
-      window.location.href = '/';
-    }
+    var TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) window.location.href = '/';
 
-    // Verifica validita' token lato server
-    (async function verifyAuth() {
+    (async function checkAuth() {
       try {
-        const res = await fetch(`/api/admin/verify?token=${encodeURIComponent(TOKEN)}`);
-        const data = await res.json();
+        var res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        var data = await res.json();
         if (!data.valid) {
           sessionStorage.removeItem('admin_token');
           window.location.href = '/';
         }
-      } catch {
-        // Se il server non risponde, non blocchiamo — riproviamo al prossimo API call
-      }
+      } catch (e) { /* procedi */ }
     })();
 
-    // Header comune per tutte le richieste API
     function apiHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'X-Admin-Token': TOKEN,
-      };
+      return { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN };
     }
 
     // =============================================
-    //  STATO LOCALE
+    //  STATO
     // =============================================
-    let inventory = [];         // Array di oggetti inventario
-    let activeFilter = 'all';   // Filtro attivo: 'all' | 'low' | 'exhausted'
+    var items = [];       // Array di articoli warehouse
+    var editingId = null; // null = nuovo, altrimenti id in modifica
 
     // =============================================
     //  RENDERING
     // =============================================
+    var listEl = document.getElementById('itemList');
 
-    const listEl = document.getElementById('inventoryList');
-
-    // Calcola la percentuale di stock rimanente
-    function stockPercent(item) {
-      if (!item.initial_stock || item.initial_stock <= 0) return 0;
-      return Math.max(0, Math.min(100, Math.round((item.stock / item.initial_stock) * 100)));
-    }
-
-    // Determina il colore della barra in base a stock e soglia
-    function barColor(item) {
-      if (item.stock <= 0) return 'red';
-      if (item.stock <= item.alert_threshold) return 'yellow';
+    function qtyDotColor(item) {
+      if (item.quantity <= 0) return 'red';
+      if (item.alert_threshold !== null && item.alert_threshold !== undefined && item.quantity <= item.alert_threshold) return 'yellow';
       return 'green';
     }
 
-    // Etichetta e classe del badge di stato
-    function badgeInfo(item) {
-      if (item.status === 'exhausted' || item.stock <= 0) {
-        return { label: 'Esaurito', cls: 'exhausted', emoji: '' };
-      }
-      if (item.status === 'low' || item.stock <= item.alert_threshold) {
-        return { label: 'In esaurimento', cls: 'low', emoji: '' };
-      }
-      return { label: 'Disponibile', cls: 'available', emoji: '' };
-    }
-
-    // Genera l'HTML di una singola riga inventario
     function renderRow(item) {
-      const pct = stockPercent(item);
-      const color = barColor(item);
-      const badge = badgeInfo(item);
-      const isExhausted = item.status === 'exhausted' || item.stock <= 0;
+      var dot = qtyDotColor(item);
+      var thresholdStr = item.alert_threshold !== null && item.alert_threshold !== undefined
+        ? 'soglia: ' + item.alert_threshold
+        : '';
 
-      return `
-        <div class="inv-row" id="row-${item.id}" data-status="${badge.cls}">
-          <!-- Riga superiore: nome + badge + conteggio stock -->
-          <div class="inv-top">
-            <span class="inv-name">${item.name}</span>
-            <span class="inv-badge ${badge.cls}">${badge.label}</span>
-            <span class="inv-stock">
-              <span class="current">${item.stock}</span>
-              <span class="separator">/</span>
-              <span class="initial">${item.initial_stock}</span>
-            </span>
-          </div>
+      var html = '<div class="item-row" data-id="' + item.id + '">';
 
-          <!-- Barra di progresso -->
-          <div class="progress-wrapper">
-            <div class="progress-track">
-              <div class="progress-fill ${color}" style="width: ${pct}%"></div>
-            </div>
-            <span class="progress-pct">${pct}%</span>
-          </div>
+      // Info
+      html += '<div class="item-info">';
+      html += '<div class="item-name">' + escapeHtml(item.name) + '</div>';
+      if (thresholdStr) {
+        html += '<div class="item-meta"><span class="item-threshold-label">' + thresholdStr + '</span></div>';
+      }
+      html += '</div>';
 
-          <!-- Riga inferiore: soglia + pulsanti -->
-          <div class="inv-bottom">
-            <div class="threshold-group">
-              <span class="threshold-label">Soglia</span>
-              <input
-                type="number"
-                class="threshold-input"
-                value="${item.alert_threshold}"
-                min="0"
-                data-id="${item.id}"
-                onchange="updateThreshold('${item.id}', this.value)"
-              >
-            </div>
+      // Quantita'
+      html += '<div class="item-qty">';
+      html += '<span class="qty-dot ' + dot + '"></span>';
+      html += '<span class="qty-display" data-id="' + item.id + '">';
+      html += item.quantity;
+      if (item.total > 0) html += '<span class="sep">/</span><span class="total">' + item.total + '</span>';
+      html += '</span>';
+      html += '</div>';
 
-            <div class="actions">
-              ${isExhausted ? `
-                <button class="act-btn reactivate" onclick="reactivateItem('${item.id}')">Riattiva</button>
-              ` : `
-                <button class="act-btn minus" onclick="adjustStock('${item.id}', -1)">-1</button>
-                <button class="act-btn plus" onclick="adjustStock('${item.id}', 1)">+1</button>
-                <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 10)">+10</button>
-                <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 50)">+50</button>
-                <button class="act-btn set" onclick="setExactStock('${item.id}')">Imposta</button>
-              `}
-            </div>
-          </div>
-        </div>
-      `;
+      // Pulsanti +/-
+      html += '<div class="qty-controls">';
+      html += '<button class="qty-btn minus" data-id="' + item.id + '" data-delta="-5">&minus;5</button>';
+      html += '<button class="qty-btn minus" data-id="' + item.id + '" data-delta="-1">&minus;1</button>';
+      html += '<button class="qty-btn plus" data-id="' + item.id + '" data-delta="1">+1</button>';
+      html += '<button class="qty-btn plus" data-id="' + item.id + '" data-delta="5">+5</button>';
+      html += '<button class="qty-btn plus" data-id="' + item.id + '" data-delta="10">+10</button>';
+      html += '</div>';
+
+      // Azioni
+      html += '<div class="item-actions">';
+      html += '<button class="act-icon edit-btn" data-id="' + item.id + '" title="Modifica">&#9998;</button>';
+      html += '<button class="act-icon delete delete-btn" data-id="' + item.id + '" title="Elimina">&times;</button>';
+      html += '</div>';
+
+      html += '</div>';
+      return html;
     }
 
-    // Renderizza tutta la lista
     function renderAll() {
-      if (inventory.length === 0) {
-        listEl.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">&#x1f4e6;</div>
-            <div class="empty-state-text">Nessun articolo in magazzino</div>
-          </div>
-        `;
-        return;
-      }
-      listEl.innerHTML = inventory.map(renderRow).join('');
-      applyFilter();
-    }
+      document.getElementById('itemCountBadge').textContent = items.length + ' articoli';
 
-    // Aggiorna una singola riga senza ri-renderizzare tutto
-    function updateRow(item) {
-      const rowEl = document.getElementById(`row-${item.id}`);
-      if (!rowEl) {
-        // Se la riga non esiste, ri-renderizza tutto
-        renderAll();
+      if (items.length === 0) {
+        listEl.innerHTML =
+          '<div class="empty-state">' +
+          '<div class="empty-state-text">Nessun articolo in magazzino</div>' +
+          '<div class="empty-state-sub">Usa "+ Nuovo" per aggiungere materiali e consumabili</div>' +
+          '</div>';
         return;
       }
 
-      const pct = stockPercent(item);
-      const color = barColor(item);
-      const badge = badgeInfo(item);
-      const isExhausted = item.status === 'exhausted' || item.stock <= 0;
-
-      rowEl.setAttribute('data-status', badge.cls);
-
-      // Aggiorna nome + badge + stock
-      rowEl.querySelector('.inv-name').textContent = item.name;
-      const badgeEl = rowEl.querySelector('.inv-badge');
-      badgeEl.textContent = badge.label;
-      badgeEl.className = `inv-badge ${badge.cls}`;
-
-      rowEl.querySelector('.inv-stock .current').textContent = item.stock;
-      rowEl.querySelector('.inv-stock .initial').textContent = item.initial_stock;
-
-      // Aggiorna barra di progresso
-      const fill = rowEl.querySelector('.progress-fill');
-      fill.style.width = `${pct}%`;
-      fill.className = `progress-fill ${color}`;
-      rowEl.querySelector('.progress-pct').textContent = `${pct}%`;
-
-      // Aggiorna soglia input
-      const thInput = rowEl.querySelector('.threshold-input');
-      if (document.activeElement !== thInput) {
-        thInput.value = item.alert_threshold;
-      }
-
-      // Aggiorna pulsanti azione
-      const actionsEl = rowEl.querySelector('.actions');
-      if (isExhausted) {
-        actionsEl.innerHTML = `
-          <button class="act-btn reactivate" onclick="reactivateItem('${item.id}')">Riattiva</button>
-        `;
-      } else {
-        actionsEl.innerHTML = `
-          <button class="act-btn minus" onclick="adjustStock('${item.id}', -1)">-1</button>
-          <button class="act-btn plus" onclick="adjustStock('${item.id}', 1)">+1</button>
-          <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 10)">+10</button>
-          <button class="act-btn plus medium" onclick="adjustStock('${item.id}', 50)">+50</button>
-          <button class="act-btn set" onclick="setExactStock('${item.id}')">Imposta</button>
-        `;
-      }
-
-      // Applica il filtro alla riga aggiornata
-      applyFilterToRow(rowEl);
+      listEl.innerHTML = items.map(renderRow).join('');
+      bindEvents();
     }
 
-    // Flash animazione sulla riga quando cambia lo stock
-    function flashRow(itemId, type) {
-      const row = document.getElementById(`row-${itemId}`);
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Flash sulla riga
+    function flashRow(id, type) {
+      var row = document.querySelector('.item-row[data-id="' + id + '"]');
       if (!row) return;
-
-      const cls = type === 'danger' ? 'flash-danger' : type === 'warn' ? 'flash-warn' : 'flash';
+      var cls = type === 'warn' ? 'flash-warn' : 'flash';
       row.classList.add(cls);
-      setTimeout(() => row.classList.remove(cls), 200);
+      setTimeout(function() { row.classList.remove(cls); }, 300);
     }
 
-    // =============================================
-    //  FILTRI
-    // =============================================
+    // Aggiorna solo la parte quantita' di una riga
+    function updateRowQty(item) {
+      var row = document.querySelector('.item-row[data-id="' + item.id + '"]');
+      if (!row) { renderAll(); return; }
 
-    function applyFilter() {
-      const rows = listEl.querySelectorAll('.inv-row');
-      rows.forEach(row => applyFilterToRow(row));
-    }
+      var dot = row.querySelector('.qty-dot');
+      if (dot) dot.className = 'qty-dot ' + qtyDotColor(item);
 
-    function applyFilterToRow(row) {
-      const status = row.getAttribute('data-status');
-      if (activeFilter === 'all') {
-        row.classList.remove('hidden');
-      } else if (activeFilter === 'low') {
-        row.classList.toggle('hidden', status !== 'low');
-      } else if (activeFilter === 'exhausted') {
-        row.classList.toggle('hidden', status !== 'exhausted');
+      var display = row.querySelector('.qty-display');
+      if (display) {
+        var html = '' + item.quantity;
+        if (item.total > 0) html += '<span class="sep">/</span><span class="total">' + item.total + '</span>';
+        display.innerHTML = html;
       }
     }
 
-    // Gestione click sui filtri
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeFilter = btn.dataset.filter;
-        applyFilter();
+    // =============================================
+    //  EVENT BINDING
+    // =============================================
+    function bindEvents() {
+      // Pulsanti +/-
+      document.querySelectorAll('.qty-btn').forEach(function(el) {
+        el.addEventListener('click', function() {
+          adjustItem(el.dataset.id, parseInt(el.dataset.delta));
+        });
       });
-    });
+
+      // Click su quantita' → input per valore esatto
+      document.querySelectorAll('.qty-display').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = el.dataset.id;
+          var item = items.find(function(i) { return i.id === id; });
+          if (!item) return;
+
+          var input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.value = item.quantity;
+          input.className = 'qty-input';
+          el.replaceWith(input);
+          input.focus();
+          input.select();
+
+          function save() {
+            var val = parseInt(input.value);
+            if (isNaN(val) || val < 0) val = item.quantity;
+            setItemQty(id, val);
+
+            var span = document.createElement('span');
+            span.className = 'qty-display';
+            span.dataset.id = id;
+            var html = '' + val;
+            if (item.total > 0) html += '<span class="sep">/</span><span class="total">' + item.total + '</span>';
+            span.innerHTML = html;
+            input.replaceWith(span);
+            // Ri-aggancia evento
+            span.addEventListener('click', function() { renderAll(); });
+          }
+
+          input.addEventListener('blur', save);
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = item.quantity; input.blur(); }
+          });
+        });
+      });
+
+      // Modifica
+      document.querySelectorAll('.edit-btn').forEach(function(el) {
+        el.addEventListener('click', function() { openEditModal(el.dataset.id); });
+      });
+
+      // Elimina
+      document.querySelectorAll('.delete-btn').forEach(function(el) {
+        el.addEventListener('click', function() { deleteItem(el.dataset.id); });
+      });
+    }
 
     // =============================================
-    //  API CALLS
+    //  API
     // =============================================
-
-    // Carica inventario dal server
-    async function loadInventory() {
+    async function loadItems() {
       try {
-        const res = await fetch('/api/inventory', { headers: apiHeaders() });
-        const data = await res.json();
-        inventory = data;
+        var res = await fetch('/api/warehouse', { headers: apiHeaders() });
+        items = await res.json();
         renderAll();
-      } catch (err) {
-        console.error('Errore caricamento inventario:', err);
+      } catch (e) {
+        console.error('Errore caricamento magazzino:', e);
       }
     }
 
-    // Trova un item nello stato locale per id
-    function findItem(id) {
-      return inventory.find(i => i.id === id);
-    }
-
-    // Aggiustamento rapido: +/- quantita'
-    async function adjustStock(id, delta) {
-      const item = findItem(id);
+    async function adjustItem(id, delta) {
+      var item = items.find(function(i) { return i.id === id; });
       if (!item) return;
-
-      // Aggiornamento ottimistico: aggiorna subito la UI
-      item.stock = Math.max(0, item.stock + delta);
-      // Ricalcola lo status in base ai nuovi valori
-      if (item.stock <= 0) item.status = 'exhausted';
-      else if (item.stock <= item.alert_threshold) item.status = 'low';
-      else item.status = 'available';
-
-      updateRow(item);
-      flashRow(id, item.stock <= 0 ? 'danger' : item.stock <= item.alert_threshold ? 'warn' : 'ok');
-
-      try {
-        const res = await fetch(`/api/inventory/${id}/adjust`, {
-          method: 'POST',
-          headers: apiHeaders(),
-          body: JSON.stringify({ delta }),
-        });
-        const updated = await res.json();
-        // Sincronizza con la risposta del server
-        if (updated && updated.id) {
-          Object.assign(item, updated);
-          updateRow(item);
-        }
-      } catch (err) {
-        console.error('Errore adjust stock:', err);
-        // In caso di errore, ricarica dal server
-        loadInventory();
-      }
-    }
-
-    // Imposta un valore esatto di stock
-    async function setExactStock(id) {
-      const item = findItem(id);
-      if (!item) return;
-
-      const input = prompt(`Imposta scorta per "${item.name}":`, item.stock);
-      if (input === null) return;
-
-      const value = parseInt(input, 10);
-      if (isNaN(value) || value < 0) return;
 
       // Aggiornamento ottimistico
-      item.stock = value;
-      if (item.stock <= 0) item.status = 'exhausted';
-      else if (item.stock <= item.alert_threshold) item.status = 'low';
-      else item.status = 'available';
+      item.quantity = Math.max(0, item.quantity + delta);
+      updateRowQty(item);
+      flashRow(id, item.alert_threshold !== null && item.quantity <= item.alert_threshold ? 'warn' : 'ok');
 
-      updateRow(item);
+      try {
+        var res = await fetch('/api/warehouse/' + encodeURIComponent(id) + '/adjust', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ delta: delta }),
+        });
+        var updated = await res.json();
+        if (updated && updated.id) Object.assign(item, updated);
+        updateRowQty(item);
+      } catch (e) {
+        console.error('Errore adjust:', e);
+        loadItems();
+      }
+    }
+
+    async function setItemQty(id, value) {
+      var item = items.find(function(i) { return i.id === id; });
+      if (!item) return;
+
+      item.quantity = value;
+      updateRowQty(item);
       flashRow(id, 'ok');
 
       try {
-        await fetch(`/api/inventory/${id}`, {
+        await fetch('/api/warehouse/' + encodeURIComponent(id), {
           method: 'PUT',
           headers: apiHeaders(),
-          body: JSON.stringify({ stock: value }),
+          body: JSON.stringify({ quantity: value }),
         });
-      } catch (err) {
-        console.error('Errore set stock:', err);
-        loadInventory();
+      } catch (e) {
+        console.error('Errore set qty:', e);
+        loadItems();
       }
     }
 
-    // Aggiorna la soglia di allarme
-    async function updateThreshold(id, newValue) {
-      const item = findItem(id);
+    async function deleteItem(id) {
+      var item = items.find(function(i) { return i.id === id; });
       if (!item) return;
-
-      const value = parseInt(newValue, 10);
-      if (isNaN(value) || value < 0) return;
-
-      item.alert_threshold = value;
-      // Ricalcola lo status
-      if (item.stock <= 0) item.status = 'exhausted';
-      else if (item.stock <= item.alert_threshold) item.status = 'low';
-      else item.status = 'available';
-
-      updateRow(item);
+      if (!confirm('Eliminare "' + item.name + '" dal magazzino?')) return;
 
       try {
-        await fetch(`/api/inventory/${id}`, {
-          method: 'PUT',
+        await fetch('/api/warehouse/' + encodeURIComponent(id), {
+          method: 'DELETE',
           headers: apiHeaders(),
-          body: JSON.stringify({ alert_threshold: value }),
         });
-      } catch (err) {
-        console.error('Errore update threshold:', err);
-        loadInventory();
+        items = items.filter(function(i) { return i.id !== id; });
+        renderAll();
+      } catch (e) {
+        console.error('Errore eliminazione:', e);
       }
     }
-
-    // Riattiva un articolo esaurito
-    async function reactivateItem(id) {
-      const item = findItem(id);
-      if (!item) return;
-
-      const input = prompt(`Quanti "${item.name}" vuoi aggiungere?`, item.initial_stock);
-      if (input === null) return;
-
-      const value = parseInt(input, 10);
-      if (isNaN(value) || value <= 0) return;
-
-      if (!confirm(`Riattivare "${item.name}" con ${value} unita'?`)) return;
-
-      // Aggiornamento ottimistico
-      item.stock = value;
-      item.status = 'available';
-
-      updateRow(item);
-      flashRow(id, 'ok');
-
-      try {
-        await fetch(`/api/inventory/${id}`, {
-          method: 'PUT',
-          headers: apiHeaders(),
-          body: JSON.stringify({ stock: value, status: 'available' }),
-        });
-      } catch (err) {
-        console.error('Errore reactivate:', err);
-        loadInventory();
-      }
-    }
-
-    // Reset scorte a inizio serata
-    document.getElementById('btnReset').addEventListener('click', async () => {
-      if (!confirm('Vuoi resettare tutte le scorte ai valori iniziali? Questa azione non e\' reversibile.')) return;
-
-      try {
-        const res = await fetch('/api/inventory/reset', {
-          method: 'POST',
-          headers: apiHeaders(),
-        });
-        const data = await res.json();
-        if (data.success && data.inventory) {
-          inventory = data.inventory;
-          renderAll();
-        }
-      } catch (err) {
-        console.error('Errore reset:', err);
-        alert('Errore durante il reset delle scorte.');
-      }
-    });
 
     // =============================================
-    //  SALVA PRESET — Snapshot delle scorte attuali
+    //  MODAL
     // =============================================
+    var modalOverlay = document.getElementById('modalOverlay');
 
-    document.getElementById('btnSavePreset').addEventListener('click', async () => {
-      // Chiede un nome per il preset
-      const name = prompt('Nome del preset (es. "Serata venerdì", "Scorte standard"):');
-      if (!name || !name.trim()) return;
+    document.getElementById('btnAdd').addEventListener('click', function() { openNewModal(); });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('btnCancel').addEventListener('click', closeModal);
+    document.getElementById('btnSave').addEventListener('click', handleSave);
+    modalOverlay.addEventListener('click', function(e) { if (e.target === modalOverlay) closeModal(); });
+
+    function openNewModal() {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = 'Nuovo articolo';
+      document.getElementById('fName').value = '';
+      document.getElementById('fQty').value = '0';
+      document.getElementById('fTotal').value = '0';
+      document.getElementById('fThreshold').value = '';
+      modalOverlay.classList.add('visible');
+      document.getElementById('fName').focus();
+    }
+
+    function openEditModal(id) {
+      var item = items.find(function(i) { return i.id === id; });
+      if (!item) return;
+
+      editingId = id;
+      document.getElementById('modalTitle').textContent = 'Modifica articolo';
+      document.getElementById('fName').value = item.name;
+      document.getElementById('fQty').value = item.quantity;
+      document.getElementById('fTotal').value = item.total || 0;
+      document.getElementById('fThreshold').value = item.alert_threshold !== null && item.alert_threshold !== undefined ? item.alert_threshold : '';
+      modalOverlay.classList.add('visible');
+      document.getElementById('fName').focus();
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('visible');
+      editingId = null;
+    }
+
+    async function handleSave() {
+      var name = document.getElementById('fName').value.trim();
+      var qty = parseInt(document.getElementById('fQty').value) || 0;
+      var total = parseInt(document.getElementById('fTotal').value) || 0;
+      var thresholdVal = document.getElementById('fThreshold').value.trim();
+      var threshold = thresholdVal !== '' ? parseInt(thresholdVal) : null;
+
+      if (!name) {
+        document.getElementById('fName').style.borderColor = 'var(--red)';
+        return;
+      }
+      document.getElementById('fName').style.borderColor = '';
+
+      var payload = { name: name, quantity: qty, total: total, alert_threshold: threshold };
+
+      var btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio...';
 
       try {
-        const res = await fetch('/api/inventory/presets', {
-          method: 'POST',
-          headers: apiHeaders(),
-          body: JSON.stringify({ name: name.trim() }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert(`Preset "${name.trim()}" salvato con successo!`);
+        if (editingId) {
+          var res = await fetch('/api/warehouse/' + encodeURIComponent(editingId), {
+            method: 'PUT',
+            headers: apiHeaders(),
+            body: JSON.stringify(payload),
+          });
+          var updated = await res.json();
+          var idx = items.findIndex(function(i) { return i.id === editingId; });
+          if (idx >= 0 && updated.id) Object.assign(items[idx], updated);
         } else {
-          alert('Errore: ' + (data.error || 'Impossibile salvare il preset.'));
+          var res2 = await fetch('/api/warehouse', {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify(payload),
+          });
+          if (!res2.ok) {
+            var err = await res2.json();
+            alert('Errore: ' + (err.error || 'Impossibile creare articolo'));
+            return;
+          }
+          var newItem = await res2.json();
+          items.push(newItem);
         }
-      } catch (err) {
-        console.error('Errore salvataggio preset:', err);
-        alert('Errore di rete durante il salvataggio del preset.');
+
+        closeModal();
+        renderAll();
+      } catch (e) {
+        console.error('Errore salvataggio:', e);
+        alert('Errore di rete');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salva';
       }
-    });
+    }
 
     // =============================================
-    //  SOCKET.IO — Aggiornamenti real-time
+    //  SOCKET.IO
     // =============================================
-
-    const socket = io(window.location.origin, {
+    var socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    const connDot = document.getElementById('connDot');
-    const connLabel = document.getElementById('connLabel');
-    const lostOverlay = document.getElementById('lostOverlay');
+    var connDot = document.getElementById('connDot');
+    var connLabel = document.getElementById('connLabel');
+    var lostOverlay = document.getElementById('lostOverlay');
 
-    socket.on('connect', () => {
-      // Registra come admin per ricevere eventi specifici
+    socket.on('connect', function() {
       socket.emit('register', { role: 'admin' });
       connDot.classList.add('online');
       connLabel.textContent = 'Online';
       lostOverlay.classList.remove('visible');
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', function() {
       connDot.classList.remove('online');
       connLabel.textContent = 'Offline';
       lostOverlay.classList.add('visible');
     });
 
-    // Aggiornamento singolo item
-    socket.on('inventory_updated', (data) => {
-      if (!data || !data.item_id) return;
+    socket.on('warehouse_updated', function(data) {
+      if (!data || !data.item) return;
 
-      const item = findItem(data.item_id);
-      if (item) {
-        if (data.stock !== undefined) item.stock = data.stock;
-        if (data.status !== undefined) item.status = data.status;
-        // Ricalcola status se necessario
-        if (item.stock <= 0) item.status = 'exhausted';
-        else if (item.stock <= item.alert_threshold) item.status = 'low';
-        else item.status = item.status === 'exhausted' ? 'available' : item.status;
-
-        updateRow(item);
-        flashRow(data.item_id, item.stock <= 0 ? 'danger' : item.stock <= item.alert_threshold ? 'warn' : 'ok');
-      } else {
-        // Item sconosciuto: ricarica tutto
-        loadInventory();
-      }
-    });
-
-    // Reset completo dell'inventario
-    socket.on('inventory_reset', (newInventory) => {
-      if (Array.isArray(newInventory)) {
-        inventory = newInventory;
+      if (data.action === 'deleted') {
+        items = items.filter(function(i) { return i.id !== data.item.id; });
         renderAll();
+      } else if (data.action === 'added') {
+        if (!items.find(function(i) { return i.id === data.item.id; })) {
+          items.push(data.item);
+          renderAll();
+        }
       } else {
-        loadInventory();
+        var idx = items.findIndex(function(i) { return i.id === data.item.id; });
+        if (idx >= 0) {
+          Object.assign(items[idx], data.item);
+          updateRowQty(items[idx]);
+          flashRow(data.item.id, 'ok');
+        }
       }
     });
 
     // =============================================
-    //  INIT — Caricamento iniziale
+    //  INIT
     // =============================================
-    loadInventory();
+    loadItems();
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

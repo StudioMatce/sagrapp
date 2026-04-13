@@ -33,10 +33,10 @@ public/
   controllo.html    # Tablet operatore fisso (lista ordini + tastierino evasione)
   admin.html        # Dashboard admin LIVE (con sidebar)
   admin-recap.html  # Report post-serata (con omaggi e sconti)
-  admin-magazzino.html # Gestione scorte
+  admin-magazzino.html # Magazzino materiali e consumabili (bicchieri, posate, ecc.)
   admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo)
   admin-chiusura.html  # Procedura chiusura turno (flash summary + PIN re-entry)
-  admin-menu.html   # Gestione menu: piatti, prezzi, casse, composizione pezzi
+  admin-menu.html   # Gestione menu: piatti, prezzi, casse, composizione pezzi, scorte inline
   setup.html        # Wizard setup inizio turno (progress bar + device checks)
   js/sidebar.js     # Sidebar navigazione (solo pagine admin)
 ```
@@ -71,10 +71,16 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
 - I piatti speciali (`special: true`) hanno **doppia stampa**: comanda cibo (.205) + stampante dedicata (.207)
 - I piatti speciali hanno `available_date` — uno diverso per ogni serata della sagra
 
-## Gestione Menu (admin-menu.html)
+## Gestione Menu e Scorte (admin-menu.html)
 - Pagina admin per CRUD piatti: nome, prezzo, categoria, postazione, casse
 - Tab per categoria in alto (filtro rapido)
 - Prezzo editabile inline (click → input → blur salva)
+- **Scorte inline**: ogni piatto mostra stock attuale/iniziale con indicatore colorato (verde/giallo/rosso)
+  - Click sul contatore per impostare valore esatto
+  - Pulsanti +/− per aggiustamento rapido
+  - Pulsante "Reset scorte" nell'header per riportare tutte le scorte ai valori iniziali
+  - Soglia allarme e scorta iniziale modificabili dal modale modifica piatto
+  - Aggiornamento real-time via Socket.IO (`inventory_updated`, `inventory_reset`)
 - Toggle attiva/disattiva per ogni piatto
 - Checkbox per disponibilità nelle 3 casse (Gen/Bar/Cas)
 - Composizione pezzi per piatti griglia
@@ -82,6 +88,18 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
 - Form modale per nuovo piatto o modifica completa
 - API: `GET /api/menu`, `PUT /api/menu/:id`, `POST /api/menu`, `DELETE /api/menu/:id`
 - Socket.IO event `menu_updated` per aggiornare le casse in tempo reale
+
+## Magazzino Materiali (admin-magazzino.html)
+- Inventario per **materiali e consumabili** (bicchieri, posate, rotoli carta, detersivi, ecc.)
+- **Nessun legame** con il menu o le casse — articoli indipendenti
+- Lista articoli con quantità attuale/totale e indicatore colorato
+- Pulsanti rapidi −5/−1/+1/+5/+10 per aggiornamento veloce
+- Click sulla quantità per impostare valore esatto
+- Pulsante "+ Nuovo" per aggiungere un articolo
+- Modale per nuovo/modifica: nome, quantità attuale, quantità totale, soglia allarme (opzionale)
+- Eliminazione articolo con conferma
+- Aggiornamento real-time via Socket.IO (`warehouse_updated`)
+- API: `GET /api/warehouse`, `POST /api/warehouse`, `PUT /api/warehouse/:id`, `POST /api/warehouse/:id/adjust`, `DELETE /api/warehouse/:id`
 
 ## Interfaccia cassa (cassa.html)
 - **Layout 70/30**: area piatti a sinistra (70%) con tab CIBO/BEVANDE/ORDINI, colonna ordine a destra (30%)
@@ -200,7 +218,7 @@ Tutte e tre le casse usano il **layout a due pannelli 70/30**:
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
 - Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.3.md` (aggiornato al 09/04/2026)
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.4.md` (aggiornato al 13/04/2026)
 
 ## Comandi
 ```bash
@@ -233,7 +251,7 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/setup` — Wizard setup inizio turno (admin)
 - `/admin` — Dashboard admin LIVE (PIN 0000)
 - `/admin/recap` — Report post-serata (admin)
-- `/admin/magazzino` — Gestione scorte (admin)
+- `/admin/magazzino` — Magazzino materiali e consumabili (admin)
 - `/admin/hardware` — Pannello controllo hardware (admin)
-- `/admin/menu` — Gestione menu (admin) — piatti, prezzi, disponibilità casse, composizione
+- `/admin/menu` — Gestione menu e scorte (admin) — piatti, prezzi, scorte, disponibilità casse, composizione
 - `/admin/chiusura` — Procedura chiusura turno (admin)

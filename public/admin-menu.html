@@ -333,6 +333,115 @@
       outline: none;
     }
 
+    /* Stock inline controls */
+    .dish-stock {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .stock-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stock-dot.green { background: var(--green); }
+    .stock-dot.yellow { background: var(--yellow); }
+    .stock-dot.red { background: var(--red); }
+
+    .stock-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-mid);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .stock-display:hover {
+      border-color: rgba(226, 232, 240, 0.15);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .stock-input {
+      width: 52px;
+      padding: 3px 4px;
+      border-radius: 4px;
+      border: 1px solid var(--cyan);
+      background: var(--bg);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+    }
+
+    .stock-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+    }
+
+    .stock-btn:active { transform: scale(0.9); }
+
+    .stock-btn.minus {
+      color: var(--red);
+      border-color: rgba(233, 69, 96, 0.15);
+    }
+
+    .stock-btn.minus:hover { background: rgba(233, 69, 96, 0.08); }
+
+    .stock-btn.plus {
+      color: var(--green);
+      border-color: rgba(78, 204, 163, 0.15);
+    }
+
+    .stock-btn.plus:hover { background: rgba(78, 204, 163, 0.08); }
+
+    /* Pulsante reset scorte header */
+    .btn-reset-stock {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(233, 69, 96, 0.25);
+      background: rgba(233, 69, 96, 0.06);
+      color: var(--red);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn-reset-stock:hover {
+      background: rgba(233, 69, 96, 0.12);
+      border-color: rgba(233, 69, 96, 0.4);
+    }
+
+    .btn-reset-stock:active { transform: scale(0.97); }
+
     /* Casse checkboxes */
     .casse-group {
       display: flex;
@@ -685,6 +794,7 @@
     @media (max-width: 900px) {
       .casse-group { display: none; }
       .dish-row { gap: 8px; padding: 12px; }
+      .stock-btn { display: none; }
     }
 
     @media (max-width: 640px) {
@@ -722,6 +832,7 @@
     </div>
     <div class="header-right">
       <span class="dish-count-badge" id="dishCountBadge">--</span>
+      <button class="btn-reset-stock" id="btnResetStock">Reset scorte</button>
       <button class="btn-add" id="btnAdd">+ Nuovo</button>
     </div>
   </header>
@@ -956,11 +1067,22 @@
       bindDishEvents();
     }
 
+    function stockDotColor(item) {
+      var stock = item.stock !== undefined ? item.stock : 999;
+      if (stock <= 0) return 'red';
+      var threshold = item.alert_threshold || 20;
+      if (stock <= threshold) return 'yellow';
+      return 'green';
+    }
+
     function renderDishRow(item) {
       var isAvailable = item.available !== false;
       var casses = item.casses || [];
       var compStr = formatComposition(item.composition);
       var priceStr = item.price.toFixed(2).replace('.', ',');
+      var stock = item.stock !== undefined ? item.stock : 999;
+      var initStock = item.initial_stock || 999;
+      var dotColor = stockDotColor(item);
 
       var html = '<div class="dish-row' + (isAvailable ? '' : ' disabled') + '" data-id="' + item.id + '">';
 
@@ -984,6 +1106,14 @@
       // Price
       html += '<div class="dish-price">';
       html += '<span class="price-display" data-id="' + item.id + '">&euro; ' + priceStr + '</span>';
+      html += '</div>';
+
+      // Stock inline
+      html += '<div class="dish-stock">';
+      html += '<button class="stock-btn minus" data-id="' + item.id + '" data-delta="-1">&minus;</button>';
+      html += '<span class="stock-dot ' + dotColor + '"></span>';
+      html += '<span class="stock-display" data-id="' + item.id + '">' + stock + '/' + initStock + '</span>';
+      html += '<button class="stock-btn plus" data-id="' + item.id + '" data-delta="1">+</button>';
       html += '</div>';
 
       // Casse
@@ -1097,6 +1227,52 @@
         });
       });
 
+      // Pulsanti +/- stock
+      document.querySelectorAll('.stock-btn').forEach(function(el) {
+        el.addEventListener('click', function() {
+          adjustDishStock(el.dataset.id, parseInt(el.dataset.delta));
+        });
+      });
+
+      // Click su stock → input inline per impostare valore esatto
+      document.querySelectorAll('.stock-display').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = el.dataset.id;
+          var item = menu.find(function(m) { return m.id === id; });
+          if (!item) return;
+          var currentStock = item.stock !== undefined ? item.stock : 999;
+
+          var input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.value = currentStock;
+          input.className = 'stock-input';
+
+          el.replaceWith(input);
+          input.focus();
+          input.select();
+
+          function save() {
+            var val = parseInt(input.value);
+            if (isNaN(val) || val < 0) val = currentStock;
+            setDishStock(id, val);
+
+            var span = document.createElement('span');
+            span.className = 'stock-display';
+            span.dataset.id = id;
+            span.textContent = val + '/' + (item.initial_stock || 999);
+            input.replaceWith(span);
+            bindStockClick(span);
+          }
+
+          input.addEventListener('blur', save);
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = currentStock; input.blur(); }
+          });
+        });
+      });
+
       // Modifica
       document.querySelectorAll('.edit-btn').forEach(function(el) {
         el.addEventListener('click', function() {
@@ -1150,6 +1326,136 @@
         });
       });
     }
+
+    // Ri-aggancia evento click su stock-display dopo inline edit
+    function bindStockClick(span) {
+      span.addEventListener('click', function() {
+        var id = span.dataset.id;
+        var item = menu.find(function(m) { return m.id === id; });
+        if (!item) return;
+        var currentStock = item.stock !== undefined ? item.stock : 999;
+
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.value = currentStock;
+        input.className = 'stock-input';
+
+        span.replaceWith(input);
+        input.focus();
+        input.select();
+
+        function save() {
+          var val = parseInt(input.value);
+          if (isNaN(val) || val < 0) val = currentStock;
+          setDishStock(id, val);
+
+          var newSpan = document.createElement('span');
+          newSpan.className = 'stock-display';
+          newSpan.dataset.id = id;
+          newSpan.textContent = val + '/' + (item.initial_stock || 999);
+          input.replaceWith(newSpan);
+          bindStockClick(newSpan);
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = currentStock; input.blur(); }
+        });
+      });
+    }
+
+    // ===================================================
+    // STOCK: Aggiustamento rapido (+/-)
+    // ===================================================
+    async function adjustDishStock(id, delta) {
+      var item = menu.find(function(m) { return m.id === id; });
+      if (!item) return;
+
+      // Aggiornamento ottimistico
+      item.stock = Math.max(0, (item.stock || 0) + delta);
+      updateStockDisplay(id, item);
+
+      try {
+        await fetch('/api/inventory/' + encodeURIComponent(id) + '/adjust', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ delta: delta }),
+        });
+      } catch (e) {
+        console.error('Errore adjust stock:', e);
+        loadMenu();
+      }
+    }
+
+    async function setDishStock(id, value) {
+      var item = menu.find(function(m) { return m.id === id; });
+      if (!item) return;
+
+      item.stock = value;
+      updateStockDisplay(id, item);
+
+      try {
+        await fetch('/api/inventory/' + encodeURIComponent(id), {
+          method: 'PUT',
+          headers: apiHeaders(),
+          body: JSON.stringify({ stock: value }),
+        });
+      } catch (e) {
+        console.error('Errore set stock:', e);
+        loadMenu();
+      }
+    }
+
+    // Aggiorna solo la parte stock di una riga senza ri-renderizzare tutto
+    function updateStockDisplay(id, item) {
+      var row = document.querySelector('.dish-row[data-id="' + id + '"]');
+      if (!row) return;
+
+      var dot = row.querySelector('.stock-dot');
+      if (dot) {
+        dot.className = 'stock-dot ' + stockDotColor(item);
+      }
+
+      var display = row.querySelector('.stock-display');
+      if (display) {
+        display.textContent = (item.stock !== undefined ? item.stock : 999) + '/' + (item.initial_stock || 999);
+      }
+
+      // Flash di conferma
+      row.classList.add('flash-save');
+      setTimeout(function() { row.classList.remove('flash-save'); }, 300);
+    }
+
+    // Reset scorte — riporta tutte le scorte ai valori iniziali
+    document.getElementById('btnResetStock').addEventListener('click', async function() {
+      if (!confirm('Resettare tutte le scorte ai valori iniziali?')) return;
+
+      try {
+        var res = await fetch('/api/inventory/reset', {
+          method: 'POST',
+          headers: apiHeaders(),
+        });
+        var data = await res.json();
+        if (data.success) {
+          // Aggiorna lo stato locale con i nuovi valori
+          if (data.inventory) {
+            data.inventory.forEach(function(inv) {
+              var item = menu.find(function(m) { return m.id === inv.id; });
+              if (item) {
+                item.stock = inv.stock;
+                item.status = inv.status;
+              }
+            });
+          }
+          renderMenu();
+        }
+      } catch (e) {
+        console.error('Errore reset scorte:', e);
+        alert('Errore durante il reset delle scorte.');
+      }
+    });
 
     // ===================================================
     // API: SALVATAGGIO
@@ -1398,6 +1704,30 @@
       }
 
       renderTabs();
+      renderMenu();
+    });
+
+    // Aggiornamento stock in tempo reale (quando un ordine scala le scorte)
+    socket.on('inventory_updated', function(data) {
+      if (!data || !data.item_id) return;
+      var item = menu.find(function(m) { return m.id === data.item_id; });
+      if (item) {
+        if (data.stock !== undefined) item.stock = data.stock;
+        if (data.status !== undefined) item.status = data.status;
+        updateStockDisplay(data.item_id, item);
+      }
+    });
+
+    // Reset completo inventario
+    socket.on('inventory_reset', function(newInventory) {
+      if (!Array.isArray(newInventory)) return;
+      newInventory.forEach(function(inv) {
+        var item = menu.find(function(m) { return m.id === inv.id; });
+        if (item) {
+          item.stock = inv.stock;
+          item.status = inv.status;
+        }
+      });
       renderMenu();
     });
   </script>

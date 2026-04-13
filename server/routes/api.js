@@ -211,6 +211,23 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
     inventory[menuItem.id].price = menuItem.price;
   }
 
+  // Aggiorna scorte e soglia se specificati
+  const { initial_stock, alert_threshold } = req.body;
+  if (initial_stock !== undefined) {
+    menuItem.initial_stock = parseInt(initial_stock);
+    if (inventory[menuItem.id]) {
+      inventory[menuItem.id].initial_stock = menuItem.initial_stock;
+      db.saveInventoryItem(inventory[menuItem.id]);
+    }
+  }
+  if (alert_threshold !== undefined) {
+    menuItem.alert_threshold = parseInt(alert_threshold);
+    if (inventory[menuItem.id]) {
+      inventory[menuItem.id].alert_threshold = menuItem.alert_threshold;
+      updateInventoryStatus(menuItem.id);
+    }
+  }
+
   // Notifica le casse in tempo reale
   if (io) io.emit('menu_updated', { item: menuItem });
 
@@ -1124,6 +1141,85 @@ router.delete('/inventory/presets/:name', requireAdmin, (req, res) => {
   }
   delete inventoryPresets[req.params.name];
   db.deletePreset(req.params.name);
+  res.json({ success: true });
+});
+
+// =============================================
+// MAGAZZINO MATERIALI — Inventario consumabili (bicchieri, posate, ecc.)
+// Nessun legame con menu o casse
+// =============================================
+
+const warehouse = db.getWarehouse();
+
+router.get('/warehouse', requireAdmin, (req, res) => {
+  res.json(Object.values(warehouse));
+});
+
+router.post('/warehouse', requireAdmin, (req, res) => {
+  const { name, quantity, total, alert_threshold } = req.body;
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ error: 'Nome obbligatorio' });
+  }
+
+  const id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  if (warehouse[id]) {
+    return res.status(409).json({ error: 'Articolo con questo nome esiste gia\'' });
+  }
+
+  const item = {
+    id,
+    name: name.trim(),
+    quantity: parseInt(quantity) || 0,
+    total: parseInt(total) || parseInt(quantity) || 0,
+    alert_threshold: alert_threshold !== undefined && alert_threshold !== null && alert_threshold !== '' ? parseInt(alert_threshold) : null,
+    created_at: Date.now(),
+  };
+
+  warehouse[id] = item;
+  db.saveWarehouseItem(item);
+
+  if (io) io.emit('warehouse_updated', { action: 'added', item });
+  res.status(201).json(item);
+});
+
+router.put('/warehouse/:id', requireAdmin, (req, res) => {
+  const item = warehouse[req.params.id];
+  if (!item) return res.status(404).json({ error: 'Articolo non trovato' });
+
+  const { name, quantity, total, alert_threshold } = req.body;
+  if (name !== undefined) item.name = String(name).trim();
+  if (quantity !== undefined) item.quantity = Math.max(0, parseInt(quantity));
+  if (total !== undefined) item.total = Math.max(0, parseInt(total));
+  if (alert_threshold !== undefined) item.alert_threshold = alert_threshold !== null && alert_threshold !== '' ? parseInt(alert_threshold) : null;
+
+  db.saveWarehouseItem(item);
+  if (io) io.emit('warehouse_updated', { action: 'updated', item });
+  res.json(item);
+});
+
+router.post('/warehouse/:id/adjust', requireAdmin, (req, res) => {
+  const item = warehouse[req.params.id];
+  if (!item) return res.status(404).json({ error: 'Articolo non trovato' });
+
+  const { delta } = req.body;
+  if (delta === undefined || isNaN(delta)) {
+    return res.status(400).json({ error: 'Specificare delta numerico' });
+  }
+
+  item.quantity = Math.max(0, item.quantity + parseInt(delta));
+  db.updateWarehouseQty(item.id, item.quantity);
+  if (io) io.emit('warehouse_updated', { action: 'adjusted', item });
+  res.json(item);
+});
+
+router.delete('/warehouse/:id', requireAdmin, (req, res) => {
+  if (!warehouse[req.params.id]) {
+    return res.status(404).json({ error: 'Articolo non trovato' });
+  }
+  const removed = warehouse[req.params.id];
+  delete warehouse[req.params.id];
+  db.deleteWarehouseItem(req.params.id);
+  if (io) io.emit('warehouse_updated', { action: 'deleted', item: removed });
   res.json({ success: true });
 });
 
