@@ -64,57 +64,15 @@
       flex-shrink: 0;
     }
 
-    .tab-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 18px;
-      border-radius: 8px;
-      border: 1.5px solid rgba(255, 255, 255, 0.06);
-      background: rgba(255, 255, 255, 0.02);
-      color: rgba(240, 244, 248, 0.45);
+    .tab-title {
       font-family: 'Outfit', sans-serif;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
-      cursor: pointer;
-      transition: all 150ms ease;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(240, 244, 248, 0.45);
+      padding: 10px 18px;
     }
-
-    .tab-btn:active { transform: scale(0.97); }
-
-    .tab-btn.active {
-      background: rgba(78, 204, 163, 0.1);
-      border-color: rgba(78, 204, 163, 0.35);
-      color: #4ecca3;
-    }
-
-    .tab-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 6px;
-      border-radius: 10px;
-      background: #4ecca3;
-      color: #060a12;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: 11px;
-      line-height: 1;
-    }
-
-    .tab-badge.hidden { display: none; }
-
-    .tab-check {
-      font-size: 14px;
-      margin-left: -2px;
-      display: none;
-    }
-
-    .tab-check.visible { display: inline; }
 
     .tab-spacer { flex: 1; }
 
@@ -147,7 +105,7 @@
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 8px 10px 16px;
+      padding: 12px;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.08) transparent;
     }
@@ -156,55 +114,48 @@
     .menu-scroll::-webkit-scrollbar-track { background: transparent; }
     .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    .category-box {
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      border-radius: 8px;
-      margin-bottom: 8px;
-      overflow: hidden;
-    }
-
     .section-header {
-      padding: 10px 12px 8px;
+      grid-column: 1 / -1;
+      padding: 6px 4px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: #4ecca3;
-      background: rgba(78, 204, 163, 0.06);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    /* ===== RIGA PIATTO ===== */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+    }
+
+    /* ===== CARD PIATTO ===== */
     .menu-row {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding: 6px 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 10px;
       transition: all 120ms ease;
-      min-height: 44px;
+      min-height: 90px;
+      text-align: center;
     }
 
-    .menu-row:last-child { border-bottom: none; }
-
-    .menu-row.group-first {
-      border-top: 2px solid rgba(255, 255, 255, 0.18);
-      margin-top: 2px;
-    }
-
-    .menu-row:active { background: rgba(255, 255, 255, 0.05); }
+    .menu-row:active { background: rgba(255, 255, 255, 0.06); }
 
     .menu-row.active {
       background: rgba(78, 204, 163, 0.10);
+      border-color: rgba(78, 204, 163, 0.35);
     }
 
     .menu-row.exhausted {
-      opacity: 0.45;
+      opacity: 0.4;
       pointer-events: none;
     }
 
@@ -218,31 +169,27 @@
       letter-spacing: 0.04em;
       padding: 2px 6px;
       border-radius: 4px;
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-      flex-shrink: 0;
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
       white-space: nowrap;
     }
 
     .row-name {
-      flex: 1;
-      font-weight: 500;
-      font-size: 15px;
+      font-weight: 600;
+      font-size: 14px;
       color: rgba(240, 244, 248, 0.88);
       line-height: 1.2;
-      min-width: 0;
+      text-align: center;
     }
 
-    .menu-row.active .row-name { color: #f0f4f8; font-weight: 600; }
+    .menu-row.active .row-name { color: #f0f4f8; font-weight: 700; }
 
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       color: rgba(78, 204, 163, 0.7);
       white-space: nowrap;
-      min-width: 52px;
-      text-align: right;
     }
 
     .menu-row.active .row-price { color: #4ecca3; }
@@ -255,22 +202,21 @@
       border-radius: 4px;
       background: rgba(255, 217, 61, 0.15);
       color: #ffd93d;
-      flex-shrink: 0;
     }
 
     /* ===== STEPPER ===== */
     .row-stepper {
       display: flex;
       align-items: center;
-      border-radius: 8px;
+      border-radius: 6px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.10);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 38px;
-      height: 36px;
+      width: 36px;
+      height: 34px;
       background: rgba(255, 255, 255, 0.04);
       border: none;
       font-family: 'JetBrains Mono', monospace;
@@ -289,14 +235,14 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 30px;
+      width: 28px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 36px;
-      line-height: 36px;
+      height: 34px;
+      line-height: 34px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
@@ -331,57 +277,6 @@
     }
 
     .order-last.visible { opacity: 1; }
-
-    /* ===== FORM ORDINE ===== */
-    .order-form {
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      flex-shrink: 0;
-    }
-
-    .form-field {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      padding: 8px 10px;
-      transition: border-color 200ms ease;
-    }
-
-    .form-field:focus-within { border-color: rgba(78, 204, 163, 0.3); }
-    .form-field.flex-1 { flex: 1; }
-
-    .field-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(240, 244, 248, 0.45);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-    }
-
-    .form-field input[type="number"] {
-      width: 44px;
-      background: none;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
-      font-weight: 800;
-      text-align: center;
-      -moz-appearance: textfield;
-    }
-
-    .form-field input[type="number"]::-webkit-outer-spin-button,
-    .form-field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .form-field input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
 
     /* ===== RIEPILOGO ORDINE ===== */
     .order-summary-label {
@@ -770,34 +665,16 @@
     <!-- AREA MENU (70%, sinistra) -->
     <div class="menu-area">
       <div class="tab-bar">
-        <button class="tab-btn active" id="tabContorni" onclick="switchTab('contorni')">
-          CONTORNI
-          <span class="tab-check" id="tabContorniCheck">&#10003;</span>
-        </button>
-        <button class="tab-btn" id="tabBevande" onclick="switchTab('bevande')">
-          BEVANDE
-          <span class="tab-badge hidden" id="tabBevandeBadge">0</span>
-        </button>
+        <span class="tab-title">CASETTA</span>
         <span class="tab-spacer"></span>
-        <span class="tab-status" id="tabStatus">
+        <span class="tab-status" id="connStatus">
           <span class="status-led" id="statusLed"></span>
-          <span id="statusText">...</span>
+          OFFLINE
         </span>
       </div>
 
       <div class="menu-scroll">
-        <div class="tab-panel active" id="panelContorni">
-          <div class="empty-state" id="emptyContorni">
-            <div class="empty-state-icon">&#8987;</div>
-            <div class="empty-state-text">Caricamento menu...</div>
-          </div>
-        </div>
-        <div class="tab-panel" id="panelBevande">
-          <div class="empty-state" id="emptyBevande">
-            <div class="empty-state-icon">&#8987;</div>
-            <div class="empty-state-text">Caricamento menu...</div>
-          </div>
-        </div>
+        <div id="productGrid"></div>
       </div>
     </div>
 
@@ -806,13 +683,6 @@
       <div class="order-header">
         <span class="order-number">ORDINE</span>
         <span class="order-last" id="lastOrder"></span>
-      </div>
-
-      <div class="order-form">
-        <div class="form-field flex-1" id="tableField">
-          <span class="field-label">Tav</span>
-          <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="opzionale">
-        </div>
       </div>
 
       <!-- Toggle POS -->
@@ -862,7 +732,6 @@
     var itemMap = {};
     var connected = false;
     var submitting = false;
-    var currentTab = 'contorni';
     var posActive = false;
 
     function togglePos() {
@@ -890,111 +759,54 @@
 
         renderPanels();
       } catch (err) {
-        document.getElementById('emptyContorni').innerHTML =
+        document.getElementById('productGrid').innerHTML =
+          '<div class="empty-state">' +
           '<div class="empty-state-icon">&#9888;</div>' +
           '<div class="empty-state-text">Errore caricamento menu</div>' +
-          '<div class="empty-state-sub">Controlla la connessione al server</div>';
+          '<div class="empty-state-sub">Controlla la connessione al server</div>' +
+          '</div>';
       }
     }
 
-    // ===== RENDER TABS =====
+    // ===== RENDER GRIGLIA PRODOTTI =====
     function renderPanels() {
       var contorni = menuItems.filter(function(i) { return i.category === 'contorno'; });
       var bevande = menuItems.filter(function(i) { return i.category === 'bevanda'; });
 
-      document.getElementById('panelContorni').innerHTML = renderItemList(contorni, 'Contorni');
-      document.getElementById('panelBevande').innerHTML = renderItemList(bevande, 'Bevande');
-    }
-
-    function renderItemList(items, label) {
-      if (items.length === 0) {
-        return '<div class="empty-state">' +
-          '<div class="empty-state-icon">&#128722;</div>' +
-          '<div class="empty-state-text">Nessun articolo disponibile</div>' +
-        '</div>';
+      var html = '<div class="product-grid">';
+      if (contorni.length > 0) {
+        html += '<div class="section-header">Contorni</div>';
+        contorni.forEach(function(item) { html += renderItemCard(item); });
       }
-
-      function beverageGroup(name) {
-        var n = name.toLowerCase();
-        if (n.indexOf('birra') === 0) return 'birra';
-        if (n.indexOf('vino') === 0) return 'vino';
-        if (n.indexOf('bottiglia') === 0) return 'bottiglia';
-        if (n.indexOf('acqua') === 0) return 'acqua';
-        if (n.indexOf('lattina') === 0) return 'lattina';
-        return 'altro';
+      if (bevande.length > 0) {
+        html += '<div class="section-header">Bevande</div>';
+        bevande.forEach(function(item) { html += renderItemCard(item); });
       }
-
-      var isBevande = (label === 'Bevande');
-      var html = '<div class="category-box">';
-      html += '<div class="section-header">' + label + '</div>';
-      var lastGroup = null;
-      items.forEach(function(item) {
-        var exhausted = item.status === 'exhausted';
-        var disabled = item.available === false;
-        var lowStock = item.status === 'low';
-        var extraClass = (exhausted || disabled) ? ' exhausted' : '';
-        var statusBadge = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
-          : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>'
-          : lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
-        var priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
-
-        var groupClass = '';
-        if (isBevande) {
-          var grp = beverageGroup(item.name);
-          if (lastGroup !== null && grp !== lastGroup) {
-            groupClass = ' group-first';
-          }
-          lastGroup = grp;
-        }
-
-        html += '<div class="menu-row' + extraClass + groupClass + '" id="card-' + item.id + '">' +
-          '<div class="row-stepper">' +
-            '<button class="step-btn step-minus" onclick="changeQty(\'' + item.id + '\', -1)">\u2212</button>' +
-            '<span class="step-count zero" id="qty-' + item.id + '">0</span>' +
-            '<button class="step-btn step-plus" onclick="changeQty(\'' + item.id + '\', 1)">+</button>' +
-          '</div>' +
-          '<span class="row-name">' + item.name + '</span>' +
-          statusBadge +
-          '<span class="row-price">' + priceFormatted + '</span>' +
-        '</div>';
-      });
       html += '</div>';
-      return html;
+
+      document.getElementById('productGrid').innerHTML = html;
     }
 
-    // ===== SWITCH TAB =====
-    function switchTab(tab) {
-      currentTab = tab;
-      document.getElementById('tabContorni').classList.toggle('active', tab === 'contorni');
-      document.getElementById('tabBevande').classList.toggle('active', tab === 'bevande');
-      document.getElementById('panelContorni').classList.toggle('active', tab === 'contorni');
-      document.getElementById('panelBevande').classList.toggle('active', tab === 'bevande');
-    }
+    function renderItemCard(item) {
+      var exhausted = item.status === 'exhausted';
+      var disabled = item.available === false;
+      var lowStock = item.status === 'low';
+      var extraClass = (exhausted || disabled) ? ' exhausted' : '';
+      var statusBadge = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
+        : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>'
+        : lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
+      var priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
 
-    function updateTabBadges() {
-      // Badge bevande
-      var drinkCount = 0;
-      menuItems.forEach(function(item) {
-        if (item.category === 'bevanda' && quantities[item.id] > 0) {
-          drinkCount += quantities[item.id];
-        }
-      });
-      var badge = document.getElementById('tabBevandeBadge');
-      if (drinkCount > 0) {
-        badge.textContent = drinkCount;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-
-      // Check contorni
-      var contorniSelected = false;
-      menuItems.forEach(function(item) {
-        if (item.category === 'contorno' && quantities[item.id] > 0) {
-          contorniSelected = true;
-        }
-      });
-      document.getElementById('tabContorniCheck').classList.toggle('visible', contorniSelected);
+      return '<div class="menu-row' + extraClass + '" id="card-' + item.id + '">' +
+        '<span class="row-name">' + item.name + '</span>' +
+        statusBadge +
+        '<span class="row-price">' + priceFormatted + '</span>' +
+        '<div class="row-stepper">' +
+          '<button class="step-btn step-minus" onclick="changeQty(\'' + item.id + '\', -1)">\u2212</button>' +
+          '<span class="step-count zero" id="qty-' + item.id + '">0</span>' +
+          '<button class="step-btn step-plus" onclick="changeQty(\'' + item.id + '\', 1)">+</button>' +
+        '</div>' +
+      '</div>';
     }
 
     // ===== LOGICA QUANTITA =====
@@ -1011,7 +823,6 @@
       var card = document.getElementById('card-' + id);
       if (card) card.classList.toggle('active', quantities[id] > 0);
 
-      updateTabBadges();
       updateOrderColumn();
     }
 
@@ -1022,7 +833,6 @@
       if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
       var card = document.getElementById('card-' + id);
       if (card) card.classList.remove('active');
-      updateTabBadges();
       updateOrderColumn();
     }
 
@@ -1083,8 +893,7 @@
       var result = calcOrder();
       if (result.totalItems === 0) return;
 
-      var tableInput = document.getElementById('tableInput');
-      var table = parseInt(tableInput.value) || 0;
+      var table = 0;
 
       var items = menuItems
         .filter(function(item) { return (quantities[item.id] || 0) > 0; })
@@ -1152,13 +961,10 @@
         var card = document.getElementById('card-' + item.id);
         if (card) card.classList.remove('active');
       });
-      document.getElementById('tableInput').value = '';
       if (posActive) {
         posActive = false;
         document.getElementById('posToggle').classList.remove('active');
       }
-      switchTab('contorni');
-      updateTabBadges();
       updateOrderColumn();
     }
 
@@ -1177,8 +983,7 @@
 
     var offlineBanner = document.getElementById('offlineBanner');
     var statusLed = document.getElementById('statusLed');
-    var statusText = document.getElementById('statusText');
-    var tabStatus = document.getElementById('tabStatus');
+    var connStatus = document.getElementById('connStatus');
 
     socket.on('connect', function() {
       connected = true;
@@ -1186,9 +991,9 @@
       offlineBanner.classList.remove('visible');
       statusLed.classList.add('on');
       statusLed.classList.remove('off');
-      tabStatus.classList.add('online');
-      tabStatus.classList.remove('offline');
-      statusText.textContent = 'Connesso';
+      connStatus.classList.add('online');
+      connStatus.classList.remove('offline');
+      connStatus.innerHTML = '<span class="status-led on" id="statusLed"></span> ONLINE';
       updateOrderColumn();
     });
 
@@ -1197,9 +1002,9 @@
       offlineBanner.classList.add('visible');
       statusLed.classList.remove('on');
       statusLed.classList.add('off');
-      tabStatus.classList.remove('online');
-      tabStatus.classList.add('offline');
-      statusText.textContent = 'Offline';
+      connStatus.classList.remove('online');
+      connStatus.classList.add('offline');
+      connStatus.innerHTML = '<span class="status-led off" id="statusLed"></span> OFFLINE';
     });
 
     // Aggiornamento scorte in tempo reale
@@ -1238,7 +1043,6 @@
         var countEl = document.getElementById('qty-' + data.item_id);
         if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
         card.classList.remove('active');
-        updateTabBadges();
         updateOrderColumn();
       }
     });
@@ -1285,8 +1089,6 @@
     socket.on('connect', function() {
       setTimeout(function() { socket.emit('request_printer_check'); }, 2000);
     });
-
-    document.getElementById('tableInput').addEventListener('input', updateOrderColumn);
 
     // ===== INIT =====
     loadMenu();

@@ -105,7 +105,7 @@
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 8px 10px 16px;
+      padding: 12px;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.08) transparent;
     }
@@ -114,52 +114,48 @@
     .menu-scroll::-webkit-scrollbar-track { background: transparent; }
     .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 
-    .category-box {
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      border-radius: 8px;
-      margin-bottom: 8px;
-      overflow: hidden;
-    }
-
     .section-header {
-      padding: 10px 12px 8px;
+      grid-column: 1 / -1;
+      padding: 6px 4px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: #4ecca3;
-      background: rgba(78, 204, 163, 0.06);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    /* ===== RIGA PIATTO ===== */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+    }
+
+    /* ===== BOX PIATTO ===== */
     .menu-row {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding: 6px 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 10px;
       transition: all 120ms ease;
-      min-height: 44px;
+      min-height: 90px;
+      text-align: center;
     }
 
-    .menu-row:last-child { border-bottom: none; }
-
-    .menu-row.group-first {
-      border-top: 2px solid rgba(255, 255, 255, 0.18);
-      margin-top: 2px;
-    }
-
-    .menu-row:active { background: rgba(255, 255, 255, 0.05); }
+    .menu-row:active { background: rgba(255, 255, 255, 0.06); }
 
     .menu-row.active {
       background: rgba(78, 204, 163, 0.10);
+      border-color: rgba(78, 204, 163, 0.35);
     }
 
     .menu-row.exhausted {
-      opacity: 0.45;
+      opacity: 0.4;
       pointer-events: none;
     }
 
@@ -173,31 +169,27 @@
       letter-spacing: 0.04em;
       padding: 2px 6px;
       border-radius: 4px;
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-      flex-shrink: 0;
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
       white-space: nowrap;
     }
 
     .row-name {
-      flex: 1;
-      font-weight: 500;
-      font-size: 15px;
+      font-weight: 600;
+      font-size: 14px;
       color: rgba(240, 244, 248, 0.88);
       line-height: 1.2;
-      min-width: 0;
+      text-align: center;
     }
 
-    .menu-row.active .row-name { color: #f0f4f8; font-weight: 600; }
+    .menu-row.active .row-name { color: #f0f4f8; font-weight: 700; }
 
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       color: rgba(78, 204, 163, 0.7);
       white-space: nowrap;
-      min-width: 52px;
-      text-align: right;
     }
 
     .menu-row.active .row-price { color: #4ecca3; }
@@ -206,15 +198,15 @@
     .row-stepper {
       display: flex;
       align-items: center;
-      border-radius: 8px;
+      border-radius: 6px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.10);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 38px;
-      height: 36px;
+      width: 36px;
+      height: 34px;
       background: rgba(255, 255, 255, 0.04);
       border: none;
       font-family: 'JetBrains Mono', monospace;
@@ -233,14 +225,14 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 30px;
+      width: 28px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 36px;
-      line-height: 36px;
+      height: 34px;
+      line-height: 34px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
@@ -275,83 +267,6 @@
     }
 
     .order-last.visible { opacity: 1; }
-
-    /* ===== FORM ORDINE ===== */
-    .order-form {
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      flex-shrink: 0;
-    }
-
-    .form-field {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      padding: 8px 10px;
-      transition: border-color 200ms ease;
-    }
-
-    .form-field:focus-within { border-color: rgba(78, 204, 163, 0.3); }
-    .form-field.flex-1 { flex: 1; }
-
-    .form-field.error {
-      border-color: #e94560;
-      animation: shake 300ms ease;
-    }
-
-    @keyframes shake {
-      25% { transform: translateX(-4px); }
-      50% { transform: translateX(4px); }
-      75% { transform: translateX(-2px); }
-    }
-
-    .field-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(240, 244, 248, 0.45);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-    }
-
-    .form-field input[type="text"] {
-      flex: 1;
-      width: 100%;
-      min-width: 0;
-      background: none;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: 'Outfit', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .form-field input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
-
-    .form-field input[type="number"] {
-      width: 44px;
-      background: none;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
-      font-weight: 800;
-      text-align: center;
-      -moz-appearance: textfield;
-    }
-
-    .form-field input[type="number"]::-webkit-outer-spin-button,
-    .form-field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .form-field input[type="number"]::placeholder { color: rgba(255, 255, 255, 0.12); }
 
     /* ===== RIEPILOGO ORDINE ===== */
     .order-summary-label {
@@ -724,17 +639,6 @@
         <span class="order-last" id="lastOrder"></span>
       </div>
 
-      <div class="order-form">
-        <div class="form-field flex-1">
-          <span class="field-label">Nome</span>
-          <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
-        </div>
-        <div class="form-field flex-1" id="tableField">
-          <span class="field-label">Tav</span>
-          <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
-        </div>
-      </div>
-
       <!-- Toggle POS -->
       <div class="pos-row">
         <div class="pos-toggle" id="posToggle" onclick="togglePos()"></div>
@@ -828,37 +732,23 @@
       if (BEVERAGES.length === 0) {
         return '<div style="padding:40px;text-align:center;color:#64748b">Nessuna bevanda disponibile</div>';
       }
-      function beverageGroup(name) {
-        var n = name.toLowerCase();
-        if (n.indexOf('birra') === 0) return 'birra';
-        if (n.indexOf('vino') === 0) return 'vino';
-        if (n.indexOf('bottiglia') === 0) return 'bottiglia';
-        if (n.indexOf('acqua') === 0) return 'acqua';
-        if (n.indexOf('lattina') === 0) return 'lattina';
-        return 'altro';
-      }
-      var html = '<div class="category-box">';
-      html += '<div class="section-header">Bevande</div>';
-      var lastGroup = null;
+      var html = '<div class="product-grid">';
       BEVERAGES.forEach(function(bev) {
         var exhausted = bev.status === 'exhausted';
         var disabled = bev.available === false;
         var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
         var tag = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
           : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
-        var grp = beverageGroup(bev.name);
-        var groupClass = (lastGroup !== null && grp !== lastGroup) ? ' group-first' : '';
-        html += '<div class="menu-row' + ((exhausted || disabled) ? ' exhausted' : '') + groupClass + '" id="card-' + bev.id + '">' +
+        html += '<div class="menu-row' + ((exhausted || disabled) ? ' exhausted' : '') + '" id="card-' + bev.id + '">' +
+          '<span class="row-name">' + bev.name + '</span>' +
+          tag +
+          '<span class="row-price">' + priceFormatted + '</span>' +
           '<div class="row-stepper">' +
             '<button class="step-btn step-minus" onclick="changeQty(\'' + bev.id + '\', -1)">\u2212</button>' +
             '<span class="step-count zero" id="qty-' + bev.id + '">0</span>' +
             '<button class="step-btn step-plus" onclick="changeQty(\'' + bev.id + '\', 1)">+</button>' +
           '</div>' +
-          '<span class="row-name">' + bev.name + '</span>' +
-          tag +
-          '<span class="row-price">' + priceFormatted + '</span>' +
         '</div>';
-        lastGroup = grp;
       });
       html += '</div>';
       return html;
@@ -936,8 +826,7 @@
       grandTotal.textContent = formatPrice(total);
       grandTotal.classList.toggle('empty', totalItems === 0);
 
-      var tableValue = document.getElementById('tableInput').value;
-      var canOrder = totalItems > 0 && tableValue;
+      var canOrder = totalItems > 0;
       document.getElementById('btnOrder').classList.toggle('disabled', !canOrder);
     }
 
@@ -945,16 +834,7 @@
     async function submitOrder() {
       if (!connected || submitting) return;
 
-      var tableInput = document.getElementById('tableInput');
-      var table = parseInt(tableInput.value);
-
-      if (!table || table < 1) {
-        var field = document.getElementById('tableField');
-        field.classList.add('error');
-        setTimeout(function() { field.classList.remove('error'); }, 400);
-        tableInput.focus();
-        return;
-      }
+      var table = 0;
 
       var items = BEVERAGES
         .filter(function(bev) { return quantities[bev.id] > 0; })
@@ -962,7 +842,6 @@
 
       if (items.length === 0) return;
 
-      var customerName = document.getElementById('nameInput').value.trim() || null;
       submitting = true;
       document.getElementById('btnOrder').classList.add('disabled');
 
@@ -973,7 +852,7 @@
           body: JSON.stringify({
             table: table,
             items: items,
-            customer_name: customerName,
+            customer_name: null,
             source: 'bar',
             payment: posActive ? 'pos' : 'contanti',
           }),
@@ -982,8 +861,7 @@
 
         if (data.success) {
           document.getElementById('successNumber').textContent = data.order_number;
-          document.getElementById('successSub').textContent =
-            'Tavolo ' + data.table + ' \u2014 ' + formatPrice(data.total);
+          document.getElementById('successSub').textContent = formatPrice(data.total);
           showOverlay('success');
 
           var lastEl = document.getElementById('lastOrder');
@@ -1013,8 +891,6 @@
         var cardEl = document.getElementById('card-' + bev.id);
         if (cardEl) cardEl.classList.remove('active');
       });
-      document.getElementById('tableInput').value = '';
-      document.getElementById('nameInput').value = '';
       if (posActive) {
         posActive = false;
         document.getElementById('posToggle').classList.remove('active');
@@ -1103,7 +979,6 @@
       loadMenu();
     });
 
-    document.getElementById('tableInput').addEventListener('input', updateOrderColumn);
   </script>
 </body>
 </html>
