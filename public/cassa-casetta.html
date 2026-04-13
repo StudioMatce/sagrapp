@@ -159,41 +159,48 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
+    .category-box {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+
     .section-header {
-      padding: 12px 8px 6px;
+      padding: 10px 12px 8px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: rgba(78, 204, 163, 0.5);
-    }
-
-    .section-header:first-child { padding-top: 4px; }
-
-    .sep {
-      height: 1px;
-      background: rgba(255, 255, 255, 0.05);
-      margin: 6px 8px;
+      color: #4ecca3;
+      background: rgba(78, 204, 163, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* ===== RIGA PIATTO ===== */
     .menu-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       padding: 6px 10px;
-      border-radius: 8px;
-      border: 1.5px solid transparent;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
       transition: all 120ms ease;
       min-height: 44px;
     }
 
-    .menu-row:active { background: rgba(255, 255, 255, 0.03); }
+    .menu-row:last-child { border-bottom: none; }
+
+    .menu-row.group-first {
+      border-top: 2px solid rgba(255, 255, 255, 0.18);
+      margin-top: 2px;
+    }
+
+    .menu-row:active { background: rgba(255, 255, 255, 0.05); }
 
     .menu-row.active {
-      background: rgba(78, 204, 163, 0.06);
-      border-color: rgba(78, 204, 163, 0.2);
+      background: rgba(78, 204, 163, 0.10);
     }
 
     .menu-row.exhausted {
@@ -205,7 +212,7 @@
 
     .row-exhausted-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -220,8 +227,8 @@
     .row-name {
       flex: 1;
       font-weight: 500;
-      font-size: 14px;
-      color: rgba(240, 244, 248, 0.75);
+      font-size: 15px;
+      color: rgba(240, 244, 248, 0.88);
       line-height: 1.2;
       min-width: 0;
     }
@@ -231,8 +238,8 @@
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 13px;
-      color: rgba(78, 204, 163, 0.5);
+      font-size: 14px;
+      color: rgba(78, 204, 163, 0.7);
       white-space: nowrap;
       min-width: 52px;
       text-align: right;
@@ -257,17 +264,17 @@
       align-items: center;
       border-radius: 8px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 40px;
-      height: 38px;
-      background: rgba(255, 255, 255, 0.02);
+      width: 38px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.04);
       border: none;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       cursor: pointer;
       touch-action: manipulation;
@@ -282,14 +289,14 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 32px;
+      width: 30px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 38px;
-      line-height: 38px;
+      height: 36px;
+      line-height: 36px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
@@ -309,16 +316,16 @@
     .order-number {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 16px;
-      color: rgba(240, 244, 248, 0.5);
+      font-size: 18px;
+      color: rgba(240, 244, 248, 0.7);
       letter-spacing: 0.02em;
     }
 
     .order-last {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
-      color: rgba(78, 204, 163, 0.5);
+      color: rgba(78, 204, 163, 0.65);
       opacity: 0;
       transition: opacity 300ms ease;
     }
@@ -339,10 +346,10 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
-      padding: 6px 10px;
+      padding: 8px 10px;
       transition: border-color 200ms ease;
     }
 
@@ -351,9 +358,9 @@
 
     .field-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 700;
-      color: rgba(240, 244, 248, 0.3);
+      color: rgba(240, 244, 248, 0.45);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       white-space: nowrap;
@@ -380,12 +387,12 @@
     .order-summary-label {
       padding: 10px 16px 6px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: rgba(240, 244, 248, 0.25);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: rgba(240, 244, 248, 0.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
     }
 
@@ -404,8 +411,8 @@
     .order-empty {
       padding: 24px 16px;
       text-align: center;
-      font-size: 13px;
-      color: rgba(240, 244, 248, 0.15);
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.25);
       font-style: italic;
     }
 
@@ -422,16 +429,16 @@
     .order-item-qty {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 15px;
       color: #4ecca3;
-      min-width: 26px;
+      min-width: 28px;
     }
 
     .order-item-name {
       flex: 1;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 500;
-      color: rgba(240, 244, 248, 0.7);
+      color: rgba(240, 244, 248, 0.85);
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -441,8 +448,8 @@
     .order-item-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 12px;
-      color: rgba(240, 244, 248, 0.4);
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.55);
       white-space: nowrap;
     }
 
@@ -472,8 +479,8 @@
 
     /* ===== FOOTER ORDINE ===== */
     .order-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 12px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 14px 16px;
       flex-shrink: 0;
     }
 
@@ -491,16 +498,16 @@
     }
 
     .total-row.grand-total .total-label {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
-      color: rgba(240, 244, 248, 0.7);
+      color: rgba(240, 244, 248, 0.85);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
 
     .total-row.grand-total .total-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 800;
       color: #4ecca3;
     }
@@ -517,9 +524,9 @@
       padding: 0 16px 12px;
     }
     .pos-label {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
-      color: rgba(240, 244, 248, 0.4);
+      color: rgba(240, 244, 248, 0.55);
       flex: 1;
     }
     .pos-toggle {
@@ -907,7 +914,20 @@
         '</div>';
       }
 
-      var html = '<div class="section-header">' + label + '</div>';
+      function beverageGroup(name) {
+        var n = name.toLowerCase();
+        if (n.indexOf('birra') === 0) return 'birra';
+        if (n.indexOf('vino') === 0) return 'vino';
+        if (n.indexOf('bottiglia') === 0) return 'bottiglia';
+        if (n.indexOf('acqua') === 0) return 'acqua';
+        if (n.indexOf('lattina') === 0) return 'lattina';
+        return 'altro';
+      }
+
+      var isBevande = (label === 'Bevande');
+      var html = '<div class="category-box">';
+      html += '<div class="section-header">' + label + '</div>';
+      var lastGroup = null;
       items.forEach(function(item) {
         var exhausted = item.status === 'exhausted';
         var disabled = item.available === false;
@@ -918,17 +938,27 @@
           : lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
         var priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
 
-        html += '<div class="menu-row' + extraClass + '" id="card-' + item.id + '">' +
-          '<span class="row-name">' + item.name + '</span>' +
-          statusBadge +
-          '<span class="row-price">' + priceFormatted + '</span>' +
+        var groupClass = '';
+        if (isBevande) {
+          var grp = beverageGroup(item.name);
+          if (lastGroup !== null && grp !== lastGroup) {
+            groupClass = ' group-first';
+          }
+          lastGroup = grp;
+        }
+
+        html += '<div class="menu-row' + extraClass + groupClass + '" id="card-' + item.id + '">' +
           '<div class="row-stepper">' +
             '<button class="step-btn step-minus" onclick="changeQty(\'' + item.id + '\', -1)">\u2212</button>' +
             '<span class="step-count zero" id="qty-' + item.id + '">0</span>' +
             '<button class="step-btn step-plus" onclick="changeQty(\'' + item.id + '\', 1)">+</button>' +
           '</div>' +
+          '<span class="row-name">' + item.name + '</span>' +
+          statusBadge +
+          '<span class="row-price">' + priceFormatted + '</span>' +
         '</div>';
       });
+      html += '</div>';
       return html;
     }
 
