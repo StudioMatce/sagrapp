@@ -208,6 +208,27 @@
       border-color: rgba(78, 204, 163, 0.2);
     }
 
+    .menu-row.exhausted {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .menu-row.exhausted .row-stepper { visibility: hidden; }
+
+    .row-exhausted-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
     .row-name {
       flex: 1;
       font-weight: 500;
@@ -1229,18 +1250,15 @@
       }
     }
 
-    // Ripristina stato quantita' e piatti esauriti dopo re-render
+    // Ripristina stato quantita' dopo re-render (esaurito gia' gestito in renderItemRow)
     function restoreQuantityUI() {
       ITEMS.forEach(function(item) {
+        if (item.status === 'exhausted') return;
         var countEl = document.getElementById('qty-' + item.id);
         var cardEl = document.getElementById('card-' + item.id);
         if (quantities[item.id] > 0) {
           if (countEl) { countEl.textContent = quantities[item.id]; countEl.classList.remove('zero'); }
           if (cardEl) cardEl.classList.add('active');
-        }
-        if (item.status === 'exhausted' && cardEl) {
-          cardEl.style.opacity = '0.3';
-          cardEl.style.pointerEvents = 'none';
         }
       });
     }
@@ -1258,11 +1276,13 @@
     function renderItemRow(itemId) {
       const item = itemMap[itemId];
       if (!item) return '';
-      // Formatta prezzo con virgola (stile italiano)
+      const exhausted = item.status === 'exhausted';
       const priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
+      const exhaustedTag = exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
       return `
-        <div class="menu-row" id="card-${item.id}">
+        <div class="menu-row${exhausted ? ' exhausted' : ''}" id="card-${item.id}">
           <span class="row-name">${item.name}</span>
+          ${exhaustedTag}
           <span class="row-price">${priceFormatted}</span>
           <div class="row-stepper">
             <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
@@ -1928,12 +1948,27 @@
       if (currentTab === 'ordini') loadAllOrders();
     });
 
-    // Ascolta aggiornamenti inventario dal server per segnalare piatti esauriti
+    // Aggiorna piatto esaurito in tempo reale: aggiunge classe + tag
     socket.on('inventory_exhausted', function(data) {
       var card = document.getElementById('card-' + data.item_id);
-      if (card) {
-        card.style.opacity = '0.3';
-        card.style.pointerEvents = 'none';
+      if (!card || card.classList.contains('exhausted')) return;
+      card.classList.add('exhausted');
+      // Aggiungi tag "Esaurito" prima del prezzo
+      var priceEl = card.querySelector('.row-price');
+      if (priceEl && !card.querySelector('.row-exhausted-tag')) {
+        var tag = document.createElement('span');
+        tag.className = 'row-exhausted-tag';
+        tag.textContent = 'Esaurito';
+        card.insertBefore(tag, priceEl);
+      }
+      // Resetta quantita' se selezionato
+      if (quantities[data.item_id] > 0) {
+        quantities[data.item_id] = 0;
+        var countEl = document.getElementById('qty-' + data.item_id);
+        if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
+        card.classList.remove('active');
+        updateTabBadges();
+        updateOrderColumn();
       }
     });
 

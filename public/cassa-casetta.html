@@ -197,8 +197,24 @@
     }
 
     .menu-row.exhausted {
-      opacity: 0.3;
+      opacity: 0.45;
       pointer-events: none;
+    }
+
+    .menu-row.exhausted .row-stepper { visibility: hidden; }
+
+    .row-exhausted-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .row-name {
@@ -897,12 +913,13 @@
         var exhausted = item.status === 'exhausted';
         var lowStock = item.status === 'low';
         var extraClass = exhausted ? ' exhausted' : '';
-        var stockBadge = lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
+        var statusBadge = exhausted ? '<span class="row-exhausted-tag">Esaurito</span>'
+          : lowStock ? '<span class="row-stock-badge">' + item.stock + '</span>' : '';
         var priceFormatted = '\u20AC' + item.price.toFixed(2).replace('.', ',');
 
         html += '<div class="menu-row' + extraClass + '" id="card-' + item.id + '">' +
           '<span class="row-name">' + item.name + '</span>' +
-          stockBadge +
+          statusBadge +
           '<span class="row-price">' + priceFormatted + '</span>' +
           '<div class="row-stepper">' +
             '<button class="step-btn step-minus" onclick="changeQty(\'' + item.id + '\', -1)">\u2212</button>' +
@@ -1166,19 +1183,23 @@
 
       card.classList.toggle('exhausted', data.status === 'exhausted');
 
+      // Rimuovi badge esistente (stock-badge o exhausted-tag)
       var existingBadge = card.querySelector('.row-stock-badge');
-      if (data.status === 'low') {
-        if (existingBadge) {
-          existingBadge.textContent = data.stock;
-        } else {
-          var badge = document.createElement('span');
-          badge.className = 'row-stock-badge';
-          badge.textContent = data.stock;
-          var priceEl = card.querySelector('.row-price');
-          card.insertBefore(badge, priceEl);
-        }
-      } else if (existingBadge) {
-        existingBadge.remove();
+      var existingTag = card.querySelector('.row-exhausted-tag');
+      if (existingBadge) existingBadge.remove();
+      if (existingTag) existingTag.remove();
+
+      var priceEl = card.querySelector('.row-price');
+      if (data.status === 'exhausted') {
+        var tag = document.createElement('span');
+        tag.className = 'row-exhausted-tag';
+        tag.textContent = 'Esaurito';
+        card.insertBefore(tag, priceEl);
+      } else if (data.status === 'low') {
+        var badge = document.createElement('span');
+        badge.className = 'row-stock-badge';
+        badge.textContent = data.stock;
+        card.insertBefore(badge, priceEl);
       }
 
       if (data.status === 'exhausted' && quantities[data.item_id] > 0) {

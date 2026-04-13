@@ -151,6 +151,27 @@
       border-color: rgba(78, 204, 163, 0.2);
     }
 
+    .menu-row.exhausted {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .menu-row.exhausted .row-stepper { visibility: hidden; }
+
+    .row-exhausted-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
     .row-name {
       flex: 1;
       font-weight: 500;
@@ -803,9 +824,12 @@
       }
       var html = '<div class="section-header">Bevande</div>';
       BEVERAGES.forEach(function(bev) {
+        var exhausted = bev.status === 'exhausted';
         var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
-        html += '<div class="menu-row" id="card-' + bev.id + '">' +
+        var exhaustedTag = exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
+        html += '<div class="menu-row' + (exhausted ? ' exhausted' : '') + '" id="card-' + bev.id + '">' +
           '<span class="row-name">' + bev.name + '</span>' +
+          exhaustedTag +
           '<span class="row-price">' + priceFormatted + '</span>' +
           '<div class="row-stepper">' +
             '<button class="step-btn step-minus" onclick="changeQty(\'' + bev.id + '\', -1)">\u2212</button>' +
