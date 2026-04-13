@@ -747,31 +747,10 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ===== BEVANDE =====
-    var BEVERAGES = [
-      { id: 'birra_spina', name: 'Birra alla spina', price: 3.50, group: 'Birra' },
-      { id: 'vino_bianco_ombra', name: 'Vino ombra bianco', price: 1.00, group: 'Vini sfusi' },
-      { id: 'vino_rosso_ombra', name: 'Vino ombra rosso', price: 1.00 },
-      { id: 'vino_bianco_mezzo', name: 'Vino bianco sfuso 1/2L', price: 3.00 },
-      { id: 'vino_rosso_mezzo', name: 'Vino rosso sfuso 1/2L', price: 3.00 },
-      { id: 'vino_bianco_trequarti', name: 'Vino bianco sfuso 3/4L', price: 4.00 },
-      { id: 'vino_rosso_trequarti', name: 'Vino rosso sfuso 3/4L', price: 4.00 },
-      { id: 'prosecco', name: 'Prosecco Superiore DOCG', price: 9.00, group: 'Bottiglie' },
-      { id: 'cabernet', name: 'Bottiglia Cabernet', price: 7.50 },
-      { id: 'acqua_naturale', name: 'Acqua naturale 1/2L', price: 1.00, group: 'Acqua' },
-      { id: 'acqua_frizzante', name: 'Acqua frizzante 1/2L', price: 1.00 },
-      { id: 'the_pesca', name: 'The alla pesca', price: 2.30, group: 'Lattine' },
-      { id: 'the_limone', name: 'The al limone', price: 2.30 },
-      { id: 'coca_cola', name: 'Coca Cola', price: 2.30 },
-      { id: 'coca_zero', name: 'Coca Cola Zero', price: 2.30 },
-      { id: 'fanta', name: 'Fanta', price: 2.30 },
-    ];
-
+    // ===== BEVANDE — caricate dal server =====
+    var BEVERAGES = [];
     var bevMap = {};
-    BEVERAGES.forEach(function(b) { bevMap[b.id] = b; });
-
     var quantities = {};
-    BEVERAGES.forEach(function(b) { quantities[b.id] = 0; });
 
     var connected = false;
     var submitting = false;
@@ -782,14 +761,48 @@
       document.getElementById('posToggle').classList.toggle('active', posActive);
     }
 
+    // Carica bevande dal server, filtra per disponibilita' e cassa bar
+    async function loadMenu() {
+      try {
+        var res = await fetch('/api/menu');
+        var allItems = await res.json();
+
+        BEVERAGES = allItems.filter(function(item) {
+          if (item.available === false) return false;
+          if (!item.casses || !item.casses.includes('cassa_bar')) return false;
+          return true;
+        });
+
+        bevMap = {};
+        BEVERAGES.forEach(function(b) {
+          if (!(b.id in quantities)) quantities[b.id] = 0;
+          bevMap[b.id] = b;
+        });
+
+        document.getElementById('beverageList').innerHTML = renderBeverages();
+        // Ripristina quantita' selezionate dopo re-render
+        BEVERAGES.forEach(function(bev) {
+          if (quantities[bev.id] > 0) {
+            var countEl = document.getElementById('qty-' + bev.id);
+            if (countEl) { countEl.textContent = quantities[bev.id]; countEl.classList.remove('zero'); }
+            var card = document.getElementById('card-' + bev.id);
+            if (card) card.classList.add('active');
+          }
+        });
+        updateOrderColumn();
+      } catch (err) {
+        document.getElementById('beverageList').innerHTML =
+          '<div style="padding:40px;text-align:center;color:#64748b">Errore caricamento menu</div>';
+      }
+    }
+
     // ===== RENDER MENU =====
     function renderBeverages() {
-      var html = '';
+      if (BEVERAGES.length === 0) {
+        return '<div style="padding:40px;text-align:center;color:#64748b">Nessuna bevanda disponibile</div>';
+      }
+      var html = '<div class="section-header">Bevande</div>';
       BEVERAGES.forEach(function(bev) {
-        if (bev.group) {
-          if (html !== '') html += '<div class="sep"></div>';
-          html += '<div class="section-header">' + bev.group + '</div>';
-        }
         var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
         html += '<div class="menu-row" id="card-' + bev.id + '">' +
           '<span class="row-name">' + bev.name + '</span>' +
@@ -804,7 +817,7 @@
       return html;
     }
 
-    document.getElementById('beverageList').innerHTML = renderBeverages();
+    loadMenu();
 
     // ===== LOGICA QUANTITA =====
     function changeQty(id, delta) {
@@ -1036,6 +1049,11 @@
 
     socket.on('connect', function() {
       setTimeout(function() { socket.emit('request_printer_check'); }, 2000);
+    });
+
+    // Ricarica menu quando l'admin modifica disponibilita', prezzo, ecc.
+    socket.on('menu_updated', function() {
+      loadMenu();
     });
 
     document.getElementById('tableInput').addEventListener('input', updateOrderColumn);

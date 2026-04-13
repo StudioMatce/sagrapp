@@ -853,8 +853,10 @@
         var res = await fetch('/api/menu');
         var allItems = await res.json();
 
-        // Filtra solo contorni e bevande per la casetta
+        // Filtra: disponibile + assegnato a cassa casetta + solo contorni e bevande
         menuItems = allItems.filter(function(item) {
+          if (item.available === false) return false;
+          if (!item.casses || !item.casses.includes('cassa_casetta')) return false;
           return item.category === 'contorno' || item.category === 'bevanda';
         });
 
@@ -1190,6 +1192,9 @@
     });
 
     socket.on('inventory_reset', function() { loadMenu(); });
+
+    // Ricarica menu quando l'admin modifica disponibilita', prezzo, ecc.
+    socket.on('menu_updated', function() { loadMenu(); });
 
     // Stampante offline
     var printerAlert = document.getElementById('printerAlert');

@@ -88,6 +88,22 @@ db.exec(`
     alert_threshold INTEGER,
     created_at      INTEGER NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS menu_items (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    price           REAL NOT NULL,
+    category        TEXT NOT NULL,
+    station         TEXT NOT NULL,
+    print_to        TEXT NOT NULL DEFAULT '["cibo"]',
+    composition     TEXT,
+    special         INTEGER NOT NULL DEFAULT 0,
+    available_date  TEXT,
+    initial_stock   INTEGER NOT NULL DEFAULT 100,
+    alert_threshold INTEGER NOT NULL DEFAULT 10,
+    available       INTEGER NOT NULL DEFAULT 1,
+    casses          TEXT NOT NULL DEFAULT '["cassa_generale"]'
+  );
 `);
 
 // =============================================
@@ -135,6 +151,16 @@ const stmtUpdateSession = db.prepare('UPDATE archived_sessions SET closed_at = ?
 const stmtGetPresets = db.prepare('SELECT * FROM inventory_presets');
 const stmtUpsertPreset = db.prepare('INSERT OR REPLACE INTO inventory_presets (name, stocks, saved_at) VALUES (?, ?, ?)');
 const stmtDeletePreset = db.prepare('DELETE FROM inventory_presets WHERE name = ?');
+
+// --- Menu Items (persistenza menu piatti) ---
+const stmtGetMenuItems = db.prepare('SELECT * FROM menu_items ORDER BY rowid ASC');
+const stmtUpsertMenuItem = db.prepare(`
+  INSERT OR REPLACE INTO menu_items (id, name, price, category, station, print_to,
+    composition, special, available_date, initial_stock, alert_threshold, available, casses)
+  VALUES (@id, @name, @price, @category, @station, @print_to,
+    @composition, @special, @available_date, @initial_stock, @alert_threshold, @available, @casses)
+`);
+const stmtDeleteMenuItem = db.prepare('DELETE FROM menu_items WHERE id = ?');
 
 // --- Warehouse (materiali e consumabili) ---
 const stmtGetWarehouse = db.prepare('SELECT * FROM warehouse ORDER BY name ASC');
@@ -333,6 +359,53 @@ function deletePreset(name) {
   stmtDeletePreset.run(name);
 }
 
+// --- Menu Items ---
+// Converte una riga DB nel formato usato in memoria (JSON parse dei campi serializzati)
+function dbRowToMenuItem(row) {
+  const item = {
+    id: row.id,
+    name: row.name,
+    price: row.price,
+    category: row.category,
+    station: row.station,
+    print_to: JSON.parse(row.print_to),
+    initial_stock: row.initial_stock,
+    alert_threshold: row.alert_threshold,
+    available: !!row.available,
+    casses: JSON.parse(row.casses),
+  };
+  if (row.composition) item.composition = JSON.parse(row.composition);
+  if (row.special) item.special = true;
+  if (row.available_date) item.available_date = row.available_date;
+  return item;
+}
+
+function getMenuItems() {
+  return stmtGetMenuItems.all().map(dbRowToMenuItem);
+}
+
+function saveMenuItem(item) {
+  stmtUpsertMenuItem.run({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    category: item.category,
+    station: item.station,
+    print_to: JSON.stringify(item.print_to || ['cibo']),
+    composition: item.composition ? JSON.stringify(item.composition) : null,
+    special: item.special ? 1 : 0,
+    available_date: item.available_date || null,
+    initial_stock: item.initial_stock || 100,
+    alert_threshold: item.alert_threshold || 10,
+    available: item.available !== false ? 1 : 0,
+    casses: JSON.stringify(item.casses || ['cassa_generale']),
+  });
+}
+
+function deleteMenuItem(id) {
+  stmtDeleteMenuItem.run(id);
+}
+
 // --- Warehouse ---
 function getWarehouse() {
   const result = {};
@@ -373,4 +446,6 @@ module.exports = {
   getPresets, savePreset, deletePreset,
   // Warehouse (materiali/consumabili)
   getWarehouse, saveWarehouseItem, updateWarehouseQty, deleteWarehouseItem,
+  // Menu Items (persistenza menu piatti)
+  getMenuItems, saveMenuItem, deleteMenuItem,
 };

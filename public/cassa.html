@@ -1185,80 +1185,67 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ===== MENU — stessi piatti e stessi dati del server (config.js) =====
-    const ITEMS = [
-      // PRIMI
-      { id: 'gnocchi_ragu', name: 'Gnocchi al ragu', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
-      { id: 'gnocchi_burro', name: 'Gnocchi burro e salvia', price: 5.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
-      { id: 'pasta_ragu', name: 'Pasta al ragu', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
-      { id: 'pasta_bianco', name: 'Pasta in bianco', price: 4.50, category: 'primo', station: 'cucina', print_to: ['cibo'] },
-      // SECONDI
-      { id: 'formaggio_polenta', name: 'Formaggio cotto con polenta', price: 6.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
-      { id: 'wurstel_patate', name: 'Wurstel con patate fritte', price: 5.00, category: 'secondo', station: 'piastra', print_to: ['cibo'] },
-      { id: 'pastin_patate', name: 'Pastin con patate fritte', price: 7.50, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'salsiccia_polenta', name: 'Salsiccia con polenta', price: 6.80, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'costicine_polenta', name: 'Costicine con polenta', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'sovracoscia_polenta', name: 'Sovracoscia di pollo con polenta', price: 7.30, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      { id: 'grigliata_mista', name: 'Grigliata mista con polenta', price: 11.00, category: 'secondo', station: 'griglia', print_to: ['cibo'] },
-      // SPECIALI (doppia stampa: .205 cibo + .207 speciali)
-      { id: 'pesce_fritto', name: 'Pesce fritto', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-10' },
-      { id: 'coniglio', name: 'Coniglio', price: 15.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-11' },
-      { id: 'costata', name: 'Costata', price: 24.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-16' },
-      { id: 'galletto_patate', name: 'Galletto con patate', price: 13.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-17' },
-      { id: 'trippa', name: 'Trippa', price: 7.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-18' },
-      { id: 'paella', name: 'Paella', price: 16.00, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-23' },
-      { id: 'spiedo', name: 'Spiedo', price: 12.80, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-24' },
-      { id: 'frico', name: 'Frico', price: 8.50, category: 'speciale', station: 'speciali', print_to: ['cibo', 'speciali'], special: true, available_date: '2025-05-25' },
-      // CONTORNI
-      { id: 'patate_fritte', name: 'Patate fritte', price: 2.90, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
-      { id: 'fagioli', name: 'Fagioli', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
-      { id: 'fagioli_cipolla', name: 'Fagioli con cipolla', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
-      { id: 'cappuccio', name: 'Cappuccio', price: 2.00, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
-      { id: 'funghi', name: 'Funghi misto bosco', price: 3.20, category: 'contorno', station: 'cucina', print_to: ['cibo'] },
-      // CONDIMENTI
-      { id: 'maionese', name: 'Maionese', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
-      { id: 'ketchup', name: 'Ketchup', price: 0.30, category: 'condimento', station: 'cucina', print_to: ['cibo'] },
-      // BEVANDE
-      { id: 'birra_spina', name: 'Birra alla spina', price: 3.50, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'vino_bianco_ombra', name: 'Vino ombra bianco', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'vino_rosso_ombra', name: 'Vino ombra rosso', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'vino_bianco_mezzo', name: 'Vino bianco sfuso 1/2L', price: 3.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'vino_rosso_mezzo', name: 'Vino rosso sfuso 1/2L', price: 3.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'vino_bianco_trequarti', name: 'Vino bianco sfuso 3/4L', price: 4.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'vino_rosso_trequarti', name: 'Vino rosso sfuso 3/4L', price: 4.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'prosecco', name: 'Prosecco Superiore DOCG', price: 9.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'cabernet', name: 'Bottiglia Cabernet', price: 7.50, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'acqua_naturale', name: 'Acqua naturale 1/2L', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'acqua_frizzante', name: 'Acqua frizzante 1/2L', price: 1.00, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'the_pesca', name: 'The alla pesca', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'the_limone', name: 'The al limone', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'coca_cola', name: 'Coca Cola', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'coca_zero', name: 'Coca Cola Zero', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
-      { id: 'fanta', name: 'Fanta', price: 2.30, category: 'bevanda', station: 'bar', print_to: ['bevande'] },
+    // ===== MENU — caricato dal server =====
+    let ITEMS = [];
+    let itemMap = {};
+    const quantities = {};
+
+    // Ordine categorie per tab CIBO
+    const CIBO_CATEGORIES = [
+      { category: 'primo', label: 'Primi' },
+      { category: 'secondo', label: 'Secondi' },
+      { category: 'speciale', label: 'Speciale del giorno' },
+      { category: 'contorno', label: 'Contorni' },
+      { category: 'condimento', label: 'Condimenti' },
     ];
 
-    // ===== DISPOSIZIONE TAB CIBO (sezioni con header) =====
-    const CIBO_SECTIONS = [
-      { label: 'Primi', items: ['gnocchi_ragu', 'gnocchi_burro', 'pasta_ragu', 'pasta_bianco'] },
-      { label: 'Secondi', items: ['formaggio_polenta', 'wurstel_patate', 'pastin_patate', 'salsiccia_polenta', 'costicine_polenta', 'sovracoscia_polenta', 'grigliata_mista'] },
-      { label: 'Speciale del giorno', items: ['pesce_fritto', 'coniglio', 'costata', 'galletto_patate', 'trippa', 'paella', 'spiedo', 'frico'] },
-      { label: 'Contorni', items: ['patate_fritte', 'fagioli', 'fagioli_cipolla', 'cappuccio', 'funghi'] },
-      { label: 'Condimenti', items: ['maionese', 'ketchup'] },
-    ];
+    // Carica menu dal server, filtra per disponibilita' e cassa
+    async function loadMenu() {
+      try {
+        const res = await fetch('/api/menu');
+        const allItems = await res.json();
+        const today = new Date().toISOString().slice(0, 10);
 
-    // ===== DISPOSIZIONE TAB BEVANDE (sezioni raggruppate) =====
-    const BEVANDE_SECTIONS = [
-      { label: 'Birra', items: ['birra_spina'] },
-      { label: 'Vini sfusi', items: ['vino_bianco_ombra', 'vino_rosso_ombra', 'vino_bianco_mezzo', 'vino_rosso_mezzo', 'vino_bianco_trequarti', 'vino_rosso_trequarti'] },
-      { label: 'Bottiglie', items: ['prosecco', 'cabernet'] },
-      { label: 'Acqua', items: ['acqua_naturale', 'acqua_frizzante'] },
-      { label: 'Lattine', items: ['the_pesca', 'the_limone', 'coca_cola', 'coca_zero', 'fanta'] },
-    ];
+        ITEMS = allItems.filter(function(item) {
+          if (item.available === false) return false;
+          if (!item.casses || !item.casses.includes('cassa_generale')) return false;
+          // Speciali: mostra solo quello del giorno
+          if (item.special && item.available_date && item.available_date !== today) return false;
+          return true;
+        });
+
+        itemMap = {};
+        ITEMS.forEach(function(i) {
+          if (!(i.id in quantities)) quantities[i.id] = 0;
+          itemMap[i.id] = i;
+        });
+
+        renderPanels();
+        restoreQuantityUI();
+        updateTabBadges();
+        updateOrderColumn();
+      } catch (err) {
+        console.error('[Cassa] Errore caricamento menu:', err);
+      }
+    }
+
+    // Ripristina stato quantita' e piatti esauriti dopo re-render
+    function restoreQuantityUI() {
+      ITEMS.forEach(function(item) {
+        var countEl = document.getElementById('qty-' + item.id);
+        var cardEl = document.getElementById('card-' + item.id);
+        if (quantities[item.id] > 0) {
+          if (countEl) { countEl.textContent = quantities[item.id]; countEl.classList.remove('zero'); }
+          if (cardEl) cardEl.classList.add('active');
+        }
+        if (item.status === 'exhausted' && cardEl) {
+          cardEl.style.opacity = '0.3';
+          cardEl.style.pointerEvents = 'none';
+        }
+      });
+    }
 
     // ===== STATO =====
-    const quantities = {};
-    ITEMS.forEach(i => { quantities[i.id] = 0; });
-
     let connected = false;
     let submitting = false;
     let activeCourtesy = null; // 'sponsor' | 'don_pierino' | 'amici' | null
@@ -1266,10 +1253,6 @@
     let currentTab = 'cibo';
     let asportoActive = false;
     let posActive = false;
-
-    // Mappa rapida id → item per lookup veloci
-    const itemMap = {};
-    ITEMS.forEach(i => { itemMap[i.id] = i; });
 
     // ===== GENERA HTML per una riga piatto =====
     function renderItemRow(itemId) {
@@ -1301,22 +1284,36 @@
 
     // ===== RENDER TABS =====
     function renderPanels() {
-      // Tab CIBO
+      // Tab CIBO — sezioni dinamiche per categoria
       let ciboHtml = '';
-      CIBO_SECTIONS.forEach((sec, i) => {
-        ciboHtml += renderSection(sec, i === CIBO_SECTIONS.length - 1);
+      const ciboSections = [];
+      CIBO_CATEGORIES.forEach(function(cat) {
+        const catItems = ITEMS.filter(function(item) { return item.category === cat.category; });
+        if (catItems.length > 0) {
+          ciboSections.push({ label: cat.label, items: catItems.map(function(i) { return i.id; }) });
+        }
       });
-      document.getElementById('panelCibo').innerHTML = ciboHtml;
+      ciboSections.forEach(function(sec, i) {
+        ciboHtml += renderSection(sec, i === ciboSections.length - 1);
+      });
+      document.getElementById('panelCibo').innerHTML = ciboHtml ||
+        '<div style="padding:40px;text-align:center;color:#64748b">Nessun piatto disponibile</div>';
 
-      // Tab BEVANDE
+      // Tab BEVANDE — tutti i piatti bevanda disponibili
+      const bevandeItems = ITEMS.filter(function(item) { return item.category === 'bevanda'; });
       let bevandeHtml = '';
-      BEVANDE_SECTIONS.forEach((sec, i) => {
-        bevandeHtml += renderSection(sec, i === BEVANDE_SECTIONS.length - 1);
-      });
+      if (bevandeItems.length > 0) {
+        bevandeHtml = '<div class="section-header">Bevande</div>';
+        bevandeItems.forEach(function(item) {
+          bevandeHtml += renderItemRow(item.id);
+        });
+      } else {
+        bevandeHtml = '<div style="padding:40px;text-align:center;color:#64748b">Nessuna bevanda disponibile</div>';
+      }
       document.getElementById('panelBevande').innerHTML = bevandeHtml;
     }
 
-    renderPanels();
+    loadMenu();
 
     // ===== SWITCH TAB =====
     function switchTab(tab) {
@@ -1938,6 +1935,11 @@
         card.style.opacity = '0.3';
         card.style.pointerEvents = 'none';
       }
+    });
+
+    // Ricarica menu quando l'admin modifica disponibilita', prezzo, ecc.
+    socket.on('menu_updated', function() {
+      loadMenu();
     });
 
     // ===== INPUT LISTENER per aggiornamento in tempo reale =====
