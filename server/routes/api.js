@@ -526,7 +526,9 @@ router.post('/orders/:id/fulfill', (req, res) => {
 router.post('/orders', (req, res) => {
   const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type, source, coperti, asporto } = req.body;
 
-  if ((!asporto && !table) || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+  // Bar e casetta non hanno tavolo (inviano table: 0), la cassa generale lo richiede
+  const needsTable = source !== 'bar' && source !== 'casetta' && !asporto;
+  if ((needsTable && !table) || !orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
     return res.status(400).json({ error: 'Specificare tavolo e piatti' });
   }
 
