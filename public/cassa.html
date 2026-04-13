@@ -149,7 +149,36 @@
     .status-led.on { background: #4ecca3; box-shadow: 0 0 6px #4ecca3; }
     .status-led.off { background: #e94560; box-shadow: 0 0 6px #e94560; }
 
-    /* ===== AREA SCROLLABILE MENU ===== */
+    /* ===== DUE COLONNE MENU (cibo sx, contorni+bevande dx) ===== */
+    .menu-columns {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .menu-col {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 4px 8px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+
+    .menu-col::-webkit-scrollbar { width: 4px; }
+    .menu-col::-webkit-scrollbar-track { background: transparent; }
+    .menu-col::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+    .menu-col-left {
+      border-right: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .bevande-disabled {
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    /* Pannello ordini (alternativo alle colonne) */
     .menu-scroll {
       flex: 1;
       overflow-y: auto;
@@ -163,53 +192,56 @@
     .menu-scroll::-webkit-scrollbar-track { background: transparent; }
     .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 
-    /* Tab panel: visibile solo quando attivo */
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    /* ===== BOX CATEGORIA ===== */
+    .category-box {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
 
-    /* ===== SEZIONE HEADER (es. PRIMI, SECONDI) ===== */
     .section-header {
-      padding: 12px 8px 6px;
+      padding: 10px 12px 8px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: rgba(78, 204, 163, 0.5);
-    }
-
-    .section-header:first-child { padding-top: 4px; }
-
-    /* ===== SEPARATORE tra gruppi ===== */
-    .sep {
-      height: 1px;
-      background: rgba(255, 255, 255, 0.05);
-      margin: 6px 8px;
+      color: #4ecca3;
+      background: rgba(78, 204, 163, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* ===== RIGA PIATTO ===== */
     .menu-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       padding: 6px 10px;
-      border-radius: 8px;
-      border: 1.5px solid transparent;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
       transition: all 120ms ease;
       min-height: 44px;
     }
 
+    .menu-row:last-child { border-bottom: none; }
+
+    /* Linea spessa tra sotto-gruppi bevande (come nella comanda cartacea) */
+    .menu-row.group-first {
+      border-top: 2px solid rgba(255, 255, 255, 0.18);
+      margin-top: 2px;
+    }
+
     .menu-row:active {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .menu-row.active {
-      background: rgba(78, 204, 163, 0.06);
-      border-color: rgba(78, 204, 163, 0.2);
+      background: rgba(78, 204, 163, 0.10);
     }
 
     .menu-row.exhausted {
-      opacity: 0.45;
+      opacity: 0.4;
       pointer-events: none;
     }
 
@@ -217,14 +249,14 @@
 
     .row-exhausted-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
+      border-radius: 3px;
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
       flex-shrink: 0;
       white-space: nowrap;
     }
@@ -232,10 +264,13 @@
     .row-name {
       flex: 1;
       font-weight: 500;
-      font-size: 14px;
-      color: rgba(240, 244, 248, 0.75);
-      line-height: 1.2;
+      font-size: 15px;
+      color: rgba(240, 244, 248, 0.88);
+      line-height: 1.15;
       min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .menu-row.active .row-name {
@@ -246,11 +281,9 @@
     .row-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 13px;
-      color: rgba(78, 204, 163, 0.5);
+      font-size: 14px;
+      color: rgba(78, 204, 163, 0.7);
       white-space: nowrap;
-      min-width: 52px;
-      text-align: right;
     }
 
     .menu-row.active .row-price {
@@ -261,19 +294,19 @@
     .row-stepper {
       display: flex;
       align-items: center;
-      border-radius: 8px;
+      border-radius: 6px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       flex-shrink: 0;
     }
 
     .step-btn {
-      width: 40px;
-      height: 38px;
-      background: rgba(255, 255, 255, 0.02);
+      width: 38px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.04);
       border: none;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       cursor: pointer;
       touch-action: manipulation;
@@ -288,14 +321,14 @@
     .step-plus { color: #4ecca3; border-left: 1px solid rgba(255, 255, 255, 0.04); }
 
     .step-count {
-      width: 32px;
+      width: 30px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 15px;
       color: rgba(255, 255, 255, 0.9);
-      height: 38px;
-      line-height: 38px;
+      height: 36px;
+      line-height: 36px;
       background: rgba(255, 255, 255, 0.015);
       transition: color 150ms ease;
     }
@@ -315,16 +348,16 @@
     .order-number {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 16px;
-      color: rgba(240, 244, 248, 0.5);
+      font-size: 18px;
+      color: rgba(240, 244, 248, 0.7);
       letter-spacing: 0.02em;
     }
 
     .order-last {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
-      color: rgba(78, 204, 163, 0.5);
+      color: rgba(78, 204, 163, 0.65);
       opacity: 0;
       transition: opacity 300ms ease;
     }
@@ -350,10 +383,10 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
-      padding: 6px 10px;
+      padding: 8px 10px;
       transition: border-color 200ms ease;
     }
 
@@ -376,9 +409,9 @@
 
     .field-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 700;
-      color: rgba(240, 244, 248, 0.3);
+      color: rgba(240, 244, 248, 0.45);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       white-space: nowrap;
@@ -393,8 +426,8 @@
       outline: none;
       color: #fff;
       font-family: 'Outfit', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 18px;
+      font-weight: 600;
     }
 
     .form-field input[type="text"]::placeholder { color: rgba(255, 255, 255, 0.12); }
@@ -432,11 +465,11 @@
       flex: 1;
       padding: 8px 4px;
       border-radius: 8px;
-      border: 1.5px solid rgba(255, 255, 255, 0.06);
-      background: rgba(255, 255, 255, 0.02);
-      color: rgba(255, 255, 255, 0.3);
+      border: 1.5px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.45);
       font-family: 'Outfit', sans-serif;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 120ms ease;
@@ -462,9 +495,9 @@
     }
 
     .asporto-label {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
-      color: rgba(240, 244, 248, 0.4);
+      color: rgba(240, 244, 248, 0.55);
       flex: 1;
     }
 
@@ -575,12 +608,12 @@
     .order-summary-label {
       padding: 10px 16px 6px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: rgba(240, 244, 248, 0.25);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: rgba(240, 244, 248, 0.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       flex-shrink: 0;
     }
 
@@ -599,8 +632,8 @@
     .order-empty {
       padding: 24px 16px;
       text-align: center;
-      font-size: 13px;
-      color: rgba(240, 244, 248, 0.15);
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.25);
       font-style: italic;
     }
 
@@ -619,16 +652,16 @@
     .order-item-qty {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 15px;
       color: #4ecca3;
-      min-width: 26px;
+      min-width: 28px;
     }
 
     .order-item-name {
       flex: 1;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 500;
-      color: rgba(240, 244, 248, 0.7);
+      color: rgba(240, 244, 248, 0.85);
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -638,8 +671,8 @@
     .order-item-price {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 12px;
-      color: rgba(240, 244, 248, 0.4);
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.55);
       white-space: nowrap;
     }
 
@@ -669,8 +702,8 @@
 
     /* ===== FOOTER ORDINE: totali + bottone ===== */
     .order-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 12px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 14px 16px;
       flex-shrink: 0;
     }
 
@@ -688,16 +721,16 @@
     }
 
     .total-label {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 500;
-      color: rgba(240, 244, 248, 0.35);
+      color: rgba(240, 244, 248, 0.5);
     }
 
     .total-value {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 13px;
-      color: rgba(240, 244, 248, 0.5);
+      font-size: 15px;
+      color: rgba(240, 244, 248, 0.65);
     }
 
     .total-row.discount-row-display .total-label { color: rgba(255, 217, 61, 0.6); }
@@ -709,19 +742,19 @@
     .total-row.grand-total {
       padding-top: 8px;
       margin-top: 4px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
 
     .total-row.grand-total .total-label {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
-      color: rgba(240, 244, 248, 0.7);
+      color: rgba(240, 244, 248, 0.85);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
 
     .total-row.grand-total .total-value {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 800;
       color: #4ecca3;
     }
@@ -1059,22 +1092,11 @@
     <!-- ============================== -->
     <div class="menu-area">
 
-      <!-- Tab bar: CIBO / BEVANDE + status connessione -->
+      <!-- Tab bar -->
       <div class="tab-bar">
-        <button class="tab-btn active" id="tabCibo" onclick="switchTab('cibo')">
-          <span class="tab-icon">&#127869;</span>
-          CIBO
-          <span class="tab-check" id="tabCiboCheck">&#10003;</span>
-        </button>
-        <button class="tab-btn" id="tabBevande" onclick="switchTab('bevande')">
-          <span class="tab-icon">&#127866;</span>
-          BEVANDE
-          <span class="tab-badge hidden" id="tabBevandeBadge">0</span>
-        </button>
-        <button class="tab-btn" id="tabOrdini" onclick="switchTab('ordini')">
-          ORDINI
-        </button>
-        <!-- Indicatore stampante offline — badge compatto nella tab bar -->
+        <button class="tab-btn active" id="tabMenu" onclick="switchTab('menu')">MENU</button>
+        <button class="tab-btn" id="tabOrdini" onclick="switchTab('ordini')">ORDINI</button>
+        <!-- Indicatore stampante offline -->
         <div class="printer-alert" id="printerAlert">
           <span class="alert-icon">&#9888;</span>
           <span id="printerAlertText">Stampante offline</span>
@@ -1086,21 +1108,16 @@
         </span>
       </div>
 
-      <!-- Area scrollabile con i piatti -->
-      <div class="menu-scroll">
+      <!-- Due colonne: cibo a sinistra, contorni+bevande a destra -->
+      <div class="menu-columns" id="panelMenu">
+        <div class="menu-col menu-col-left" id="colCibo"></div>
+        <div class="menu-col menu-col-right" id="colBevande"></div>
+      </div>
 
-        <!-- TAB CIBO: primi, secondi, speciale del giorno, contorni, condimenti -->
-        <div class="tab-panel active" id="panelCibo"></div>
-
-        <!-- TAB BEVANDE: tutte le bevande raggruppate -->
-        <div class="tab-panel" id="panelBevande"></div>
-
-        <!-- TAB ORDINI: storico ordini della serata -->
-        <div class="tab-panel" id="panelOrdini">
-          <div class="oh-empty" id="ordiniEmpty">Nessun ordine nella serata</div>
-          <div class="orders-panel-list" id="ordiniList"></div>
-        </div>
-
+      <!-- Pannello ordini (nascosto di default) -->
+      <div class="menu-scroll" id="panelOrdini" style="display:none">
+        <div class="oh-empty" id="ordiniEmpty">Nessun ordine nella serata</div>
+        <div class="orders-panel-list" id="ordiniList"></div>
       </div>
     </div>
 
@@ -1123,16 +1140,15 @@
           <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
         </div>
 
-        <!-- Tavolo + Coperti -->
-        <div class="form-row">
-          <div class="form-field flex-1" id="tableField">
-            <span class="field-label">Tav</span>
-            <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
-          </div>
-          <div class="form-field flex-1" id="copertiField">
-            <span class="field-label">Cop</span>
-            <input type="number" id="copertiInput" inputmode="numeric" min="1" max="50" placeholder="&mdash;">
-          </div>
+        <!-- Tavolo -->
+        <div class="form-field flex-1" id="tableField">
+          <span class="field-label">Tav</span>
+          <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
+        </div>
+        <!-- Coperti -->
+        <div class="form-field flex-1" id="copertiField">
+          <span class="field-label">Cop</span>
+          <input type="number" id="copertiInput" inputmode="numeric" min="1" max="50" placeholder="&mdash;">
         </div>
 
         <!-- Toggle asporto -->
@@ -1211,13 +1227,18 @@
     let itemMap = {};
     const quantities = {};
 
-    // Ordine categorie per tab CIBO
-    const CIBO_CATEGORIES = [
+    // Categorie colonna sinistra (cibo)
+    const LEFT_CATEGORIES = [
       { category: 'primo', label: 'Primi' },
       { category: 'secondo', label: 'Secondi' },
       { category: 'speciale', label: 'Speciale del giorno' },
-      { category: 'contorno', label: 'Contorni' },
       { category: 'condimento', label: 'Condimenti' },
+    ];
+
+    // Categorie colonna destra (contorni + bevande)
+    const RIGHT_CATEGORIES = [
+      { category: 'contorno', label: 'Contorni' },
+      { category: 'bevanda', label: 'Bevande' },
     ];
 
     // Carica menu dal server, filtra per disponibilita' e cassa
@@ -1228,9 +1249,9 @@
         const today = new Date().toISOString().slice(0, 10);
 
         ITEMS = allItems.filter(function(item) {
-          if (!item.casses || !item.casses.includes('cassa_generale')) return false;
-          // Speciali: mostra solo quello del giorno
-          if (item.special && item.available_date && item.available_date !== today) return false;
+          if (!item.casses) return false;
+          // La cassa generale mostra i piatti assegnati + tutte le bevande
+          if (item.category !== 'bevanda' && !item.casses.includes('cassa_generale')) return false;
           return true;
         });
 
@@ -1282,102 +1303,94 @@
         : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
       return `
         <div class="menu-row${(exhausted || disabled) ? ' exhausted' : ''}" id="card-${item.id}">
-          <span class="row-name">${item.name}</span>
-          ${tag}
-          <span class="row-price">${priceFormatted}</span>
           <div class="row-stepper">
             <button class="step-btn step-minus" onclick="changeQty('${item.id}', -1)">\u2212</button>
             <span class="step-count zero" id="qty-${item.id}">0</span>
             <button class="step-btn step-plus" onclick="changeQty('${item.id}', 1)">+</button>
           </div>
+          <span class="row-name">${item.name}</span>
+          ${tag}
+          <span class="row-price">${priceFormatted}</span>
         </div>`;
     }
 
-    // ===== GENERA HTML per una sezione (header + righe piatti) =====
-    function renderSection(section, isLast) {
-      let html = `<div class="section-header">${section.label}</div>`;
-      section.items.forEach(id => {
-        html += renderItemRow(id);
-      });
-      if (!isLast) html += '<div class="sep"></div>';
+    // ===== RENDER COLONNE =====
+    // Genera un box categoria: header + righe piatti
+    function renderCategoryBox(label, items) {
+      let html = '<div class="category-box">';
+      html += '<div class="section-header">' + label + '</div>';
+      items.forEach(function(item) { html += renderItemRow(item.id); });
+      html += '</div>';
       return html;
     }
 
-    // ===== RENDER TABS =====
     function renderPanels() {
-      // Tab CIBO — sezioni dinamiche per categoria
-      let ciboHtml = '';
-      const ciboSections = [];
-      CIBO_CATEGORIES.forEach(function(cat) {
+      // Colonna sinistra — Cibo (primi, secondi, speciali, condimenti)
+      let leftHtml = '';
+      LEFT_CATEGORIES.forEach(function(cat) {
         const catItems = ITEMS.filter(function(item) { return item.category === cat.category; });
-        if (catItems.length > 0) {
-          ciboSections.push({ label: cat.label, items: catItems.map(function(i) { return i.id; }) });
-        }
+        if (catItems.length === 0) return;
+        leftHtml += renderCategoryBox(cat.label, catItems);
       });
-      ciboSections.forEach(function(sec, i) {
-        ciboHtml += renderSection(sec, i === ciboSections.length - 1);
-      });
-      document.getElementById('panelCibo').innerHTML = ciboHtml ||
+      document.getElementById('colCibo').innerHTML = leftHtml ||
         '<div style="padding:40px;text-align:center;color:#64748b">Nessun piatto disponibile</div>';
 
-      // Tab BEVANDE — tutti i piatti bevanda disponibili
-      const bevandeItems = ITEMS.filter(function(item) { return item.category === 'bevanda'; });
-      let bevandeHtml = '';
-      if (bevandeItems.length > 0) {
-        bevandeHtml = '<div class="section-header">Bevande</div>';
-        bevandeItems.forEach(function(item) {
-          bevandeHtml += renderItemRow(item.id);
-        });
-      } else {
-        bevandeHtml = '<div style="padding:40px;text-align:center;color:#64748b">Nessuna bevanda disponibile</div>';
+      // Colonna destra — Contorni + Bevande (in wrapper separati per asporto)
+      let rightHtml = '';
+      const contorni = ITEMS.filter(function(item) { return item.category === 'contorno'; });
+      if (contorni.length > 0) {
+        rightHtml += renderCategoryBox('Contorni', contorni);
       }
-      document.getElementById('panelBevande').innerHTML = bevandeHtml;
+
+      const bevande = ITEMS.filter(function(item) { return item.category === 'bevanda'; });
+      let bevandeBox = '';
+      if (bevande.length > 0) {
+        // Raggruppa bevande per sotto-gruppo (come nella comanda cartacea)
+        // Rileva il gruppo dal prefisso del nome
+        function beverageGroup(name) {
+          var n = name.toLowerCase();
+          if (n.indexOf('birra') === 0) return 'birra';
+          if (n.indexOf('vino') === 0) return 'vino';
+          if (n.indexOf('bottiglia') === 0) return 'bottiglia';
+          if (n.indexOf('acqua') === 0) return 'acqua';
+          if (n.indexOf('lattina') === 0) return 'lattina';
+          return 'altro';
+        }
+        bevandeBox = '<div class="category-box">';
+        bevandeBox += '<div class="section-header">Bevande</div>';
+        var lastGroup = null;
+        bevande.forEach(function(item) {
+          var grp = beverageGroup(item.name);
+          var row = renderItemRow(item.id);
+          // Aggiungi classe group-first quando cambia sotto-gruppo
+          if (lastGroup !== null && grp !== lastGroup) {
+            row = row.replace('class="menu-row', 'class="menu-row group-first');
+          }
+          bevandeBox += row;
+          lastGroup = grp;
+        });
+        bevandeBox += '</div>';
+      }
+
+      document.getElementById('colBevande').innerHTML =
+        rightHtml +
+        '<div id="sectionBevande"' + (asportoActive ? ' class="bevande-disabled"' : '') + '>' + bevandeBox + '</div>';
     }
 
     loadMenu();
 
     // ===== SWITCH TAB =====
     function switchTab(tab) {
-      if (tab === 'bevande' && asportoActive) return; // Bevande disabilitate in asporto
       currentTab = tab;
-      // Aggiorna pulsanti tab
-      document.getElementById('tabCibo').classList.toggle('active', tab === 'cibo');
-      document.getElementById('tabBevande').classList.toggle('active', tab === 'bevande');
+      document.getElementById('tabMenu').classList.toggle('active', tab === 'menu');
       document.getElementById('tabOrdini').classList.toggle('active', tab === 'ordini');
-      // Aggiorna pannelli
-      document.getElementById('panelCibo').classList.toggle('active', tab === 'cibo');
-      document.getElementById('panelBevande').classList.toggle('active', tab === 'bevande');
-      document.getElementById('panelOrdini').classList.toggle('active', tab === 'ordini');
-      // Carica ordini quando si apre il tab
+      document.getElementById('panelMenu').style.display = tab === 'menu' ? '' : 'none';
+      document.getElementById('panelOrdini').style.display = tab === 'ordini' ? '' : 'none';
       if (tab === 'ordini') loadAllOrders();
     }
 
-    // ===== AGGIORNA BADGE E CHECK SULLE TAB =====
-    function updateTabBadges() {
-      // Conteggio bevande selezionate (per il badge)
-      let drinkCount = 0;
-      ITEMS.forEach(item => {
-        if (item.category === 'bevanda' && quantities[item.id] > 0) {
-          drinkCount += quantities[item.id];
-        }
-      });
-      const badge = document.getElementById('tabBevandeBadge');
-      if (drinkCount > 0) {
-        badge.textContent = drinkCount;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-
-      // Check sulla tab CIBO se ha piatti selezionati
-      let foodSelected = false;
-      ITEMS.forEach(item => {
-        if (item.category !== 'bevanda' && quantities[item.id] > 0) {
-          foodSelected = true;
-        }
-      });
-      document.getElementById('tabCiboCheck').classList.toggle('visible', foodSelected);
-    }
+    // Badge non piu' necessari con layout a due colonne
+    function updateTabBadges() {}
 
     // ===== FLAG OMAGGIO: solo uno attivo alla volta =====
     function toggleFlag(type) {
@@ -1411,7 +1424,7 @@
       var tableField = document.getElementById('tableField');
       var tableInput = document.getElementById('tableInput');
       var nameInput = document.getElementById('nameInput');
-      var tabBevande = document.getElementById('tabBevande');
+      var sectionBevande = document.getElementById('sectionBevande');
 
       if (asportoActive) {
         // Disabilita coperti e metti a 0
@@ -1423,9 +1436,8 @@
         tableInput.value = '';
         // Nome diventa obbligatorio
         nameInput.placeholder = 'obbligatorio';
-        // Disabilita tab bevande e resetta quantita' bevande
-        tabBevande.style.opacity = '0.3';
-        tabBevande.style.pointerEvents = 'none';
+        // Disabilita sezione bevande e resetta quantita'
+        if (sectionBevande) sectionBevande.classList.add('bevande-disabled');
         ITEMS.forEach(function(item) {
           if (item.category === 'bevanda' && quantities[item.id] > 0) {
             quantities[item.id] = 0;
@@ -1435,8 +1447,6 @@
             if (cardEl) cardEl.classList.remove('active');
           }
         });
-        // Se siamo sul tab bevande, torna a cibo
-        if (currentTab === 'bevande') switchTab('cibo');
       } else {
         // Riabilita coperti
         copertiInput.disabled = false;
@@ -1446,9 +1456,8 @@
         tableField.style.display = '';
         // Nome torna opzionale
         nameInput.placeholder = 'opzionale';
-        // Riabilita tab bevande
-        tabBevande.style.opacity = '';
-        tabBevande.style.pointerEvents = '';
+        // Riabilita sezione bevande
+        if (sectionBevande) sectionBevande.classList.remove('bevande-disabled');
       }
 
       updateTabBadges();
@@ -1774,8 +1783,8 @@
         document.getElementById('copertiInput').parentElement.style.opacity = '';
         document.getElementById('tableField').style.display = '';
         document.getElementById('nameInput').placeholder = 'opzionale';
-        document.getElementById('tabBevande').style.opacity = '';
-        document.getElementById('tabBevande').style.pointerEvents = '';
+        var sb = document.getElementById('sectionBevande');
+        if (sb) sb.classList.remove('bevande-disabled');
       }
 
       // Reset POS
@@ -1788,8 +1797,8 @@
       discountIsPercent = false;
       document.getElementById('discountToggle').textContent = '\u20AC';
 
-      // Torna alla tab CIBO dopo reset
-      switchTab('cibo');
+      // Torna al menu dopo reset
+      if (currentTab !== 'menu') switchTab('menu');
       updateTabBadges();
       updateOrderColumn();
     }
