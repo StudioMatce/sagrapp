@@ -475,46 +475,73 @@
 
     .btn-order.disabled { opacity: 0.2; pointer-events: none; }
 
-    /* ===== OVERLAYS ===== */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+    /* ===== INLINE FEEDBACK ===== */
+    .order-progress {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
       opacity: 0;
-      pointer-events: none;
-      transition: opacity 200ms ease;
+      transition: opacity 150ms ease;
     }
 
-    .overlay.visible { opacity: 1; pointer-events: auto; }
-    .overlay-success { background: rgba(78, 204, 163, 0.95); }
-    .overlay-error { background: rgba(233, 69, 96, 0.95); }
+    .order-progress.active {
+      opacity: 1;
+    }
 
-    .overlay-number {
+    .order-progress-bar {
+      height: 100%;
+      width: 0;
+      background: #4ecca3;
+      border-radius: 2px;
+      transition: width 300ms ease;
+    }
+
+    .order-progress.active .order-progress-bar {
+      width: 70%;
+      animation: progress-pulse 800ms ease-in-out infinite alternate;
+    }
+
+    .order-progress.done .order-progress-bar {
+      width: 100%;
+      animation: none;
+      transition: width 200ms ease;
+    }
+
+    @keyframes progress-pulse {
+      from { width: 40%; }
+      to { width: 75%; }
+    }
+
+    .order-feedback {
+      width: 100%;
+      text-align: center;
       font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: clamp(64px, 18vw, 130px);
-      line-height: 1;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-
-    .overlay-text {
+      font-size: 12px;
       font-weight: 700;
-      font-size: clamp(18px, 4vw, 30px);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #fff;
+      margin-top: 8px;
+      padding: 6px 0;
+      border-radius: 6px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 200ms ease;
     }
 
-    .overlay-sub {
-      font-size: clamp(14px, 2.5vw, 20px);
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.8);
-      margin-top: 6px;
+    .order-feedback.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .order-feedback.success {
+      color: #4ecca3;
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    .order-feedback.error {
+      color: #e94560;
+      background: rgba(233, 69, 96, 0.08);
     }
 
     /* ===== BANNERS ===== */
@@ -660,23 +687,11 @@
           </div>
         </div>
         <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
+        <div class="order-progress" id="orderProgress"><div class="order-progress-bar"></div></div>
+        <div class="order-feedback" id="orderFeedback"></div>
       </div>
     </div>
 
-  </div>
-
-  <!-- Overlay successo -->
-  <div class="overlay overlay-success" id="overlay-success">
-    <div class="overlay-number" id="successNumber"></div>
-    <div class="overlay-text">Ordine creato</div>
-    <div class="overlay-sub" id="successSub"></div>
-  </div>
-
-  <!-- Overlay errore -->
-  <div class="overlay overlay-error" id="overlay-error">
-    <div class="overlay-number">!</div>
-    <div class="overlay-text" id="errorText">Errore</div>
-    <div class="overlay-sub" id="errorSub"></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -836,8 +851,6 @@
     async function submitOrder() {
       if (!connected || submitting) return;
 
-      var table = 0;
-
       var items = BEVERAGES
         .filter(function(bev) { return quantities[bev.id] > 0; })
         .map(function(bev) { return { id: bev.id, qty: quantities[bev.id] }; });
@@ -845,14 +858,21 @@
       if (items.length === 0) return;
 
       submitting = true;
-      document.getElementById('btnOrder').classList.add('disabled');
+      var btnOrder = document.getElementById('btnOrder');
+      var progress = document.getElementById('orderProgress');
+      var feedback = document.getElementById('orderFeedback');
+      btnOrder.classList.add('disabled');
+
+      feedback.classList.remove('visible', 'success', 'error');
+      progress.classList.remove('done');
+      progress.classList.add('active');
 
       try {
         var res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            table: table,
+            table: 0,
             items: items,
             customer_name: null,
             source: 'bar',
@@ -861,25 +881,41 @@
         });
         var data = await res.json();
 
+        progress.classList.remove('active');
+        progress.classList.add('done');
+
         if (data.success) {
-          document.getElementById('successNumber').textContent = data.order_number;
-          document.getElementById('successSub').textContent = formatPrice(data.total);
-          showOverlay('success');
+          var msg = data.order_number + '  ' + formatPrice(data.total);
+          feedback.textContent = msg;
+          feedback.classList.add('visible', 'success');
 
           var lastEl = document.getElementById('lastOrder');
           lastEl.textContent = 'Ultimo: ' + data.order_number;
           lastEl.classList.add('visible');
 
           resetOrder();
+
+          setTimeout(function() {
+            feedback.classList.remove('visible');
+            progress.classList.remove('done');
+          }, 3000);
         } else {
-          document.getElementById('errorText').textContent = 'Errore';
-          document.getElementById('errorSub').textContent = data.error || 'Errore sconosciuto';
-          showOverlay('error');
+          feedback.textContent = data.error || 'Errore sconosciuto';
+          feedback.classList.add('visible', 'error');
+          setTimeout(function() {
+            feedback.classList.remove('visible');
+            progress.classList.remove('done');
+          }, 4000);
         }
       } catch (err) {
-        document.getElementById('errorText').textContent = 'Errore di rete';
-        document.getElementById('errorSub').textContent = 'Verifica la connessione';
-        showOverlay('error');
+        progress.classList.remove('active');
+        progress.classList.add('done');
+        feedback.textContent = 'Errore di rete';
+        feedback.classList.add('visible', 'error');
+        setTimeout(function() {
+          feedback.classList.remove('visible');
+          progress.classList.remove('done');
+        }, 4000);
       }
 
       submitting = false;
@@ -898,12 +934,6 @@
         document.getElementById('posToggle').classList.remove('active');
       }
       updateOrderColumn();
-    }
-
-    function showOverlay(type) {
-      var el = document.getElementById('overlay-' + type);
-      el.classList.add('visible');
-      setTimeout(function() { el.classList.remove('visible'); }, 2500);
     }
 
     // ===== SOCKET.IO =====
