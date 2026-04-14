@@ -97,7 +97,7 @@ module.exports = {
 
     // CONTORNI
     { id: 'patate_fritte', name: 'Patate fritte', price: 2.90, category: 'contorno', station: 'cucina', print_to: ['cibo'],
-      initial_stock: 200, alert_threshold: 20 },
+      composition: { patate: 1 }, initial_stock: 200, alert_threshold: 20 },
     { id: 'fagioli', name: 'Fagioli', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'],
       initial_stock: 150, alert_threshold: 15 },
     { id: 'fagioli_cipolla', name: 'Fagioli con cipolla', price: 2.50, category: 'contorno', station: 'cucina', print_to: ['cibo'],
