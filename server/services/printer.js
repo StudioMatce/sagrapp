@@ -317,7 +317,7 @@ function buildReceipt(order) {
 
   // --- Intestazione ---
   parts.push(
-    ALIGN_LEFT,
+    ALIGN_CENTER,
     BOLD_ON, DOUBLE_BOTH, text('Sagra M.d.G.'),
     NORMAL_SIZE, BOLD_OFF,
     text(''),
@@ -329,6 +329,7 @@ function buildReceipt(order) {
 
   // --- Sezione ordine ---
   parts.push(
+    ALIGN_LEFT,
     textInline('Ordine nr: '), BOLD_ON, text(`${order.id}`), BOLD_OFF,
     text(`Giorno:    ${now}`),
     text(''),
