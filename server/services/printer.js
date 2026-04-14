@@ -424,48 +424,32 @@ function buildFoodOrder(order) {
   );
   if (foodItems.length === 0) return null;
 
-  const coperti = order.coperti || 0;
-  const parts = [
-    INIT,
-    CODEPAGE_CP437,
-    ALIGN_CENTER,
-    BOLD_ON, text(LINE),
-    DOUBLE_BOTH, text('COMANDA CIBO'),
-    NORMAL_SIZE, BOLD_ON,
-    text(LINE),
-    BOLD_OFF,
-  ];
+  const parts = [INIT, CODEPAGE_CP437];
 
-  // Riquadro con ordine, tavolo, coperti e asporto
+  // Header: tavolo a sinistra, nome cliente a destra (DOUBLE = 24 chars)
+  const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
+  const nome = order.customer_name || '';
+  const headerPad = Math.max(1, 24 - tavolo.length - nome.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
-  parts.push(text(BOX));
-  parts.push(text(`${order.id}  TAV.${order.table}`));
-  if (coperti > 0) {
-    parts.push(text(`COPERTI: ${coperti}`));
-  }
-  if (order.asporto) {
-    parts.push(text('>>> ASPORTO <<<'));
-  }
-  parts.push(text(BOX));
+  parts.push(text(tavolo + ' '.repeat(headerPad) + nome));
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
-  parts.push(
-    text(LINE),
-    ALIGN_LEFT,
-    text(''),
-  );
+  parts.push(text(LINE), ALIGN_LEFT, text(''));
 
+  // Piatti
   foodItems.forEach(item => {
     parts.push(BOLD_ON, DOUBLE_BOTH);
     const prefix = item.special ? '* ' : '  ';
-    parts.push(text(`${prefix}${item.qty}x ${shortName(item.name)}`));
+    parts.push(text(`${prefix}${item.qty} ${shortName(item.name)}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
   });
 
+  // Numero ordine in fondo
   parts.push(
     text(''),
     ALIGN_CENTER,
     text(LINE),
+    BOLD_ON, text(`Ordine: ${order.id}`), BOLD_OFF,
     FEED, CUT,
   );
 
@@ -474,52 +458,47 @@ function buildFoodOrder(order) {
 
 // Comanda bevande — Fuhuihe .204 (printer #2)
 // Filtra per print_to che include 'bevande'
-// Comanda bevande — STAMPA SEMPRE, anche senza bevande (per posate/coperti)
+// STAMPA SEMPRE, anche senza bevande (per posate/coperti)
 function buildDrinkOrder(order) {
   const drinkItems = order.items.filter(i =>
     i.print_to && i.print_to.includes('bevande')
   );
 
-  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
   const coperti = order.coperti || 0;
-  const parts = [
-    INIT,
-    CODEPAGE_CP437,
-    ALIGN_CENTER,
-    BOLD_ON, text(LINE),
-    DOUBLE_BOTH, text('COMANDA BEVANDE'),
-    NORMAL_SIZE, BOLD_ON,
-    text(LINE),
-    BOLD_OFF,
-  ];
+  const parts = [INIT, CODEPAGE_CP437];
 
-  // Riquadro con ordine, tavolo e coperti
+  // Header: tavolo a sinistra, nome cliente a destra (DOUBLE = 24 chars)
+  const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
+  const nome = order.customer_name || '';
+  const headerPad = Math.max(1, 24 - tavolo.length - nome.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
-  parts.push(text(BOX));
-  parts.push(text(`${order.id}  TAV.${order.table}`));
+  parts.push(text(tavolo + ' '.repeat(headerPad) + nome));
+
+  // Coperti sotto l'header
   if (coperti > 0) {
     parts.push(text(`COPERTI: ${coperti}`));
   }
-  parts.push(text(BOX));
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
   parts.push(text(LINE), ALIGN_LEFT, text(''));
 
+  // Bevande
   if (drinkItems.length > 0) {
     drinkItems.forEach(item => {
       parts.push(BOLD_ON, DOUBLE_BOTH);
-      parts.push(text(`  ${item.qty}x ${item.name}`));
+      parts.push(text(`  ${item.qty} ${item.name}`));
       parts.push(NORMAL_SIZE, BOLD_OFF);
     });
   } else {
-    // Nessuna bevanda — stampa solo per posate
     parts.push(text('  (nessuna bevanda)'));
   }
 
+  // Numero ordine in fondo
   parts.push(
     text(''),
     ALIGN_CENTER,
     text(LINE),
+    BOLD_ON, text(`Ordine: ${order.id}`), BOLD_OFF,
     FEED, CUT,
   );
 
