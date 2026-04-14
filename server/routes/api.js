@@ -467,12 +467,14 @@ router.post('/orders/:id/fulfill', (req, res) => {
   // Controlla che ci siano abbastanza pezzi NELLO SCALDAVIVANDE (pronto - evasi)
   // per tutti i piatti griglia dell'ordine.
   // Piatti senza composition (pasta, bevande, ecc.) passano senza controllo.
+  // Patate escluse dal controllo: tracciate per il monitor ma non nello scaldavivande
+  const SKIP_FULFILLMENT = ['patate'];
   const missingPieces = [];
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
-        if (counters[piece] !== undefined) {
+        if (counters[piece] !== undefined && !SKIP_FULFILLMENT.includes(piece)) {
           const needed = count * item.qty;
           const nelloScaldavivande = Math.max(0, counters[piece].pronto - counters[piece].evasi);
           if (nelloScaldavivande < needed) {
