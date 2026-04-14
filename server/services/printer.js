@@ -367,7 +367,7 @@ function buildReceipt(order) {
 
   // --- Subtotale / Sconto / Omaggio ---
   const subtotal = order.subtotal !== undefined ? order.subtotal : order.total;
-  parts.push(text(''), text(DASH), text(''));
+  parts.push(text(''), text(DASH));
 
   if (order.discount > 0 || order.courtesy_type) {
     parts.push(text(padLine('Subtotale', subtotal.toFixed(2))));
@@ -391,11 +391,13 @@ function buildReceipt(order) {
     parts.push(BOLD_OFF, ALIGN_LEFT);
   }
 
-  // --- Totale ---
+  // --- Totale --- (DOUBLE = 24 chars per riga)
+  const totalStr = order.total.toFixed(2);
+  const totalLine = 'Totale' + ' '.repeat(Math.max(1, 24 - 6 - totalStr.length)) + totalStr;
   parts.push(
-    BOLD_ON,
-    text(padLine('   Totale', order.total.toFixed(2))),
-    BOLD_OFF,
+    BOLD_ON, DOUBLE_BOTH,
+    text(totalLine),
+    NORMAL_SIZE, BOLD_OFF,
     text(''),
     text(LINE),
   );
