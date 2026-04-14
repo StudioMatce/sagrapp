@@ -424,14 +424,19 @@ function buildFoodOrder(order) {
   );
   if (foodItems.length === 0) return null;
 
+  const coperti = order.coperti || 0;
   const parts = [INIT, CODEPAGE_CP437];
 
-  // Header: tavolo a sinistra, nome cliente a destra (DOUBLE = 24 chars)
+  // Header: cop a sinistra, tavolo a destra (DOUBLE = 24 chars)
+  const cop = coperti > 0 ? `COP.${coperti}` : '';
   const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
-  const nome = order.customer_name || '';
-  const headerPad = Math.max(1, 24 - tavolo.length - nome.length);
+  const headerPad = Math.max(1, 24 - cop.length - tavolo.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
-  parts.push(text(tavolo + ' '.repeat(headerPad) + nome));
+  parts.push(text(cop + ' '.repeat(headerPad) + tavolo));
+  // Nome cliente sulla riga sotto
+  if (order.customer_name) {
+    parts.push(text(order.customer_name));
+  }
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
   parts.push(text(LINE), ALIGN_LEFT, text(''));
@@ -444,16 +449,30 @@ function buildFoodOrder(order) {
     parts.push(NORMAL_SIZE, BOLD_OFF);
   });
 
-  // Numero ordine in fondo
+  // Numero ordine in fondo (DOUBLE, a sinistra)
   parts.push(
     text(''),
-    ALIGN_CENTER,
     text(LINE),
-    BOLD_ON, text(`Ordine: ${order.id}`), BOLD_OFF,
+    BOLD_ON, DOUBLE_BOTH,
+    text(`  ${order.id}`),
+    NORMAL_SIZE, BOLD_OFF,
     FEED, CUT,
   );
 
   return Buffer.concat(parts);
+}
+
+// Abbrevia i nomi delle bevande per la comanda (DOUBLE = 24 chars)
+function shortDrinkName(name) {
+  return name
+    .replace(/ sfuso/i, '')
+    .replace(/Prosecco Superiore DOCG/i, 'Prosecco DOCG')
+    .replace(/Bottiglia Cabernet/i, 'Cabernet bott.')
+    .replace(/Coca Cola Zero/i, 'Coca Zero')
+    .replace(/ alla spina/i, '')
+    .replace(/Vino ombra /i, 'Vino ')
+    .replace(/ alla pesca/i, ' pesca')
+    .replace(/ al limone/i, ' limone');
 }
 
 // Comanda bevande — Fuhuihe .204 (printer #2)
@@ -467,16 +486,15 @@ function buildDrinkOrder(order) {
   const coperti = order.coperti || 0;
   const parts = [INIT, CODEPAGE_CP437];
 
-  // Header: tavolo a sinistra, nome cliente a destra (DOUBLE = 24 chars)
+  // Header: cop a sinistra, tavolo a destra (DOUBLE = 24 chars)
+  const cop = coperti > 0 ? `COP.${coperti}` : '';
   const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
-  const nome = order.customer_name || '';
-  const headerPad = Math.max(1, 24 - tavolo.length - nome.length);
+  const headerPad = Math.max(1, 24 - cop.length - tavolo.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
-  parts.push(text(tavolo + ' '.repeat(headerPad) + nome));
-
-  // Coperti sotto l'header
-  if (coperti > 0) {
-    parts.push(text(`COPERTI: ${coperti}`));
+  parts.push(text(cop + ' '.repeat(headerPad) + tavolo));
+  // Nome cliente sulla riga sotto
+  if (order.customer_name) {
+    parts.push(text(order.customer_name));
   }
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
@@ -486,19 +504,20 @@ function buildDrinkOrder(order) {
   if (drinkItems.length > 0) {
     drinkItems.forEach(item => {
       parts.push(BOLD_ON, DOUBLE_BOTH);
-      parts.push(text(`  ${item.qty} ${item.name}`));
+      parts.push(text(`  ${item.qty} ${shortDrinkName(item.name)}`));
       parts.push(NORMAL_SIZE, BOLD_OFF);
     });
   } else {
     parts.push(text('  (nessuna bevanda)'));
   }
 
-  // Numero ordine in fondo
+  // Numero ordine in fondo (DOUBLE, a sinistra)
   parts.push(
     text(''),
-    ALIGN_CENTER,
     text(LINE),
-    BOLD_ON, text(`Ordine: ${order.id}`), BOLD_OFF,
+    BOLD_ON, DOUBLE_BOTH,
+    text(`  ${order.id}`),
+    NORMAL_SIZE, BOLD_OFF,
     FEED, CUT,
   );
 
