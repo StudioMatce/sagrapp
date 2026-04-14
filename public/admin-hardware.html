@@ -515,8 +515,7 @@
             'IP: <span>' + (p.ip || '—') + ':9100</span>' +
             (p.model ? ' &mdash; ' + p.model : '') +
           '</div>' +
-          '<button class="btn-test" onclick="testPrint(\'' + p.id + '\')" ' +
-            (online ? '' : 'disabled') + '>Test stampa</button>' +
+          '<button class="btn-test" onclick="testPrint(\'' + p.id + '\')">Test stampa</button>' +
         '</div>';
       }).join('');
     }
