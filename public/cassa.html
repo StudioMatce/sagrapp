@@ -1148,7 +1148,7 @@
         <!-- Coperti -->
         <div class="form-field flex-1" id="copertiField">
           <span class="field-label">Cop</span>
-          <input type="number" id="copertiInput" inputmode="numeric" min="1" max="50" placeholder="&mdash;">
+          <input type="number" id="copertiInput" inputmode="numeric" min="0" max="50" placeholder="&mdash;">
         </div>
 
         <!-- Toggle asporto -->
@@ -1648,7 +1648,7 @@
           tableInput.focus();
           return;
         }
-        if (!coperti || coperti < 1) {
+        if (coperti === undefined || coperti === null || isNaN(coperti) || coperti < 0) {
           const field = document.getElementById('copertiField');
           field.classList.add('error');
           setTimeout(function() { field.classList.remove('error'); }, 400);
