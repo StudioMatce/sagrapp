@@ -465,7 +465,7 @@ function buildFoodOrder(order) {
 // Abbrevia i nomi delle bevande per la comanda (DOUBLE = 24 chars)
 function shortDrinkName(name) {
   return name
-    .replace(/ sfuso/i, '')
+    .replace(/ sfuso /i, ' ')
     .replace(/Prosecco Superiore DOCG/i, 'Prosecco DOCG')
     .replace(/Bottiglia Cabernet/i, 'Cabernet bott.')
     .replace(/Coca Cola Zero/i, 'Coca Zero')
