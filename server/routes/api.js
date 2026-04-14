@@ -638,9 +638,9 @@ router.post('/orders', (req, res) => {
   // Cassa casetta → solo ricevuta su .208 (printer #6)
   // Cassa generale → ricevuta .203 + comanda cibo .205 + comanda bevande .204 + speciali .207
   const prints = { receipt: false, food: false, drinks: false, special: false };
-  const source = order.cassa || 'principale';
+  const cassa = order.cassa || 'principale';
 
-  if (source === 'bar') {
+  if (cassa === 'bar') {
     // Cassa bar: ricevuta solo su .206
     const receiptData = printer.buildReceipt(order);
     const barPrinter = config.PRINTERS.find(p => p.id === 4);
@@ -653,7 +653,7 @@ router.post('/orders', (req, res) => {
       });
       prints.receipt = true;
     }
-  } else if (source === 'casetta') {
+  } else if (cassa === 'casetta') {
     // Cassa casetta: ricevuta solo su .208
     const receiptData = printer.buildReceipt(order);
     const casettaPrinter = config.PRINTERS.find(p => p.id === 6);
