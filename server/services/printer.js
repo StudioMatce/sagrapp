@@ -318,8 +318,9 @@ function buildReceipt(order) {
   // --- Intestazione ---
   parts.push(
     ALIGN_LEFT,
-    BOLD_ON, DOUBLE_BOTH, text('Sagra M.D.G.'),
+    BOLD_ON, DOUBLE_BOTH, text('Sagra M.d.G.'),
     NORMAL_SIZE, BOLD_OFF,
+    text(''),
     text('54^ festa della comunita tra altare e tavola'),
     text(''),
     text(LINE),
@@ -330,8 +331,6 @@ function buildReceipt(order) {
   parts.push(
     textInline('Ordine nr: '), BOLD_ON, text(`${order.id}`), BOLD_OFF,
     text(`Giorno:    ${now}`),
-    text(''),
-    text(DASH),
     text(''),
   );
 
@@ -394,7 +393,6 @@ function buildReceipt(order) {
 
   // --- Totale ---
   parts.push(
-    text(''),
     BOLD_ON,
     text(padLine('   Totale', order.total.toFixed(2))),
     BOLD_OFF,
