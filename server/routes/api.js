@@ -634,67 +634,98 @@ router.post('/orders', (req, res) => {
   }
 
   // --- STAMPA ---
+  // Cassa bar → solo ricevuta su .206 (printer #4)
+  // Cassa casetta → solo ricevuta su .208 (printer #6)
+  // Cassa generale → ricevuta .203 + comanda cibo .205 + comanda bevande .204 + speciali .207
   const prints = { receipt: false, food: false, drinks: false, special: false };
+  const source = order.cassa || 'principale';
 
-  // 1. Ricevuta cassa generale → vretti .203 (printer #1)
-  const receiptData = printer.buildReceipt(order);
-  const receiptPrinter = config.PRINTERS.find(p => p.id === 1);
-  if (io && receiptPrinter) {
-    emitToProxy('print', {
-      printer_id: 1,
-      printer_ip: receiptPrinter.ip,
-      data: Array.from(receiptData),
-      job_id: `receipt-${order.id}-${Date.now()}`,
-    });
-    prints.receipt = true;
-  }
-
-  // 2. Comanda cibo → Fuhuihe .205 (printer #3)
-  //    Include TUTTI i piatti con print_to 'cibo' (anche speciali)
-  if (hasFood) {
-    const foodData = printer.buildFoodOrder(order);
-    const foodPrinter = config.PRINTERS.find(p => p.id === 3);
-    if (io && foodData && foodPrinter) {
+  if (source === 'bar') {
+    // Cassa bar: ricevuta solo su .206
+    const receiptData = printer.buildReceipt(order);
+    const barPrinter = config.PRINTERS.find(p => p.id === 4);
+    if (io && barPrinter) {
       emitToProxy('print', {
-        printer_id: 3,
-        printer_ip: foodPrinter.ip,
-        data: Array.from(foodData),
-        job_id: `food-${order.id}-${Date.now()}`,
+        printer_id: 4,
+        printer_ip: barPrinter.ip,
+        data: Array.from(receiptData),
+        job_id: `receipt-bar-${order.id}-${Date.now()}`,
       });
-      prints.food = true;
+      prints.receipt = true;
     }
-  }
-
-  // 3. Comanda bevande → Fuhuihe .204 (printer #2)
-  //    STAMPA SEMPRE — tranne per ordini ASPORTO (niente bevande, niente coperti)
-  if (!order.asporto) {
-    const drinkData = printer.buildDrinkOrder(order);
-    const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
-    if (io && drinkData && drinkPrinter) {
+  } else if (source === 'casetta') {
+    // Cassa casetta: ricevuta solo su .208
+    const receiptData = printer.buildReceipt(order);
+    const casettaPrinter = config.PRINTERS.find(p => p.id === 6);
+    if (io && casettaPrinter) {
       emitToProxy('print', {
-        printer_id: 2,
-        printer_ip: drinkPrinter.ip,
-        data: Array.from(drinkData),
-        job_id: `drink-${order.id}-${Date.now()}`,
+        printer_id: 6,
+        printer_ip: casettaPrinter.ip,
+        data: Array.from(receiptData),
+        job_id: `receipt-casetta-${order.id}-${Date.now()}`,
       });
-      prints.drinks = true;
+      prints.receipt = true;
     }
-  }
+  } else {
+    // Cassa generale: flusso completo
 
-  // 4. Piatti speciali → Fuhuihe .207 (printer #5)
-  //    DOPPIA STAMPA: gli speciali vanno già sulla comanda cibo (.205),
-  //    qui stampiamo SOLO i piatti speciali sulla stampante dedicata
-  if (hasSpecial) {
-    const specialData = printer.buildSpecialOrder(order);
-    const specialPrinter = config.PRINTERS.find(p => p.id === 5);
-    if (io && specialData && specialPrinter) {
+    // 1. Ricevuta → vretti .203 (printer #1)
+    const receiptData = printer.buildReceipt(order);
+    const receiptPrinter = config.PRINTERS.find(p => p.id === 1);
+    if (io && receiptPrinter) {
       emitToProxy('print', {
-        printer_id: 5,
-        printer_ip: specialPrinter.ip,
-        data: Array.from(specialData),
-        job_id: `special-${order.id}-${Date.now()}`,
+        printer_id: 1,
+        printer_ip: receiptPrinter.ip,
+        data: Array.from(receiptData),
+        job_id: `receipt-${order.id}-${Date.now()}`,
       });
-      prints.special = true;
+      prints.receipt = true;
+    }
+
+    // 2. Comanda cibo → Fuhuihe .205 (printer #3)
+    if (hasFood) {
+      const foodData = printer.buildFoodOrder(order);
+      const foodPrinter = config.PRINTERS.find(p => p.id === 3);
+      if (io && foodData && foodPrinter) {
+        emitToProxy('print', {
+          printer_id: 3,
+          printer_ip: foodPrinter.ip,
+          data: Array.from(foodData),
+          job_id: `food-${order.id}-${Date.now()}`,
+        });
+        prints.food = true;
+      }
+    }
+
+    // 3. Comanda bevande → Fuhuihe .204 (printer #2)
+    //    STAMPA SEMPRE — tranne per ordini ASPORTO
+    if (!order.asporto) {
+      const drinkData = printer.buildDrinkOrder(order);
+      const drinkPrinter = config.PRINTERS.find(p => p.id === 2);
+      if (io && drinkData && drinkPrinter) {
+        emitToProxy('print', {
+          printer_id: 2,
+          printer_ip: drinkPrinter.ip,
+          data: Array.from(drinkData),
+          job_id: `drink-${order.id}-${Date.now()}`,
+        });
+        prints.drinks = true;
+      }
+    }
+
+    // 4. Piatti speciali → Fuhuihe .207 (printer #5)
+    if (hasSpecial) {
+      const specialData = printer.buildSpecialOrder(order);
+      const specialPrinter = config.PRINTERS.find(p => p.id === 5);
+      if (io && specialData && specialPrinter) {
+        emitToProxy('print', {
+          printer_id: 5,
+          printer_ip: specialPrinter.ip,
+          data: Array.from(specialData),
+          job_id: `special-${order.id}-${Date.now()}`,
+        });
+        prints.special = true;
+      }
     }
   }
 

@@ -416,12 +416,11 @@ function buildReceipt(order) {
 }
 
 // Comanda cibo — Fuhuihe .205 (printer #3)
-// Filtra per print_to 'cibo', esclude contorni e condimenti (tutti sanno)
+// Filtra per print_to 'cibo' — include contorni e condimenti
 // Nomi abbreviati, testo DOUBLE per leggibilità in cucina
 function buildFoodOrder(order) {
   const foodItems = order.items.filter(i =>
-    i.print_to && i.print_to.includes('cibo') &&
-    i.category !== 'contorno' && i.category !== 'condimento'
+    i.print_to && i.print_to.includes('cibo')
   );
   if (foodItems.length === 0) return null;
 
