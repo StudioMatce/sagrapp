@@ -557,11 +557,10 @@
         <div class="step-title">Conferma PIN e Reset</div>
       </div>
       <div class="step-body">
-        <div class="step-desc">Reinserisci il PIN admin per confermare il reset. Ordini, contatori e scorte verranno azzerati. Questa azione non è reversibile.</div>
-        <!-- PIN re-entry: verifica identità prima del reset -->
+        <div class="step-desc">Inserisci la password di conferma per procedere al reset. Ordini, contatori e scorte verranno azzerati. Questa azione non è reversibile.</div>
         <div class="pin-group">
-          <input type="password" id="pinInput" class="pin-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="----">
-          <button class="btn btn-next" id="btnVerifyPin" onclick="verifyPin()">Verifica PIN</button>
+          <input type="password" id="pinInput" class="pin-input" style="width: 200px; letter-spacing: 0.05em;" maxlength="20" placeholder="Password">
+          <button class="btn btn-next" id="btnVerifyPin" onclick="verifyPin()">Conferma</button>
         </div>
         <div id="pinResult"></div>
         <!-- Il bottone reset appare solo dopo il PIN corretto -->
@@ -772,55 +771,35 @@
       }
     }
 
-    // === STEP 4: Verifica PIN admin ===
-    async function verifyPin() {
-      var pinInput = document.getElementById('pinInput');
-      var pin = pinInput.value.trim();
+    // === STEP 4: Verifica password reset ===
+    var RESET_PASSWORD = 'puntoenel';
 
-      if (pin.length !== 4) {
+    function verifyPin() {
+      var pinInput = document.getElementById('pinInput');
+      var pwd = pinInput.value.trim();
+
+      if (!pwd) {
         pinInput.classList.add('error');
         setTimeout(function() { pinInput.classList.remove('error'); }, 400);
         return;
       }
 
-      var btn = document.getElementById('btnVerifyPin');
-      btn.disabled = true;
-      btn.textContent = 'Verifica...';
-
-      try {
-        var res = await fetch('/api/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: pin })
-        });
-        var data = await res.json();
-
-        if (data.success) {
-          // PIN corretto: mostra il bottone di reset
-          pinVerified = true;
-          document.getElementById('pinResult').innerHTML = '';
-          document.getElementById('resetSection').style.display = 'block';
-          // Nascondi il gruppo PIN (non serve più)
-          document.querySelector('.pin-group').style.display = 'none';
-        } else {
-          // PIN errato: shake + messaggio
-          pinInput.classList.add('error');
-          setTimeout(function() { pinInput.classList.remove('error'); }, 400);
-          pinInput.value = '';
-          pinInput.focus();
-          document.getElementById('pinResult').innerHTML =
-            '<div class="info-box error" style="margin-bottom: 14px;">PIN errato. Riprova.</div>';
-        }
-      } catch (e) {
+      if (pwd === RESET_PASSWORD) {
+        pinVerified = true;
+        document.getElementById('pinResult').innerHTML = '';
+        document.getElementById('resetSection').style.display = 'block';
+        document.querySelector('.pin-group').style.display = 'none';
+      } else {
+        pinInput.classList.add('error');
+        setTimeout(function() { pinInput.classList.remove('error'); }, 400);
+        pinInput.value = '';
+        pinInput.focus();
         document.getElementById('pinResult').innerHTML =
-          '<div class="info-box error" style="margin-bottom: 14px;">Errore di connessione: ' + e.message + '</div>';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Verifica PIN';
+          '<div class="info-box error" style="margin-bottom: 14px;">Password errata. Riprova.</div>';
       }
     }
 
-    // Permetti di premere Invio nel campo PIN per verificare
+    // Permetti di premere Invio per confermare
     document.getElementById('pinInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') verifyPin();
     });
@@ -864,6 +843,13 @@
           '<div class="info-box error">Errore: ' + e.message + '</div>';
       }
     }
+
+    // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
+    window.completeStep = completeStep;
+    window.loadStep1 = loadStep1;
+    window.loadStep3 = loadStep3;
+    window.verifyPin = verifyPin;
+    window.handleReset = handleReset;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

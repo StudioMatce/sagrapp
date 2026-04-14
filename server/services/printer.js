@@ -531,41 +531,35 @@ function buildSpecialOrder(order) {
   const specialItems = order.items.filter(i => i.special);
   if (specialItems.length === 0) return null;
 
-  const now = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
-  const parts = [
-    INIT,
-    CODEPAGE_CP437,
-    ALIGN_CENTER,
-    BOLD_ON, text(LINE),
-    DOUBLE_BOTH, text('PIATTO SPECIALE'),
-    NORMAL_SIZE, BOLD_ON,
-    text(LINE),
-    BOLD_OFF,
-  ];
+  const coperti = order.coperti || 0;
+  const parts = [INIT, CODEPAGE_CP437];
 
-  // Riquadro con ordine e tavolo
+  // Header: cop a sinistra, tavolo a destra (DOUBLE = 24 chars)
+  const cop = coperti > 0 ? `COP.${coperti}` : '';
+  const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
+  const headerPad = Math.max(1, 24 - cop.length - tavolo.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
-  parts.push(text(BOX));
-  parts.push(text(`${order.id}  TAV.${order.table}`));
-  parts.push(text(BOX));
+  parts.push(text(cop + ' '.repeat(headerPad) + tavolo));
+  if (order.customer_name) {
+    parts.push(text(order.customer_name));
+  }
   parts.push(NORMAL_SIZE, BOLD_OFF);
 
-  parts.push(
-    text(LINE),
-    ALIGN_LEFT,
-    text(''),
-  );
+  parts.push(text(LINE), ALIGN_LEFT, text(''));
 
   specialItems.forEach(item => {
     parts.push(BOLD_ON, DOUBLE_BOTH);
-    parts.push(text(`  ${item.qty}x ${item.name}`));
+    parts.push(text(`  ${item.qty} ${item.name}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
   });
 
+  // Numero ordine in fondo (DOUBLE, a sinistra)
   parts.push(
     text(''),
-    ALIGN_CENTER,
     text(LINE),
+    BOLD_ON, DOUBLE_BOTH,
+    text(`  ${order.id}`),
+    NORMAL_SIZE, BOLD_OFF,
     FEED, CUT,
   );
 
