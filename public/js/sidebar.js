@@ -1,10 +1,13 @@
 /**
  * SagrApp — Sidebar navigazione globale (SOLO ADMIN)
- * Incluso solo nelle pagine admin. L'admin ha gia' fatto login con PIN 0000.
+ * Incluso in tutte le pagine — si attiva solo se l'utente ha il token admin.
  * Genera il DOM della sidebar, evidenzia la voce attiva, gestisce apertura/chiusura.
  */
 (function () {
   'use strict';
+
+  // Mostra la sidebar solo per admin (chi ha il token admin in sessionStorage)
+  if (!sessionStorage.getItem('admin_token')) return;
 
   // Gruppi e voci della sidebar
   var NAV_GROUPS = [
@@ -264,7 +267,8 @@
   // Le pagine non-admin (casse, monitor, ecc.) fanno navigazione normale.
 
   function isAdminPage(path) {
-    return path.startsWith('/admin') || path === '/setup';
+    return path.startsWith('/admin') || path === '/setup' ||
+      path === '/cassa' || path === '/cassa-bar' || path === '/cassa-casetta';
   }
 
   function setupSoftNav() {
