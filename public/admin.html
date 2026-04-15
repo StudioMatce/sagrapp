@@ -1070,6 +1070,18 @@
       }
     }
 
+    // Password richiesta per azioni pericolose
+    var ADMIN_ACTION_PWD = 'puntoenel';
+
+    function requirePassword(action, callback) {
+      var pwd = prompt('Inserisci la password per: ' + action);
+      if (pwd === ADMIN_ACTION_PWD) {
+        callback();
+      } else if (pwd !== null) {
+        alert('Password errata');
+      }
+    }
+
     // Genera un ordine di test
     async function generateTestOrder() {
       try {
@@ -1082,18 +1094,22 @@
     // =============================================
     // PULSANTE TEST
     // =============================================
-    document.getElementById('btnTest').addEventListener('click', generateTestOrder);
+    document.getElementById('btnTest').addEventListener('click', function() {
+      requirePassword('Genera ordine test', generateTestOrder);
+    });
 
-    document.getElementById('btnReset').addEventListener('click', async () => {
-      if (!confirm('Sei sicuro? Questo azzera TUTTI gli ordini, contatori e scorte.')) return;
-      try {
-        await fetch('/api/admin/reset', {
-          method: 'POST',
-          headers: { 'X-Admin-Token': TOKEN },
-        });
-        fetchStats();
-        loadAllOrders();
-      } catch (err) {}
+    document.getElementById('btnReset').addEventListener('click', function() {
+      requirePassword('Reset tutto', async function() {
+        if (!confirm('Sei sicuro? Questo azzera TUTTI gli ordini, contatori e scorte.')) return;
+        try {
+          await fetch('/api/admin/reset', {
+            method: 'POST',
+            headers: { 'X-Admin-Token': TOKEN },
+          });
+          fetchStats();
+          loadAllOrders();
+        } catch (err) {}
+      });
     });
 
     // =============================================

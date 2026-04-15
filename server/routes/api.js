@@ -1206,6 +1206,52 @@ router.get('/warehouse', requireAdmin, (req, res) => {
   res.json(Object.values(warehouse));
 });
 
+// Export CSV
+router.get('/warehouse/export', requireAdmin, (req, res) => {
+  const items = Object.values(warehouse);
+  const header = 'nome,categoria,quantita,totale,soglia_allarme,ultimo_aggiornamento';
+  const rows = items.map(i => {
+    const updatedAt = i.updated_at ? new Date(i.updated_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '';
+    return [
+      '"' + (i.name || '').replace(/"/g, '""') + '"',
+      '"' + (i.category || '').replace(/"/g, '""') + '"',
+      i.quantity || 0,
+      i.total || 0,
+      i.alert_threshold !== null && i.alert_threshold !== undefined ? i.alert_threshold : '',
+      '"' + updatedAt + '"',
+    ].join(',');
+  });
+  const csv = [header, ...rows].join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="magazzino_' + new Date().toISOString().slice(0, 10) + '.csv"');
+  res.send(csv);
+});
+
+// Import CSV
+router.post('/warehouse/import', requireAdmin, (req, res) => {
+  const { rows } = req.body;
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return res.status(400).json({ error: 'Nessun dato da importare' });
+  }
+  let imported = 0;
+  rows.forEach(row => {
+    if (!row.nome || !row.nome.trim()) return;
+    const id = row.nome.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const item = warehouse[id] || { id, created_at: Date.now() };
+    item.name = row.nome.trim();
+    item.category = row.categoria ? row.categoria.trim() : item.category || null;
+    item.quantity = row.quantita !== undefined && row.quantita !== '' ? parseInt(row.quantita) : (item.quantity || 0);
+    item.total = row.totale !== undefined && row.totale !== '' ? parseInt(row.totale) : (item.total || 0);
+    item.alert_threshold = row.soglia_allarme !== undefined && row.soglia_allarme !== '' ? parseInt(row.soglia_allarme) : (item.alert_threshold || null);
+    item.updated_at = Date.now();
+    warehouse[id] = item;
+    db.saveWarehouseItem(item);
+    imported++;
+  });
+  if (io) io.emit('warehouse_updated', { action: 'bulk_import' });
+  res.json({ success: true, imported });
+});
+
 router.post('/warehouse', requireAdmin, (req, res) => {
   const { name, quantity, total, alert_threshold } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -1223,7 +1269,9 @@ router.post('/warehouse', requireAdmin, (req, res) => {
     quantity: parseInt(quantity) || 0,
     total: parseInt(total) || parseInt(quantity) || 0,
     alert_threshold: alert_threshold !== undefined && alert_threshold !== null && alert_threshold !== '' ? parseInt(alert_threshold) : null,
+    category: req.body.category ? String(req.body.category).trim() : null,
     created_at: Date.now(),
+    updated_at: Date.now(),
   };
 
   warehouse[id] = item;
@@ -1237,11 +1285,13 @@ router.put('/warehouse/:id', requireAdmin, (req, res) => {
   const item = warehouse[req.params.id];
   if (!item) return res.status(404).json({ error: 'Articolo non trovato' });
 
-  const { name, quantity, total, alert_threshold } = req.body;
+  const { name, quantity, total, alert_threshold, category } = req.body;
   if (name !== undefined) item.name = String(name).trim();
   if (quantity !== undefined) item.quantity = Math.max(0, parseInt(quantity));
   if (total !== undefined) item.total = Math.max(0, parseInt(total));
   if (alert_threshold !== undefined) item.alert_threshold = alert_threshold !== null && alert_threshold !== '' ? parseInt(alert_threshold) : null;
+  if (category !== undefined) item.category = category ? String(category).trim() : null;
+  item.updated_at = Date.now();
 
   db.saveWarehouseItem(item);
   if (io) io.emit('warehouse_updated', { action: 'updated', item });
@@ -1258,6 +1308,7 @@ router.post('/warehouse/:id/adjust', requireAdmin, (req, res) => {
   }
 
   item.quantity = Math.max(0, item.quantity + parseInt(delta));
+  item.updated_at = Date.now();
   db.updateWarehouseQty(item.id, item.quantity);
   if (io) io.emit('warehouse_updated', { action: 'adjusted', item });
   res.json(item);

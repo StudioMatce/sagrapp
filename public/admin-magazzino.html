@@ -553,6 +553,11 @@
         <div class="conn-dot" id="connDot"></div>
         <span class="conn-label" id="connLabel">Offline</span>
       </div>
+      <button class="btn-add" id="btnExport" style="border-color:rgba(34,211,238,0.3);background:rgba(34,211,238,0.08);color:var(--cyan)">CSV</button>
+      <label class="btn-add" id="btnImport" style="border-color:rgba(255,217,61,0.3);background:rgba(255,217,61,0.08);color:var(--yellow);margin:0;cursor:pointer">
+        Importa
+        <input type="file" accept=".csv" id="csvFileInput" style="display:none">
+      </label>
       <button class="btn-add" id="btnAdd">+ Nuovo</button>
     </div>
   </header>
@@ -577,6 +582,12 @@
         <div class="field">
           <label class="field-label">Nome articolo</label>
           <input class="field-input" id="fName" type="text" placeholder="es. Bicchieri plastica">
+        </div>
+        <div class="field">
+          <label class="field-label">Categoria</label>
+          <input class="field-input" id="fCategory" type="text" list="categoryList" placeholder="es. Posate, Bevande, Pulizia...">
+          <datalist id="categoryList"></datalist>
+          <span class="field-hint">Scegli una esistente o scrivi per crearne una nuova</span>
         </div>
         <div class="field-row">
           <div class="field">
@@ -647,19 +658,27 @@
       return 'green';
     }
 
+    function formatTimestamp(ts) {
+      if (!ts) return '';
+      var d = new Date(ts);
+      return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' +
+             d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    }
+
     function renderRow(item) {
       var dot = qtyDotColor(item);
-      var thresholdStr = item.alert_threshold !== null && item.alert_threshold !== undefined
-        ? 'soglia: ' + item.alert_threshold
-        : '';
+      var metaParts = [];
+      if (item.category) metaParts.push(escapeHtml(item.category));
+      if (item.alert_threshold !== null && item.alert_threshold !== undefined) metaParts.push('soglia: ' + item.alert_threshold);
+      if (item.updated_at) metaParts.push(formatTimestamp(item.updated_at));
 
       var html = '<div class="item-row" data-id="' + item.id + '">';
 
       // Info
       html += '<div class="item-info">';
       html += '<div class="item-name">' + escapeHtml(item.name) + '</div>';
-      if (thresholdStr) {
-        html += '<div class="item-meta"><span class="item-threshold-label">' + thresholdStr + '</span></div>';
+      if (metaParts.length > 0) {
+        html += '<div class="item-meta"><span class="item-threshold-label">' + metaParts.join(' · ') + '</span></div>';
       }
       html += '</div>';
 
@@ -885,13 +904,24 @@
     document.getElementById('btnSave').addEventListener('click', handleSave);
     modalOverlay.addEventListener('click', function(e) { if (e.target === modalOverlay) closeModal(); });
 
+    function updateCategoryDatalist() {
+      var cats = {};
+      items.forEach(function(i) { if (i.category) cats[i.category] = true; });
+      var dl = document.getElementById('categoryList');
+      dl.innerHTML = Object.keys(cats).sort().map(function(c) {
+        return '<option value="' + escapeHtml(c) + '">';
+      }).join('');
+    }
+
     function openNewModal() {
       editingId = null;
       document.getElementById('modalTitle').textContent = 'Nuovo articolo';
       document.getElementById('fName').value = '';
+      document.getElementById('fCategory').value = '';
       document.getElementById('fQty').value = '0';
       document.getElementById('fTotal').value = '0';
       document.getElementById('fThreshold').value = '';
+      updateCategoryDatalist();
       modalOverlay.classList.add('visible');
       document.getElementById('fName').focus();
     }
@@ -903,9 +933,11 @@
       editingId = id;
       document.getElementById('modalTitle').textContent = 'Modifica articolo';
       document.getElementById('fName').value = item.name;
+      document.getElementById('fCategory').value = item.category || '';
       document.getElementById('fQty').value = item.quantity;
       document.getElementById('fTotal').value = item.total || 0;
       document.getElementById('fThreshold').value = item.alert_threshold !== null && item.alert_threshold !== undefined ? item.alert_threshold : '';
+      updateCategoryDatalist();
       modalOverlay.classList.add('visible');
       document.getElementById('fName').focus();
     }
@@ -928,7 +960,8 @@
       }
       document.getElementById('fName').style.borderColor = '';
 
-      var payload = { name: name, quantity: qty, total: total, alert_threshold: threshold };
+      var category = document.getElementById('fCategory').value.trim() || null;
+      var payload = { name: name, quantity: qty, total: total, alert_threshold: threshold, category: category };
 
       var btn = document.getElementById('btnSave');
       btn.disabled = true;
@@ -956,7 +989,10 @@
             return;
           }
           var newItem = await res2.json();
-          items.push(newItem);
+          // Evita duplicato: il socket event 'warehouse_updated' potrebbe averlo gia' aggiunto
+          if (!items.find(function(i) { return i.id === newItem.id; })) {
+            items.push(newItem);
+          }
         }
 
         closeModal();
@@ -969,6 +1005,54 @@
         btn.textContent = 'Salva';
       }
     }
+
+    // =============================================
+    //  CSV EXPORT / IMPORT
+    // =============================================
+    document.getElementById('btnExport').addEventListener('click', function() {
+      window.location.href = '/api/warehouse/export?token=' + encodeURIComponent(TOKEN);
+    });
+
+    document.getElementById('csvFileInput').addEventListener('change', async function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var text = await file.text();
+      var lines = text.split('\n').filter(function(l) { return l.trim(); });
+      if (lines.length < 2) { alert('CSV vuoto o senza righe dati'); return; }
+
+      // Parsa header
+      var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase().replace(/['"]/g, ''); });
+      var rows = [];
+      for (var i = 1; i < lines.length; i++) {
+        var vals = lines[i].match(/(".*?"|[^,]+)/g) || [];
+        var row = {};
+        headers.forEach(function(h, idx) {
+          row[h] = (vals[idx] || '').replace(/^"|"$/g, '').trim();
+        });
+        if (row.nome) rows.push(row);
+      }
+
+      if (rows.length === 0) { alert('Nessun dato valido nel CSV'); return; }
+      if (!confirm('Importare ' + rows.length + ' articoli? Gli articoli con lo stesso nome verranno aggiornati.')) return;
+
+      try {
+        var res = await fetch('/api/warehouse/import', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ rows: rows }),
+        });
+        var data = await res.json();
+        if (data.success) {
+          alert('Importati ' + data.imported + ' articoli');
+          loadItems();
+        } else {
+          alert('Errore: ' + (data.error || 'Sconosciuto'));
+        }
+      } catch (err) {
+        alert('Errore di rete');
+      }
+      e.target.value = '';
+    });
 
     // =============================================
     //  SOCKET.IO
@@ -997,7 +1081,10 @@
     });
 
     socket.on('warehouse_updated', function(data) {
-      if (!data || !data.item) return;
+      if (!data) return;
+      // Import massivo: ricarica tutto
+      if (data.action === 'bulk_import') { loadItems(); return; }
+      if (!data.item) return;
 
       if (data.action === 'deleted') {
         items = items.filter(function(i) { return i.id !== data.item.id; });
