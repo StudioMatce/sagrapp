@@ -9,7 +9,7 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
 - **Accesso:** Login unificato con PIN (config.js → PINS). Sidebar solo per admin
-- **Navigazione:** Sidebar (js/sidebar.js) solo pagine admin. Pulsante "Esci" su pagine non-admin
+- **Navigazione:** Sidebar (js/sidebar.js) visibile su tutte le pagine quando loggato come admin (incluse monitor, scaldavivande, controllo). Pulsante "Esci" su pagine non-admin
 - **Deploy:** Railway (con variabile d'ambiente DATABASE_URL impostata nel progetto)
 
 ## Struttura file
@@ -36,10 +36,11 @@ public/
   admin-recap.html  # Report post-serata (con omaggi e sconti)
   admin-magazzino.html # Magazzino materiali e consumabili (bicchieri, posate, ecc.)
   admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo)
-  admin-chiusura.html  # Procedura chiusura turno (flash summary + PIN re-entry)
+  admin-chiusura.html  # Procedura chiusura turno (flash summary + scarica report + PIN re-entry)
   admin-menu.html   # Gestione menu: piatti, prezzi, casse, composizione pezzi, scorte inline
+  admin-serate.html # Storico serate: tabella comparativa con download report per serata
   setup.html        # Wizard setup inizio turno (progress bar + device checks)
-  js/sidebar.js     # Sidebar navigazione (solo pagine admin)
+  js/sidebar.js     # Sidebar navigazione (pagine admin + monitor + scaldavivande + controllo)
 ```
 
 ## Stampanti (tutte LAN via Powerline, TCP porta 9100)
@@ -259,4 +260,5 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/admin/magazzino` — Magazzino materiali e consumabili (admin)
 - `/admin/hardware` — Pannello controllo hardware (admin)
 - `/admin/menu` — Gestione menu e scorte (admin) — piatti, prezzi, scorte, disponibilità casse, composizione
-- `/admin/chiusura` — Procedura chiusura turno (admin)
+- `/admin/serate` — Storico serate archiviate con confronto dati e download report (admin)
+- `/admin/chiusura` — Procedura chiusura turno con download report + reset dati (admin)

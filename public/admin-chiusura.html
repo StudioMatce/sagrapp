@@ -525,13 +525,17 @@
         <div class="step-title">Riepilogo e report serata</div>
       </div>
       <div class="step-body">
-        <div class="step-desc">Riepilogo rapido della serata e link al report completo.</div>
+        <div class="step-desc">Riepilogo rapido della serata e download del report prima del reset.</div>
         <!-- Flash summary: numeri chiave della serata -->
         <div id="flashSummary" style="color: var(--text-dim); font-size: 13px; margin-bottom: 14px;">Caricamento riepilogo...</div>
-        <a href="/admin/recap" target="_blank" class="btn btn-secondary" style="margin-bottom: 14px; text-decoration: none;">
-          Apri report completo
-        </a>
-        <br>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 14px;">
+          <a href="/admin/recap" target="_blank" class="btn btn-secondary" style="text-decoration: none;">
+            Apri report completo
+          </a>
+          <button class="btn btn-secondary" id="btnDownloadReport" onclick="downloadCurrentReport()">
+            &#8595; Scarica report (.txt)
+          </button>
+        </div>
         <button class="btn btn-next" onclick="completeStep(2)">Passo successivo</button>
       </div>
     </div>
@@ -844,12 +848,99 @@
       }
     }
 
+    // === STEP 2: Scarica report serata corrente ===
+    async function downloadCurrentReport() {
+      var btn = document.getElementById('btnDownloadReport');
+      if (btn) { btn.disabled = true; btn.textContent = 'Download...'; }
+
+      try {
+        var res = await fetch('/api/admin/recap', { headers: { 'X-Admin-Token': TOKEN } });
+        if (!res.ok) throw new Error('Errore ' + res.status);
+        var recap = await res.json();
+
+        var today = new Date().toISOString().slice(0, 10);
+        var fEuro = function(v) {
+          return '€' + (v || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+        var sep = '─'.repeat(48);
+        var lines = [
+          'SAGRAPP — REPORT SERATA',
+          sep,
+          'Data:    ' + today,
+          sep, '',
+          'RIEPILOGO GENERALE',
+          '  Incasso totale:  ' + fEuro(recap.totalRevenue),
+          '  Ordini totali:   ' + (recap.totalOrders || 0),
+          '  Coperti:         ' + (recap.totalCoperti || 0),
+          '  Ordini asporto:  ' + (recap.totalAsporto || 0),
+        ];
+        if (recap.discountTotal > 0) lines.push('  Sconti:          ' + fEuro(recap.discountTotal));
+        lines.push('');
+
+        if (recap.revenueByCassa) {
+          lines.push('INCASSO PER CASSA');
+          var nomi = { principale: 'Cassa Generale', bar: 'Cassa Bar', casetta: 'Casetta' };
+          Object.entries(recap.revenueByCassa).forEach(function(e) {
+            lines.push('  ' + (nomi[e[0]] || e[0]) + ': ' + fEuro(e[1]));
+          });
+          lines.push('');
+        }
+
+        if (recap.revenueByPayment) {
+          lines.push('METODO DI PAGAMENTO');
+          Object.entries(recap.revenueByPayment).forEach(function(e) {
+            lines.push('  ' + (e[0] === 'pos' ? 'POS (carta)' : 'Contanti') + ': ' + fEuro(e[1]));
+          });
+          lines.push('');
+        }
+
+        if (recap.courtesy && recap.courtesy.total && recap.courtesy.total.count > 0) {
+          lines.push('OMAGGI');
+          var omNomi = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+          ['sponsor','don_pierino','amici'].forEach(function(t) {
+            var om = recap.courtesy[t];
+            if (om && om.count > 0)
+              lines.push('  ' + (omNomi[t] || t) + ': ' + om.count + ' ordini — val. ' + fEuro(om.realValue));
+          });
+          lines.push('');
+        }
+
+        if (recap.salesRanking && recap.salesRanking.length > 0) {
+          lines.push('CLASSIFICA VENDITE');
+          recap.salesRanking.forEach(function(item, i) {
+            var rank = ('  ' + (i + 1) + '.').slice(-4);
+            lines.push(rank + ' ' + item.name + ': ' + item.qty + ' pz — ' + fEuro(item.revenue));
+          });
+          lines.push('');
+        }
+
+        lines.push(sep);
+        lines.push('Generato da SagrApp — ' + new Date().toLocaleString('it-IT'));
+
+        var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'sagrapp-report-' + today + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (btn) { btn.textContent = '✓ Scaricato'; setTimeout(function() { btn.disabled = false; btn.textContent = '↓ Scarica report (.txt)'; }, 2500); }
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = '↓ Scarica report (.txt)'; }
+        alert('Errore download: ' + e.message);
+      }
+    }
+
     // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
     window.completeStep = completeStep;
     window.loadStep1 = loadStep1;
     window.loadStep3 = loadStep3;
     window.verifyPin = verifyPin;
     window.handleReset = handleReset;
+    window.downloadCurrentReport = downloadCurrentReport;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

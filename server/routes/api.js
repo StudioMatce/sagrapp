@@ -1096,8 +1096,11 @@ router.get('/admin/sessions', requireAdmin, (req, res) => {
     closed_at: s.closed_at,
     totalOrders: s.recap.totalOrders,
     totalRevenue: s.recap.totalRevenue,
+    totalCoperti: s.recap.totalCoperti || 0,
+    totalAsporto: s.recap.totalAsporto || 0,
+    topPiatto: s.recap.salesRanking && s.recap.salesRanking[0] ? s.recap.salesRanking[0].name : null,
+    topPiattoQty: s.recap.salesRanking && s.recap.salesRanking[0] ? s.recap.salesRanking[0].qty : 0,
   }));
-  // Ordina dalla piu' recente alla piu' vecchia
   list.sort((a, b) => b.closed_at - a.closed_at);
   res.json(list);
 });

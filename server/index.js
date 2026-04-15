@@ -95,6 +95,10 @@ app.get('/admin/menu', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-menu.html'));
 });
 
+app.get('/admin/serate', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-serate.html'));
+});
+
 app.get('/setup', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'setup.html'));
 });

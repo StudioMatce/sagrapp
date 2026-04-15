@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Storico Serate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #060a12;
+      --bg-surface:  #0c1220;
+      --bg-raised:   #111827;
+      --border:      #1e293b;
+      --border-dim:  rgba(30,41,59,0.6);
+      --green:       #4ecca3;
+      --green-dim:   rgba(78,204,163,0.12);
+      --green-glow:  rgba(78,204,163,0.25);
+      --red:         #e94560;
+      --amber:       #f59e0b;
+      --text:        #e2e8f0;
+      --text-dim:    rgba(226,232,240,0.5);
+      --text-muted:  #475569;
+      --radius:      10px;
+    }
+
+    html { font-size: 16px; background: var(--bg); }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== HEADER ===== */
+    .page-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      height: 56px;
+      background: rgba(6,10,18,0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .header-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: var(--green-dim);
+      border: 1px solid rgba(78,204,163,0.2);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+
+    /* ===== MAIN ===== */
+    .page-body {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    /* ===== STATO CARICAMENTO / EMPTY ===== */
+    .state-loading,
+    .state-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 80px 24px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .state-empty-icon {
+      font-size: 2.5rem;
+      opacity: 0.4;
+    }
+
+    .state-empty-title {
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .state-empty-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-align: center;
+    }
+
+    /* ===== TABELLA SERATE ===== */
+    .serate-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 6px;
+    }
+
+    .serate-table thead th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      padding: 0 12px 8px;
+      text-align: left;
+    }
+
+    .serate-table thead th:last-child { text-align: right; }
+
+    .serate-row {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius);
+      transition: border-color 200ms ease, background 200ms ease;
+      animation: fadeIn 300ms ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .serate-row:hover {
+      border-color: rgba(78,204,163,0.25);
+      background: #0d1626;
+    }
+
+    .serate-row td {
+      padding: 14px 12px;
+      vertical-align: middle;
+    }
+
+    .serate-row td:first-child { border-radius: var(--radius) 0 0 var(--radius); padding-left: 18px; }
+    .serate-row td:last-child  { border-radius: 0 var(--radius) var(--radius) 0; padding-right: 14px; }
+
+    /* Colonna data */
+    .col-data { min-width: 150px; }
+    .data-day {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .data-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Colonna incasso con barra */
+    .col-incasso { min-width: 180px; }
+    .incasso-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .incasso-bar-track {
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .incasso-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), rgba(78,204,163,0.5));
+      border-radius: 2px;
+      transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Colonne metriche */
+    .col-num {
+      text-align: center;
+      min-width: 70px;
+    }
+    .metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: block;
+    }
+    .metric-label {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Colonna top piatto */
+    .col-top { min-width: 140px; }
+    .top-name {
+      font-size: 0.82rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+    .top-qty {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .top-none {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Colonna azioni */
+    .col-actions { text-align: right; white-space: nowrap; }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg-raised);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 150ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-download:hover {
+      border-color: rgba(78,204,163,0.4);
+      color: var(--green);
+      background: var(--green-dim);
+    }
+    .btn-download:active { transform: scale(0.96); }
+    .btn-download.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .btn-download svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    /* Riga indice (numero serata) */
+    .row-index {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      min-width: 28px;
+      text-align: right;
+      padding-right: 8px !important;
+    }
+
+    /* ===== ERRORE ===== */
+    .state-error {
+      background: rgba(233,69,96,0.08);
+      border: 1px solid rgba(233,69,96,0.2);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 0.85rem;
+      color: var(--red);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 700px) {
+      .page-body { padding: 20px 14px 40px; }
+      .col-top, .col-num.hide-mobile { display: none; }
+      .serate-table thead th.hide-mobile { display: none; }
+      .col-incasso { min-width: 120px; }
+      .incasso-val { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="page-header">
+    <div class="header-title">Storico Serate</div>
+    <div id="headerBadge" class="header-badge" style="display:none"></div>
+  </header>
+
+  <div class="page-body">
+    <div id="tableWrapper">
+      <div class="state-loading">Caricamento serate...</div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ===== AUTH =====
+    var TOKEN = sessionStorage.getItem('admin_token');
+    if (!TOKEN) window.location.href = '/';
+
+    (async function checkAuth() {
+      try {
+        var res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        var data = await res.json();
+        if (!data.valid) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/';
+          return;
+        }
+        loadSerate();
+      } catch (e) {
+        loadSerate();
+      }
+    })();
+
+    // ===== FORMATTAZIONE =====
+    var DAYS = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    var MONTHS = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+    function formatDate(dateStr) {
+      // dateStr: "2025-04-12"
+      var parts = dateStr.split('-');
+      var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + parts[0];
+    }
+
+    function formatTime(ts) {
+      var d = new Date(ts);
+      return 'Chiusa ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatEuro(val) {
+      return '€' + (val || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ===== DOWNLOAD REPORT =====
+    async function downloadReport(id, dateStr, btn) {
+      btn.classList.add('loading');
+      btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> ...';
+
+      try {
+        var res = await fetch('/api/admin/sessions/' + id + '/recap', {
+          headers: { 'X-Admin-Token': TOKEN }
+        });
+        if (!res.ok) throw new Error('Errore ' + res.status);
+        var recap = await res.json();
+
+        var lines = [];
+        var sep = '─'.repeat(48);
+
+        lines.push('SAGRAPP — REPORT SERATA');
+        lines.push(sep);
+        lines.push('Data:    ' + formatDate(dateStr));
+        lines.push(sep);
+        lines.push('');
+
+        lines.push('RIEPILOGO GENERALE');
+        lines.push('  Incasso totale:  ' + formatEuro(recap.totalRevenue));
+        lines.push('  Ordini totali:   ' + (recap.totalOrders || 0));
+        lines.push('  Coperti:         ' + (recap.totalCoperti || 0));
+        lines.push('  Ordini asporto:  ' + (recap.totalAsporto || 0));
+        if (recap.discountTotal > 0) lines.push('  Sconti:          ' + formatEuro(recap.discountTotal));
+        lines.push('');
+
+        if (recap.revenueByCassa) {
+          lines.push('INCASSO PER CASSA');
+          var nomi = { principale: 'Cassa Generale', bar: 'Cassa Bar', casetta: 'Casetta' };
+          Object.entries(recap.revenueByCassa).forEach(function(e) {
+            lines.push('  ' + (nomi[e[0]] || e[0]) + ': ' + formatEuro(e[1]));
+          });
+          lines.push('');
+        }
+
+        if (recap.revenueByPayment) {
+          lines.push('METODO DI PAGAMENTO');
+          Object.entries(recap.revenueByPayment).forEach(function(e) {
+            lines.push('  ' + (e[0] === 'pos' ? 'POS (carta)' : 'Contanti') + ': ' + formatEuro(e[1]));
+          });
+          lines.push('');
+        }
+
+        if (recap.courtesy && recap.courtesy.total && recap.courtesy.total.count > 0) {
+          lines.push('OMAGGI');
+          var omNomi = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+          ['sponsor','don_pierino','amici'].forEach(function(t) {
+            var om = recap.courtesy[t];
+            if (om && om.count > 0)
+              lines.push('  ' + (omNomi[t] || t) + ': ' + om.count + ' ordini — val. ' + formatEuro(om.realValue));
+          });
+          lines.push('  TOTALE: ' + recap.courtesy.total.count + ' ordini — ' + formatEuro(recap.courtesy.total.realValue));
+          lines.push('');
+        }
+
+        if (recap.salesRanking && recap.salesRanking.length > 0) {
+          lines.push('CLASSIFICA VENDITE');
+          recap.salesRanking.forEach(function(item, i) {
+            var rank = ('  ' + (i + 1) + '.').slice(-4);
+            lines.push(rank + ' ' + item.name + ': ' + item.qty + ' pz — ' + formatEuro(item.revenue));
+          });
+          lines.push('');
+        }
+
+        lines.push(sep);
+        lines.push('Generato da SagrApp — ' + new Date().toLocaleString('it-IT'));
+
+        var text = lines.join('\n');
+        var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'sagrapp-report-' + dateStr + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg> OK';
+        setTimeout(function() {
+          btn.classList.remove('loading');
+          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> Scarica';
+        }, 2000);
+      } catch (e) {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> Scarica';
+        alert('Errore durante il download: ' + e.message);
+      }
+    }
+
+    // ===== CARICA SERATE =====
+    async function loadSerate() {
+      var wrapper = document.getElementById('tableWrapper');
+      try {
+        var res = await fetch('/api/admin/sessions', {
+          headers: { 'X-Admin-Token': TOKEN }
+        });
+        if (res.status === 401) {
+          sessionStorage.removeItem('admin_token');
+          window.location.href = '/';
+          return;
+        }
+        var sessions = await res.json();
+
+        if (!sessions || sessions.length === 0) {
+          wrapper.innerHTML =
+            '<div class="state-empty">' +
+              '<div class="state-empty-icon">📋</div>' +
+              '<div class="state-empty-title">Nessuna serata archiviata</div>' +
+              '<div class="state-empty-sub">Le serate vengono archiviate al termine<br>di ogni turno tramite Chiusura Turno.</div>' +
+            '</div>';
+          return;
+        }
+
+        // Badge conteggio
+        var badge = document.getElementById('headerBadge');
+        badge.style.display = '';
+        badge.textContent = sessions.length + ' serate';
+
+        // Valore massimo per le barre proporzionali
+        var maxRevenue = Math.max.apply(null, sessions.map(function(s) { return s.totalRevenue || 0; }));
+
+        // Costruisci tabella
+        var rows = sessions.map(function(s, i) {
+          var barPct = maxRevenue > 0 ? Math.round((s.totalRevenue / maxRevenue) * 100) : 0;
+          var topHtml = s.topPiatto
+            ? '<div class="top-name" title="' + esc(s.topPiatto) + '">' + esc(s.topPiatto) + '</div>' +
+              '<div class="top-qty">' + (s.topPiattoQty || 0) + ' venduti</div>'
+            : '<div class="top-none">—</div>';
+
+          return '<tr class="serate-row" style="animation-delay:' + (i * 50) + 'ms">' +
+            '<td class="row-index">' + (i + 1) + '</td>' +
+            '<td class="col-data">' +
+              '<div class="data-day">' + formatDate(s.date) + '</div>' +
+              '<div class="data-time">' + formatTime(s.closed_at) + '</div>' +
+            '</td>' +
+            '<td class="col-incasso">' +
+              '<div class="incasso-val">' + formatEuro(s.totalRevenue) + '</div>' +
+              '<div class="incasso-bar-track">' +
+                '<div class="incasso-bar-fill" style="width:' + barPct + '%"></div>' +
+              '</div>' +
+            '</td>' +
+            '<td class="col-num">' +
+              '<span class="metric-val">' + (s.totalOrders || 0) + '</span>' +
+              '<span class="metric-label">ordini</span>' +
+            '</td>' +
+            '<td class="col-num hide-mobile">' +
+              '<span class="metric-val">' + (s.totalCoperti || 0) + '</span>' +
+              '<span class="metric-label">coperti</span>' +
+            '</td>' +
+            '<td class="col-top hide-mobile">' + topHtml + '</td>' +
+            '<td class="col-actions">' +
+              '<button class="btn-download" onclick="downloadReport(\'' + esc(s.id) + '\', \'' + esc(s.date) + '\', this)">' +
+                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">' +
+                  '<path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/>' +
+                '</svg>' +
+                ' Scarica' +
+              '</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+
+        wrapper.innerHTML =
+          '<table class="serate-table">' +
+            '<thead><tr>' +
+              '<th></th>' +
+              '<th>Data</th>' +
+              '<th>Incasso</th>' +
+              '<th style="text-align:center">Ordini</th>' +
+              '<th style="text-align:center" class="hide-mobile">Coperti</th>' +
+              '<th class="hide-mobile">Top Piatto</th>' +
+              '<th></th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>';
+
+      } catch (e) {
+        wrapper.innerHTML = '<div class="state-error">Errore nel caricamento: ' + esc(e.message) + '</div>';
+      }
+    }
+
+    function esc(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+  </script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>
