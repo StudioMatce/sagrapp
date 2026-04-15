@@ -673,7 +673,7 @@ router.post('/orders', (req, res) => {
   const cassa = order.cassa || 'principale';
 
   if (cassa === 'bar') {
-    // Cassa bar: ricevuta solo su .206
+    // 1. Ricevuta → .206
     const receiptData = printer.buildReceipt(order);
     const barPrinter = config.PRINTERS.find(p => p.id === 4);
     if (io && barPrinter) {
@@ -685,8 +685,37 @@ router.post('/orders', (req, res) => {
       });
       prints.receipt = true;
     }
+    // 2. Comanda cibo → .205 (se ci sono piatti di cucina)
+    //    L'header mostrerà "BAR" invece del numero tavolo
+    if (hasFood) {
+      const foodData = printer.buildFoodOrder(order);
+      const foodPrinter = config.PRINTERS.find(p => p.id === 3);
+      if (io && foodData && foodPrinter) {
+        emitToProxy('print', {
+          printer_id: 3,
+          printer_ip: foodPrinter.ip,
+          data: Array.from(foodData),
+          job_id: `food-bar-${order.id}-${Date.now()}`,
+        });
+        prints.food = true;
+      }
+    }
+    // 3. Piatti speciali → .207
+    if (hasSpecial) {
+      const specialData = printer.buildSpecialOrder(order);
+      const specialPrinter = config.PRINTERS.find(p => p.id === 5);
+      if (io && specialData && specialPrinter) {
+        emitToProxy('print', {
+          printer_id: 5,
+          printer_ip: specialPrinter.ip,
+          data: Array.from(specialData),
+          job_id: `special-bar-${order.id}-${Date.now()}`,
+        });
+        prints.special = true;
+      }
+    }
   } else if (cassa === 'casetta') {
-    // Cassa casetta: ricevuta solo su .208
+    // 1. Ricevuta → .208
     const receiptData = printer.buildReceipt(order);
     const casettaPrinter = config.PRINTERS.find(p => p.id === 6);
     if (io && casettaPrinter) {
@@ -697,6 +726,35 @@ router.post('/orders', (req, res) => {
         job_id: `receipt-casetta-${order.id}-${Date.now()}`,
       });
       prints.receipt = true;
+    }
+    // 2. Comanda cibo → .205 (se ci sono piatti di cucina)
+    //    L'header mostrerà "CASETTA" invece del numero tavolo
+    if (hasFood) {
+      const foodData = printer.buildFoodOrder(order);
+      const foodPrinter = config.PRINTERS.find(p => p.id === 3);
+      if (io && foodData && foodPrinter) {
+        emitToProxy('print', {
+          printer_id: 3,
+          printer_ip: foodPrinter.ip,
+          data: Array.from(foodData),
+          job_id: `food-casetta-${order.id}-${Date.now()}`,
+        });
+        prints.food = true;
+      }
+    }
+    // 3. Piatti speciali → .207
+    if (hasSpecial) {
+      const specialData = printer.buildSpecialOrder(order);
+      const specialPrinter = config.PRINTERS.find(p => p.id === 5);
+      if (io && specialData && specialPrinter) {
+        emitToProxy('print', {
+          printer_id: 5,
+          printer_ip: specialPrinter.ip,
+          data: Array.from(specialData),
+          job_id: `special-casetta-${order.id}-${Date.now()}`,
+        });
+        prints.special = true;
+      }
     }
   } else {
     // Cassa generale: flusso completo

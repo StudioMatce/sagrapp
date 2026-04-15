@@ -475,6 +475,42 @@
 
     .btn-order.disabled { opacity: 0.2; pointer-events: none; }
 
+    /* ===== CAMPO NOME ===== */
+    .name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .name-row .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(240, 244, 248, 0.4);
+      white-space: nowrap;
+    }
+
+    .name-row input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #f0f4f8;
+      padding: 4px 0;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .name-row input::placeholder { color: rgba(255, 255, 255, 0.12); }
+
     /* ===== CALCOLATRICE RESTO ===== */
     .resto-block {
       margin-top: 8px;
@@ -739,6 +775,12 @@
         <span class="order-last" id="lastOrder"></span>
       </div>
 
+      <!-- Nome cliente (opzionale) -->
+      <div class="name-row">
+        <span class="field-label">Nome</span>
+        <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
+      </div>
+
       <!-- Toggle POS -->
       <div class="pos-row">
         <div class="pos-toggle" id="posToggle" onclick="togglePos()"></div>
@@ -747,7 +789,7 @@
 
       <div class="order-summary-label">Riepilogo</div>
       <div class="order-items-scroll" id="orderItemsList">
-        <div class="order-empty">Nessuna bevanda selezionata</div>
+        <div class="order-empty">Nessun articolo selezionato</div>
       </div>
 
       <div class="order-footer">
@@ -849,28 +891,45 @@
       }
     }
 
+    // Sezioni in ordine di comparsa — solo quelle con almeno un articolo vengono mostrate
+    var CATEGORY_SECTIONS = [
+      { cat: 'primo',     label: 'Primi' },
+      { cat: 'secondo',   label: 'Secondi' },
+      { cat: 'speciale',  label: 'Speciale del Giorno' },
+      { cat: 'contorno',  label: 'Contorni' },
+      { cat: 'condimento',label: 'Condimenti' },
+      { cat: 'bevanda',   label: 'Bevande' },
+    ];
+
+    function renderCard(bev) {
+      var exhausted = bev.status === 'exhausted';
+      var disabled = bev.available === false;
+      var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
+      var tag = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
+        : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
+      return '<div class="menu-row' + ((exhausted || disabled) ? ' exhausted' : '') + '" id="card-' + bev.id + '">' +
+        '<span class="row-name">' + bev.name + '</span>' +
+        tag +
+        '<span class="row-price">' + priceFormatted + '</span>' +
+        '<div class="row-stepper">' +
+          '<button class="step-btn step-minus" onclick="changeQty(\'' + bev.id + '\', -1)">\u2212</button>' +
+          '<span class="step-count zero" id="qty-' + bev.id + '">0</span>' +
+          '<button class="step-btn step-plus" onclick="changeQty(\'' + bev.id + '\', 1)">+</button>' +
+        '</div>' +
+      '</div>';
+    }
+
     // ===== RENDER MENU =====
     function renderBeverages() {
       if (BEVERAGES.length === 0) {
-        return '<div style="padding:40px;text-align:center;color:#64748b">Nessuna bevanda disponibile</div>';
+        return '<div style="padding:40px;text-align:center;color:#64748b">Nessun articolo disponibile</div>';
       }
       var html = '<div class="product-grid">';
-      BEVERAGES.forEach(function(bev) {
-        var exhausted = bev.status === 'exhausted';
-        var disabled = bev.available === false;
-        var priceFormatted = '\u20AC' + bev.price.toFixed(2).replace('.', ',');
-        var tag = disabled ? '<span class="row-exhausted-tag">Non disp.</span>'
-          : exhausted ? '<span class="row-exhausted-tag">Esaurito</span>' : '';
-        html += '<div class="menu-row' + ((exhausted || disabled) ? ' exhausted' : '') + '" id="card-' + bev.id + '">' +
-          '<span class="row-name">' + bev.name + '</span>' +
-          tag +
-          '<span class="row-price">' + priceFormatted + '</span>' +
-          '<div class="row-stepper">' +
-            '<button class="step-btn step-minus" onclick="changeQty(\'' + bev.id + '\', -1)">\u2212</button>' +
-            '<span class="step-count zero" id="qty-' + bev.id + '">0</span>' +
-            '<button class="step-btn step-plus" onclick="changeQty(\'' + bev.id + '\', 1)">+</button>' +
-          '</div>' +
-        '</div>';
+      CATEGORY_SECTIONS.forEach(function(sec) {
+        var items = BEVERAGES.filter(function(b) { return b.category === sec.cat; });
+        if (items.length === 0) return;
+        html += '<div class="section-header">' + sec.label + '</div>';
+        items.forEach(function(bev) { html += renderCard(bev); });
       });
       html += '</div>';
       return html;
@@ -988,7 +1047,7 @@
           body: JSON.stringify({
             table: 0,
             items: items,
-            customer_name: null,
+            customer_name: document.getElementById('nameInput').value.trim() || null,
             source: 'bar',
             payment: posActive ? 'pos' : 'contanti',
           }),
@@ -1044,6 +1103,7 @@
         if (cardEl) cardEl.classList.remove('active');
       });
       document.getElementById('ricevutoInput').value = '';
+      document.getElementById('nameInput').value = '';
       if (posActive) {
         posActive = false;
         document.getElementById('posToggle').classList.remove('active');

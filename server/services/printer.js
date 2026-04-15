@@ -427,9 +427,13 @@ function buildFoodOrder(order) {
   const coperti = order.coperti || 0;
   const parts = [INIT, CODEPAGE_CP437];
 
-  // Header: cop a sinistra, tavolo a destra (DOUBLE = 24 chars)
+  // Header: cop a sinistra, tavolo/origine a destra (DOUBLE = 24 chars)
+  // Per casetta e bar non c'è tavolo — si mostra l'origine in maiuscolo
   const cop = coperti > 0 ? `COP.${coperti}` : '';
-  const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
+  const tavolo = order.cassa === 'casetta' ? 'CASETTA'
+               : order.cassa === 'bar' ? 'BAR'
+               : order.asporto ? 'ASPORTO'
+               : `TAV.${order.table}`;
   const headerPad = Math.max(1, 24 - cop.length - tavolo.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
   parts.push(text(cop + ' '.repeat(headerPad) + tavolo));
@@ -534,9 +538,12 @@ function buildSpecialOrder(order) {
   const coperti = order.coperti || 0;
   const parts = [INIT, CODEPAGE_CP437];
 
-  // Header: cop a sinistra, tavolo a destra (DOUBLE = 24 chars)
+  // Header: cop a sinistra, tavolo/origine a destra (DOUBLE = 24 chars)
   const cop = coperti > 0 ? `COP.${coperti}` : '';
-  const tavolo = order.asporto ? 'ASPORTO' : `TAV.${order.table}`;
+  const tavolo = order.cassa === 'casetta' ? 'CASETTA'
+               : order.cassa === 'bar' ? 'BAR'
+               : order.asporto ? 'ASPORTO'
+               : `TAV.${order.table}`;
   const headerPad = Math.max(1, 24 - cop.length - tavolo.length);
   parts.push(BOLD_ON, DOUBLE_BOTH);
   parts.push(text(cop + ' '.repeat(headerPad) + tavolo));
