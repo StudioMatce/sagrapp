@@ -496,6 +496,93 @@
       color: var(--text-dim);
     }
 
+    /* ===== CATEGORY TABS ===== */
+    .cat-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 16px 16px 0;
+      max-width: 800px;
+      margin: 0 auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .cat-tabs::-webkit-scrollbar { display: none; }
+
+    .cat-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .cat-tab:hover { border-color: rgba(226, 232, 240, 0.15); color: var(--text); }
+
+    .cat-tab.active {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.3);
+      color: var(--green);
+    }
+
+    .cat-tab-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-dim);
+    }
+
+    .cat-tab.active .cat-tab-count {
+      background: rgba(78, 204, 163, 0.15);
+      color: var(--green);
+    }
+
+    /* ===== CATEGORY SECTION HEADER ===== */
+    .cat-section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 4px 8px;
+      margin-top: 16px;
+    }
+
+    .cat-section-header:first-child { margin-top: 0; }
+
+    .cat-section-name {
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--green);
+    }
+
+    .cat-section-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .cat-section-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
     /* ===== OVERLAY CONNESSIONE PERSA ===== */
     .lost-overlay {
       position: fixed;
@@ -561,6 +648,9 @@
       <button class="btn-add" id="btnAdd">+ Nuovo</button>
     </div>
   </header>
+
+  <!-- Tab categorie -->
+  <div class="cat-tabs" id="catTabs"></div>
 
   <div class="page-wrap">
     <div id="itemList">
@@ -646,6 +736,7 @@
     // =============================================
     var items = [];       // Array di articoli warehouse
     var editingId = null; // null = nuovo, altrimenti id in modifica
+    var activeCategory = 'tutti'; // Filtro categoria attiva
 
     // =============================================
     //  RENDERING
@@ -710,10 +801,61 @@
       return html;
     }
 
-    function renderAll() {
-      document.getElementById('itemCountBadge').textContent = items.length + ' articoli';
+    // Estrae le categorie uniche dagli articoli, ordinate alfabeticamente
+    function getCategories() {
+      var cats = {};
+      items.forEach(function(i) {
+        var cat = i.category || 'Altro';
+        if (!cats[cat]) cats[cat] = 0;
+        cats[cat]++;
+      });
+      return Object.keys(cats).sort(function(a, b) {
+        // "Altro" sempre in fondo
+        if (a === 'Altro') return 1;
+        if (b === 'Altro') return -1;
+        return a.localeCompare(b, 'it');
+      }).map(function(name) { return { name: name, count: cats[name] }; });
+    }
 
-      if (items.length === 0) {
+    function renderTabs() {
+      var categories = getCategories();
+      var tabsEl = document.getElementById('catTabs');
+
+      // Se c'è solo una categoria (o zero), nascondi i tab
+      if (categories.length <= 1) {
+        tabsEl.innerHTML = '';
+        return;
+      }
+
+      var html = '<button class="cat-tab' + (activeCategory === 'tutti' ? ' active' : '') + '" data-cat="tutti">' +
+        'Tutti<span class="cat-tab-count">' + items.length + '</span></button>';
+
+      categories.forEach(function(cat) {
+        html += '<button class="cat-tab' + (activeCategory === cat.name ? ' active' : '') + '" data-cat="' + escapeHtml(cat.name) + '">' +
+          escapeHtml(cat.name) + '<span class="cat-tab-count">' + cat.count + '</span></button>';
+      });
+
+      tabsEl.innerHTML = html;
+
+      // Bind tab clicks
+      tabsEl.querySelectorAll('.cat-tab').forEach(function(el) {
+        el.addEventListener('click', function() {
+          activeCategory = el.dataset.cat;
+          renderTabs();
+          renderList();
+        });
+      });
+    }
+
+    function renderList() {
+      // Filtra per categoria attiva
+      var filtered = activeCategory === 'tutti' ? items : items.filter(function(i) {
+        return (i.category || 'Altro') === activeCategory;
+      });
+
+      document.getElementById('itemCountBadge').textContent = filtered.length + ' / ' + items.length + ' articoli';
+
+      if (filtered.length === 0) {
         listEl.innerHTML =
           '<div class="empty-state">' +
           '<div class="empty-state-text">Nessun articolo in magazzino</div>' +
@@ -722,8 +864,32 @@
         return;
       }
 
-      listEl.innerHTML = items.map(renderRow).join('');
+      // Se siamo su "tutti", raggruppa per categoria con header di sezione
+      if (activeCategory === 'tutti') {
+        var categories = getCategories();
+        var html = '';
+        categories.forEach(function(cat) {
+          var catItems = filtered.filter(function(i) { return (i.category || 'Altro') === cat.name; });
+          if (catItems.length === 0) return;
+
+          html += '<div class="cat-section-header">' +
+            '<span class="cat-section-name">' + escapeHtml(cat.name) + '</span>' +
+            '<div class="cat-section-line"></div>' +
+            '<span class="cat-section-count">' + cat.count + '</span>' +
+            '</div>';
+          html += catItems.map(renderRow).join('');
+        });
+        listEl.innerHTML = html;
+      } else {
+        listEl.innerHTML = filtered.map(renderRow).join('');
+      }
+
       bindEvents();
+    }
+
+    function renderAll() {
+      renderTabs();
+      renderList();
     }
 
     function escapeHtml(str) {

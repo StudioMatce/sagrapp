@@ -92,6 +92,10 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
 ## Magazzino Materiali (admin-magazzino.html)
 - Inventario per **materiali e consumabili** (bicchieri, posate, rotoli carta, detersivi, ecc.)
 - **Nessun legame** con il menu o le casse — articoli indipendenti
+- **Tab categorie** in alto: "Tutti" + un tab per ogni categoria presente (auto-generati dagli articoli)
+  - Tab visibili solo se ci sono 2+ categorie
+  - In vista "Tutti": articoli raggruppati per categoria con header di sezione (nome verde + linea + conteggio)
+  - Articoli senza categoria finiscono in "Altro"
 - Lista articoli con quantità attuale/totale e indicatore colorato
 - Pulsanti rapidi −5/−1/+1/+5/+10 per aggiornamento veloce
 - Click sulla quantità per impostare valore esatto
