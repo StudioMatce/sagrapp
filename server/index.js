@@ -264,25 +264,26 @@ function broadcastDeviceStatus() {
 }
 
 // --- Avvio server ---
-// Carica prima i dati dal database PostgreSQL (Neon), poi avvia il server.
+// Il server apre la porta subito (così Railway trova il healthcheck /api/health).
+// L'inizializzazione del DB avviene in parallelo — pronta entro pochi secondi.
 // 0.0.0.0 necessario per Railway/Render (non solo localhost).
+server.listen(config.PORT, '0.0.0.0', () => {
+  console.log('');
+  console.log('  ==============================');
+  console.log('  SagrApp — Server');
+  console.log(`  Porta: ${config.PORT}`);
+  console.log(`  http://localhost:${config.PORT}`);
+  console.log('  ==============================');
+  console.log('');
+  console.log('  Pagine disponibili:');
+  console.log(`    Login (PIN):      http://localhost:${config.PORT}/`);
+  console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor  (accesso diretto)`);
+  console.log(`    PIN 0000 → Admin  PIN 0001 → Cassa  PIN 0002 → Operatore`);
+  console.log('');
+});
+
 initApi()
-  .then(() => {
-    server.listen(config.PORT, '0.0.0.0', () => {
-      console.log('');
-      console.log('  ==============================');
-      console.log('  SagrApp — Server');
-      console.log(`  Porta: ${config.PORT}`);
-      console.log(`  http://localhost:${config.PORT}`);
-      console.log('  ==============================');
-      console.log('');
-      console.log('  Pagine disponibili:');
-      console.log(`    Login (PIN):      http://localhost:${config.PORT}/`);
-      console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor  (accesso diretto)`);
-      console.log(`    PIN 0000 → Admin  PIN 0001 → Cassa  PIN 0002 → Operatore`);
-      console.log('');
-    });
-  })
+  .then(() => console.log('[Server] Database pronto — app operativa'))
   .catch(err => {
     console.error('[Init] Errore inizializzazione database:', err.message);
     console.error('Assicurati che DATABASE_URL sia impostata correttamente.');
