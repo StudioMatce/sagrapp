@@ -5,11 +5,14 @@
 
 const { Pool } = require('pg');
 
-// Pool di connessioni — riutilizza le connessioni per performance.
-// La connection string viene dalla variabile d'ambiente DATABASE_URL.
+// Rimuove sslmode dall'URL per evitare il warning di pg-connection-string.
+// L'SSL è gestito esplicitamente tramite l'opzione ssl del Pool.
+const dbUrl = new URL(process.env.DATABASE_URL || '');
+dbUrl.searchParams.delete('sslmode');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Neon usa SSL con certificato self-signed
+  connectionString: dbUrl.toString(),
+  ssl: { rejectUnauthorized: false }, // Neon usa SSL con certificato CA valido
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
