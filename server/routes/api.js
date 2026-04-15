@@ -81,8 +81,8 @@ async function init() {
 
   // Sessioni admin — caricate dal DB per sopravvivere ai deploy
   await db.cleanExpiredAdminSessions();
-  const dbSessions = await db.loadAdminSessions();
-  dbSessions.forEach(s => adminSessions.set(s.token, {
+  const dbAdminSessions = await db.loadAdminSessions();
+  dbAdminSessions.forEach(s => adminSessions.set(s.token, {
     role: s.role, created: Number(s.created), expires: Number(s.expires),
   }));
 
