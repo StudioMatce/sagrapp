@@ -5,12 +5,12 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 
 ## Stack
 - **Backend:** Node.js + Express + Socket.IO
-- **Database:** In-memory (migrazione a SQLite via better-sqlite3 in corso)
+- **Database:** PostgreSQL su Neon (cloud) via libreria `pg` (node-postgres). Connection string in `DATABASE_URL` (`.env` in locale, variabile Railway in produzione)
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
 - **Accesso:** Login unificato con PIN (config.js → PINS). Sidebar solo per admin
 - **Navigazione:** Sidebar (js/sidebar.js) solo pagine admin. Pulsante "Esci" su pagine non-admin
-- **Deploy:** VPS con PM2 (attualmente test su localhost:3000)
+- **Deploy:** Railway (con variabile d'ambiente DATABASE_URL impostata nel progetto)
 
 ## Struttura file
 ```
@@ -19,6 +19,7 @@ server/
   config.js         # Menu (42 piatti), stampanti, configurazione
   routes/api.js     # API REST + logica ordini/stampa/inventario/omaggi/sconti
   services/printer.js  # Generazione comandi ESC/POS (ricevuta, comande, speciali)
+  db.js               # Layer database PostgreSQL (Neon) — tutte le funzioni sono async
 
 print-proxy/
   index.js          # Proxy locale che inoltra stampe alle stampanti LAN

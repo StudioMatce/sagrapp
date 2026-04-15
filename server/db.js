@@ -1,202 +1,158 @@
-// Database SQLite per persistenza dati tra riavvii del server.
-// Usa better-sqlite3 (sincrono, veloce, perfetto per server singolo).
+// Database PostgreSQL (Neon) per persistenza dati tra riavvii del server.
+// Usa pg (node-postgres) con Pool di connessioni.
 // Strategia: write-through cache — i dati restano in memoria per velocità,
 // ma ogni modifica viene scritta anche su DB per persistenza.
 
-const Database = require('better-sqlite3');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-// Crea la cartella data/ se non esiste (es. primo deploy su Railway)
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+// Pool di connessioni — riutilizza le connessioni per performance.
+// La connection string viene dalla variabile d'ambiente DATABASE_URL.
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // Neon usa SSL con certificato self-signed
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
 
-const DB_PATH = path.join(DATA_DIR, 'sagrapp.db');
-const db = new Database(DB_PATH);
-
-// WAL mode: più veloce per letture concorrenti e crash-safe
-db.pragma('journal_mode = WAL');
-
-// =============================================
-// CREAZIONE TABELLE
-// =============================================
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS meta (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS orders (
-    id             INTEGER PRIMARY KEY,
-    table_num      INTEGER NOT NULL,
-    items          TEXT NOT NULL,
-    subtotal       REAL NOT NULL DEFAULT 0,
-    total          REAL NOT NULL DEFAULT 0,
-    discount       REAL NOT NULL DEFAULT 0,
-    discount_type  TEXT,
-    discount_value REAL NOT NULL DEFAULT 0,
-    courtesy_type  TEXT,
-    customer_name  TEXT,
-    cassa          TEXT NOT NULL DEFAULT 'principale',
-    coperti        INTEGER NOT NULL DEFAULT 0,
-    asporto        INTEGER NOT NULL DEFAULT 0,
-    payment        TEXT NOT NULL DEFAULT 'contanti',
-    status         TEXT NOT NULL DEFAULT 'in_progress',
-    created_at     INTEGER NOT NULL,
-    completed_at   INTEGER,
-    cancelled_at   INTEGER
-  );
-
-  CREATE TABLE IF NOT EXISTS counters (
-    item     TEXT PRIMARY KEY,
-    pronto   INTEGER NOT NULL DEFAULT 0,
-    vendute  INTEGER NOT NULL DEFAULT 0,
-    evasi    INTEGER NOT NULL DEFAULT 0
-  );
-
-  CREATE TABLE IF NOT EXISTS inventory (
-    id              TEXT PRIMARY KEY,
-    name            TEXT NOT NULL,
-    station         TEXT NOT NULL,
-    price           REAL NOT NULL,
-    category        TEXT NOT NULL,
-    stock           INTEGER NOT NULL DEFAULT 999,
-    initial_stock   INTEGER NOT NULL DEFAULT 999,
-    alert_threshold INTEGER NOT NULL DEFAULT 20,
-    status          TEXT NOT NULL DEFAULT 'available'
-  );
-
-  CREATE TABLE IF NOT EXISTS archived_sessions (
-    id        TEXT PRIMARY KEY,
-    date      TEXT NOT NULL,
-    closed_at INTEGER NOT NULL,
-    recap     TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS inventory_presets (
-    name     TEXT PRIMARY KEY,
-    stocks   TEXT NOT NULL,
-    saved_at INTEGER NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS warehouse (
-    id              TEXT PRIMARY KEY,
-    name            TEXT NOT NULL,
-    quantity        INTEGER NOT NULL DEFAULT 0,
-    total           INTEGER NOT NULL DEFAULT 0,
-    alert_threshold INTEGER,
-    created_at      INTEGER NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS menu_items (
-    id              TEXT PRIMARY KEY,
-    name            TEXT NOT NULL,
-    price           REAL NOT NULL,
-    category        TEXT NOT NULL,
-    station         TEXT NOT NULL,
-    print_to        TEXT NOT NULL DEFAULT '["cibo"]',
-    composition     TEXT,
-    special         INTEGER NOT NULL DEFAULT 0,
-    available_date  TEXT,
-    initial_stock   INTEGER NOT NULL DEFAULT 100,
-    alert_threshold INTEGER NOT NULL DEFAULT 10,
-    available       INTEGER NOT NULL DEFAULT 1,
-    casses          TEXT NOT NULL DEFAULT '["cassa_generale"]'
-  );
-`);
+// Log degli errori di connessione inattese (quando il pool è idle)
+pool.on('error', (err) => {
+  console.error('[DB] Errore pool PostgreSQL:', err.message);
+});
 
 // =============================================
-// PREPARED STATEMENTS (riusati per performance)
+// CREAZIONE TABELLE (idempotente — IF NOT EXISTS)
 // =============================================
 
-// --- Meta ---
-const stmtGetMeta = db.prepare('SELECT value FROM meta WHERE key = ?');
-const stmtSetMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+async function createTables() {
+  // Eseguiamo le CREATE TABLE separatamente per compatibilità con pg
+  const queries = [
+    `CREATE TABLE IF NOT EXISTS meta (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )`,
 
-// --- Orders ---
-const stmtInsertOrder = db.prepare(`
-  INSERT INTO orders (id, table_num, items, subtotal, total, discount, discount_type,
-    discount_value, courtesy_type, customer_name, cassa, coperti, asporto, payment,
-    status, created_at, completed_at, cancelled_at)
-  VALUES (@id, @table_num, @items, @subtotal, @total, @discount, @discount_type,
-    @discount_value, @courtesy_type, @customer_name, @cassa, @coperti, @asporto, @payment,
-    @status, @created_at, @completed_at, @cancelled_at)
-`);
-const stmtGetAllOrders = db.prepare('SELECT * FROM orders ORDER BY id ASC');
-const stmtUpdateOrderStatus = db.prepare('UPDATE orders SET status = ?, completed_at = ?, cancelled_at = ? WHERE id = ?');
-const stmtDeleteAllOrders = db.prepare('DELETE FROM orders');
+    `CREATE TABLE IF NOT EXISTS orders (
+      id             INTEGER PRIMARY KEY,
+      table_num      INTEGER NOT NULL,
+      items          TEXT NOT NULL,
+      subtotal       DOUBLE PRECISION NOT NULL DEFAULT 0,
+      total          DOUBLE PRECISION NOT NULL DEFAULT 0,
+      discount       DOUBLE PRECISION NOT NULL DEFAULT 0,
+      discount_type  TEXT,
+      discount_value DOUBLE PRECISION NOT NULL DEFAULT 0,
+      courtesy_type  TEXT,
+      customer_name  TEXT,
+      cassa          TEXT NOT NULL DEFAULT 'principale',
+      coperti        INTEGER NOT NULL DEFAULT 0,
+      asporto        INTEGER NOT NULL DEFAULT 0,
+      payment        TEXT NOT NULL DEFAULT 'contanti',
+      status         TEXT NOT NULL DEFAULT 'in_progress',
+      created_at     BIGINT NOT NULL,
+      completed_at   BIGINT,
+      cancelled_at   BIGINT
+    )`,
 
-// --- Counters ---
-const stmtGetCounters = db.prepare('SELECT * FROM counters');
-const stmtUpsertCounter = db.prepare('INSERT OR REPLACE INTO counters (item, pronto, vendute, evasi) VALUES (?, ?, ?, ?)');
-const stmtResetCounters = db.prepare('UPDATE counters SET pronto = 0, vendute = 0, evasi = 0');
+    `CREATE TABLE IF NOT EXISTS counters (
+      item    TEXT PRIMARY KEY,
+      pronto  INTEGER NOT NULL DEFAULT 0,
+      vendute INTEGER NOT NULL DEFAULT 0,
+      evasi   INTEGER NOT NULL DEFAULT 0
+    )`,
 
-// --- Inventory ---
-const stmtGetInventory = db.prepare('SELECT * FROM inventory');
-const stmtUpsertInventory = db.prepare(`
-  INSERT OR REPLACE INTO inventory (id, name, station, price, category, stock, initial_stock, alert_threshold, status)
-  VALUES (@id, @name, @station, @price, @category, @stock, @initial_stock, @alert_threshold, @status)
-`);
-const stmtUpdateInventoryStock = db.prepare('UPDATE inventory SET stock = ?, status = ? WHERE id = ?');
-const stmtDeleteInventoryItem = db.prepare('DELETE FROM inventory WHERE id = ?');
+    `CREATE TABLE IF NOT EXISTS inventory (
+      id              TEXT PRIMARY KEY,
+      name            TEXT NOT NULL,
+      station         TEXT NOT NULL,
+      price           DOUBLE PRECISION NOT NULL,
+      category        TEXT NOT NULL,
+      stock           INTEGER NOT NULL DEFAULT 999,
+      initial_stock   INTEGER NOT NULL DEFAULT 999,
+      alert_threshold INTEGER NOT NULL DEFAULT 20,
+      status          TEXT NOT NULL DEFAULT 'available'
+    )`,
 
-// --- Archived Sessions ---
-const stmtGetSessions = db.prepare('SELECT * FROM archived_sessions ORDER BY closed_at DESC');
-const stmtGetSessionByDate = db.prepare('SELECT * FROM archived_sessions WHERE date = ?');
-const stmtInsertSession = db.prepare('INSERT INTO archived_sessions (id, date, closed_at, recap) VALUES (?, ?, ?, ?)');
-const stmtUpdateSession = db.prepare('UPDATE archived_sessions SET closed_at = ?, recap = ? WHERE id = ?');
+    `CREATE TABLE IF NOT EXISTS archived_sessions (
+      id        TEXT PRIMARY KEY,
+      date      TEXT NOT NULL,
+      closed_at BIGINT NOT NULL,
+      recap     TEXT NOT NULL
+    )`,
 
-// --- Inventory Presets ---
-const stmtGetPresets = db.prepare('SELECT * FROM inventory_presets');
-const stmtUpsertPreset = db.prepare('INSERT OR REPLACE INTO inventory_presets (name, stocks, saved_at) VALUES (?, ?, ?)');
-const stmtDeletePreset = db.prepare('DELETE FROM inventory_presets WHERE name = ?');
+    `CREATE TABLE IF NOT EXISTS inventory_presets (
+      name     TEXT PRIMARY KEY,
+      stocks   TEXT NOT NULL,
+      saved_at BIGINT NOT NULL
+    )`,
 
-// --- Menu Items (persistenza menu piatti) ---
-const stmtGetMenuItems = db.prepare('SELECT * FROM menu_items ORDER BY rowid ASC');
-const stmtUpsertMenuItem = db.prepare(`
-  INSERT OR REPLACE INTO menu_items (id, name, price, category, station, print_to,
-    composition, special, available_date, initial_stock, alert_threshold, available, casses)
-  VALUES (@id, @name, @price, @category, @station, @print_to,
-    @composition, @special, @available_date, @initial_stock, @alert_threshold, @available, @casses)
-`);
-const stmtDeleteMenuItem = db.prepare('DELETE FROM menu_items WHERE id = ?');
+    // category e updated_at aggiunti rispetto alla versione SQLite
+    `CREATE TABLE IF NOT EXISTS warehouse (
+      id              TEXT PRIMARY KEY,
+      name            TEXT NOT NULL,
+      quantity        INTEGER NOT NULL DEFAULT 0,
+      total           INTEGER NOT NULL DEFAULT 0,
+      alert_threshold INTEGER,
+      category        TEXT,
+      created_at      BIGINT NOT NULL,
+      updated_at      BIGINT
+    )`,
 
-// --- Warehouse (materiali e consumabili) ---
-const stmtGetWarehouse = db.prepare('SELECT * FROM warehouse ORDER BY name ASC');
-const stmtUpsertWarehouse = db.prepare(`
-  INSERT OR REPLACE INTO warehouse (id, name, quantity, total, alert_threshold, created_at)
-  VALUES (@id, @name, @quantity, @total, @alert_threshold, @created_at)
-`);
-const stmtUpdateWarehouseQty = db.prepare('UPDATE warehouse SET quantity = ? WHERE id = ?');
-const stmtDeleteWarehouse = db.prepare('DELETE FROM warehouse WHERE id = ?');
+    // sort_order SERIAL preserva l'ordine di inserimento (PostgreSQL non garantisce ordine senza ORDER BY)
+    `CREATE TABLE IF NOT EXISTS menu_items (
+      sort_order      SERIAL,
+      id              TEXT PRIMARY KEY,
+      name            TEXT NOT NULL,
+      price           DOUBLE PRECISION NOT NULL,
+      category        TEXT NOT NULL,
+      station         TEXT NOT NULL,
+      print_to        TEXT NOT NULL DEFAULT '["cibo"]',
+      composition     TEXT,
+      special         INTEGER NOT NULL DEFAULT 0,
+      available_date  TEXT,
+      initial_stock   INTEGER NOT NULL DEFAULT 100,
+      alert_threshold INTEGER NOT NULL DEFAULT 10,
+      available       INTEGER NOT NULL DEFAULT 1,
+      casses          TEXT NOT NULL DEFAULT '["cassa_generale"]'
+    )`,
+  ];
+
+  for (const q of queries) {
+    await pool.query(q);
+  }
+}
 
 // =============================================
-// FUNZIONI HELPER ESPORTATE
+// FUNZIONI HELPER ESPORTATE (tutte async — restituiscono Promise)
 // =============================================
 
 // --- Meta / orderCounter ---
-function getOrderCounter() {
-  const row = stmtGetMeta.get('orderCounter');
-  return row ? parseInt(row.value, 10) : 0;
+
+async function getOrderCounter() {
+  const { rows } = await pool.query('SELECT value FROM meta WHERE key = $1', ['orderCounter']);
+  return rows.length > 0 ? parseInt(rows[0].value, 10) : 0;
 }
 
-function setOrderCounter(n) {
-  stmtSetMeta.run('orderCounter', String(n));
+async function setOrderCounter(n) {
+  await pool.query(
+    `INSERT INTO meta (key, value) VALUES ($1, $2)
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    ['orderCounter', String(n)]
+  );
 }
 
 // --- Orders ---
+
 // Converte una riga DB nel formato usato in memoria da api.js
 function rowToOrder(row) {
   return {
     id: row.id,
     table: row.table_num,
     items: JSON.parse(row.items),
-    subtotal: row.subtotal,
-    total: row.total,
-    discount: row.discount,
+    subtotal: parseFloat(row.subtotal),
+    total: parseFloat(row.total),
+    discount: parseFloat(row.discount),
     discount_type: row.discount_type,
-    discount_value: row.discount_value,
+    discount_value: parseFloat(row.discount_value),
     courtesy_type: row.courtesy_type,
     customer_name: row.customer_name,
     cassa: row.cassa,
@@ -204,168 +160,203 @@ function rowToOrder(row) {
     asporto: !!row.asporto,
     payment: row.payment,
     status: row.status,
-    created_at: row.created_at,
-    completed_at: row.completed_at,
-    cancelled_at: row.cancelled_at,
+    created_at: parseInt(row.created_at),
+    completed_at: row.completed_at ? parseInt(row.completed_at) : null,
+    cancelled_at: row.cancelled_at ? parseInt(row.cancelled_at) : null,
   };
 }
 
-function getAllOrders() {
-  return stmtGetAllOrders.all().map(rowToOrder);
+async function getAllOrders() {
+  const { rows } = await pool.query('SELECT * FROM orders ORDER BY id ASC');
+  return rows.map(rowToOrder);
 }
 
-function insertOrder(order) {
-  stmtInsertOrder.run({
-    id: order.id,
-    table_num: order.table,
-    items: JSON.stringify(order.items),
-    subtotal: order.subtotal || 0,
-    total: order.total,
-    discount: order.discount || 0,
-    discount_type: order.discount_type || null,
-    discount_value: order.discount_value || 0,
-    courtesy_type: order.courtesy_type || null,
-    customer_name: order.customer_name || null,
-    cassa: order.cassa || 'principale',
-    coperti: order.coperti || 0,
-    asporto: order.asporto ? 1 : 0,
-    payment: order.payment || 'contanti',
-    status: order.status || 'in_progress',
-    created_at: order.created_at,
-    completed_at: order.completed_at || null,
-    cancelled_at: order.cancelled_at || null,
-  });
+async function insertOrder(order) {
+  await pool.query(
+    `INSERT INTO orders (id, table_num, items, subtotal, total, discount, discount_type,
+       discount_value, courtesy_type, customer_name, cassa, coperti, asporto, payment,
+       status, created_at, completed_at, cancelled_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+    [
+      order.id, order.table, JSON.stringify(order.items),
+      order.subtotal || 0, order.total, order.discount || 0,
+      order.discount_type || null, order.discount_value || 0,
+      order.courtesy_type || null, order.customer_name || null,
+      order.cassa || 'principale', order.coperti || 0,
+      order.asporto ? 1 : 0, order.payment || 'contanti',
+      order.status || 'in_progress', order.created_at,
+      order.completed_at || null, order.cancelled_at || null,
+    ]
+  );
 }
 
-function updateOrderStatus(id, status, completedAt, cancelledAt) {
-  stmtUpdateOrderStatus.run(status, completedAt || null, cancelledAt || null, id);
+async function updateOrderStatus(id, status, completedAt, cancelledAt) {
+  await pool.query(
+    'UPDATE orders SET status = $1, completed_at = $2, cancelled_at = $3 WHERE id = $4',
+    [status, completedAt || null, cancelledAt || null, id]
+  );
 }
 
-function deleteAllOrders() {
-  stmtDeleteAllOrders.run();
+async function deleteAllOrders() {
+  await pool.query('DELETE FROM orders');
 }
 
 // --- Counters ---
-function getCounters() {
+
+async function getCounters() {
+  const { rows } = await pool.query('SELECT * FROM counters');
   const result = {};
-  stmtGetCounters.all().forEach(row => {
+  rows.forEach(row => {
     result[row.item] = { pronto: row.pronto, vendute: row.vendute, evasi: row.evasi };
   });
   return result;
 }
 
-function saveCounter(item, data) {
-  stmtUpsertCounter.run(item, data.pronto, data.vendute, data.evasi);
+async function saveCounter(item, data) {
+  await pool.query(
+    `INSERT INTO counters (item, pronto, vendute, evasi) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (item) DO UPDATE SET
+       pronto = EXCLUDED.pronto, vendute = EXCLUDED.vendute, evasi = EXCLUDED.evasi`,
+    [item, data.pronto, data.vendute, data.evasi]
+  );
 }
 
 // Inizializza i contatori se non esistono ancora nel DB
-function seedCounters(monitorItems) {
-  const existing = getCounters();
-  monitorItems.forEach(item => {
-    if (!existing[item]) {
-      stmtUpsertCounter.run(item, 0, 0, 0);
-    }
-  });
+async function seedCounters(monitorItems) {
+  for (const item of monitorItems) {
+    await pool.query(
+      `INSERT INTO counters (item, pronto, vendute, evasi) VALUES ($1, 0, 0, 0)
+       ON CONFLICT (item) DO NOTHING`,
+      [item]
+    );
+  }
 }
 
-function resetCounters() {
-  stmtResetCounters.run();
+async function resetCounters() {
+  await pool.query('UPDATE counters SET pronto = 0, vendute = 0, evasi = 0');
 }
 
-// --- Inventory ---
-function getInventory() {
+// --- Inventory (scorte piatti menu) ---
+
+async function getInventory() {
+  const { rows } = await pool.query('SELECT * FROM inventory');
   const result = {};
-  stmtGetInventory.all().forEach(row => {
-    result[row.id] = { ...row };
-  });
+  rows.forEach(row => { result[row.id] = { ...row }; });
   return result;
 }
 
-function saveInventoryItem(item) {
-  stmtUpsertInventory.run(item);
+async function saveInventoryItem(item) {
+  await pool.query(
+    `INSERT INTO inventory (id, name, station, price, category, stock, initial_stock, alert_threshold, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, station = EXCLUDED.station, price = EXCLUDED.price,
+       category = EXCLUDED.category, stock = EXCLUDED.stock,
+       initial_stock = EXCLUDED.initial_stock, alert_threshold = EXCLUDED.alert_threshold,
+       status = EXCLUDED.status`,
+    [
+      item.id, item.name, item.station, item.price, item.category,
+      item.stock, item.initial_stock, item.alert_threshold, item.status,
+    ]
+  );
 }
 
-function updateInventoryStock(id, stock, status) {
-  stmtUpdateInventoryStock.run(stock, status, id);
+async function updateInventoryStock(id, stock, status) {
+  await pool.query(
+    'UPDATE inventory SET stock = $1, status = $2 WHERE id = $3',
+    [stock, status, id]
+  );
 }
 
-function deleteInventoryItem(id) {
-  stmtDeleteInventoryItem.run(id);
+async function deleteInventoryItem(id) {
+  await pool.query('DELETE FROM inventory WHERE id = $1', [id]);
 }
 
 // Inizializza l'inventario dal menu di config.js se il DB è vuoto o ha piatti nuovi
-function seedInventory(menuItems) {
-  const existing = getInventory();
-  menuItems.forEach(item => {
-    if (!existing[item.id]) {
-      stmtUpsertInventory.run({
-        id: item.id,
-        name: item.name,
-        station: item.station,
-        price: item.price,
-        category: item.category,
-        stock: item.initial_stock || 999,
-        initial_stock: item.initial_stock || 999,
-        alert_threshold: item.alert_threshold || 20,
-        status: 'available',
-      });
-    }
-  });
+async function seedInventory(menuItems) {
+  for (const item of menuItems) {
+    await pool.query(
+      `INSERT INTO inventory (id, name, station, price, category, stock, initial_stock, alert_threshold, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        item.id, item.name, item.station, item.price, item.category,
+        item.initial_stock || 999, item.initial_stock || 999,
+        item.alert_threshold || 20, 'available',
+      ]
+    );
+  }
 }
 
 // --- Archived Sessions ---
-function getArchivedSessions() {
-  return stmtGetSessions.all().map(row => ({
+
+async function getArchivedSessions() {
+  const { rows } = await pool.query('SELECT * FROM archived_sessions ORDER BY closed_at DESC');
+  return rows.map(row => ({
     id: row.id,
     date: row.date,
-    closed_at: row.closed_at,
+    closed_at: parseInt(row.closed_at),
     recap: JSON.parse(row.recap),
   }));
 }
 
-function getArchivedSessionByDate(date) {
-  const row = stmtGetSessionByDate.get(date);
-  if (!row) return null;
+async function getArchivedSessionByDate(date) {
+  const { rows } = await pool.query('SELECT * FROM archived_sessions WHERE date = $1', [date]);
+  if (rows.length === 0) return null;
+  const row = rows[0];
   return {
     id: row.id,
     date: row.date,
-    closed_at: row.closed_at,
+    closed_at: parseInt(row.closed_at),
     recap: JSON.parse(row.recap),
   };
 }
 
-function insertArchivedSession(session) {
-  stmtInsertSession.run(session.id, session.date, session.closed_at, JSON.stringify(session.recap));
+async function insertArchivedSession(session) {
+  await pool.query(
+    'INSERT INTO archived_sessions (id, date, closed_at, recap) VALUES ($1, $2, $3, $4)',
+    [session.id, session.date, session.closed_at, JSON.stringify(session.recap)]
+  );
 }
 
-function updateArchivedSession(id, closedAt, recap) {
-  stmtUpdateSession.run(closedAt, JSON.stringify(recap), id);
+async function updateArchivedSession(id, closedAt, recap) {
+  await pool.query(
+    'UPDATE archived_sessions SET closed_at = $1, recap = $2 WHERE id = $3',
+    [closedAt, JSON.stringify(recap), id]
+  );
 }
 
 // --- Inventory Presets ---
-function getPresets() {
+
+async function getPresets() {
+  const { rows } = await pool.query('SELECT * FROM inventory_presets');
   const result = {};
-  stmtGetPresets.all().forEach(row => {
-    result[row.name] = { name: row.name, stocks: JSON.parse(row.stocks), saved_at: row.saved_at };
+  rows.forEach(row => {
+    result[row.name] = { name: row.name, stocks: JSON.parse(row.stocks), saved_at: parseInt(row.saved_at) };
   });
   return result;
 }
 
-function savePreset(name, stocks, savedAt) {
-  stmtUpsertPreset.run(name, JSON.stringify(stocks), savedAt);
+async function savePreset(name, stocks, savedAt) {
+  await pool.query(
+    `INSERT INTO inventory_presets (name, stocks, saved_at) VALUES ($1, $2, $3)
+     ON CONFLICT (name) DO UPDATE SET stocks = EXCLUDED.stocks, saved_at = EXCLUDED.saved_at`,
+    [name, JSON.stringify(stocks), savedAt]
+  );
 }
 
-function deletePreset(name) {
-  stmtDeletePreset.run(name);
+async function deletePreset(name) {
+  await pool.query('DELETE FROM inventory_presets WHERE name = $1', [name]);
 }
 
 // --- Menu Items ---
+
 // Converte una riga DB nel formato usato in memoria (JSON parse dei campi serializzati)
 function dbRowToMenuItem(row) {
   const item = {
     id: row.id,
     name: row.name,
-    price: row.price,
+    price: parseFloat(row.price),
     category: row.category,
     station: row.station,
     print_to: JSON.parse(row.print_to),
@@ -380,51 +371,87 @@ function dbRowToMenuItem(row) {
   return item;
 }
 
-function getMenuItems() {
-  return stmtGetMenuItems.all().map(dbRowToMenuItem);
+async function getMenuItems() {
+  // sort_order SERIAL preserva l'ordine di inserimento originale
+  const { rows } = await pool.query('SELECT * FROM menu_items ORDER BY sort_order ASC');
+  return rows.map(dbRowToMenuItem);
 }
 
-function saveMenuItem(item) {
-  stmtUpsertMenuItem.run({
-    id: item.id,
-    name: item.name,
-    price: item.price,
-    category: item.category,
-    station: item.station,
-    print_to: JSON.stringify(item.print_to || ['cibo']),
-    composition: item.composition ? JSON.stringify(item.composition) : null,
-    special: item.special ? 1 : 0,
-    available_date: item.available_date || null,
-    initial_stock: item.initial_stock || 100,
-    alert_threshold: item.alert_threshold || 10,
-    available: item.available !== false ? 1 : 0,
-    casses: JSON.stringify(item.casses || ['cassa_generale']),
-  });
+async function saveMenuItem(item) {
+  await pool.query(
+    `INSERT INTO menu_items (id, name, price, category, station, print_to,
+       composition, special, available_date, initial_stock, alert_threshold, available, casses)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, price = EXCLUDED.price, category = EXCLUDED.category,
+       station = EXCLUDED.station, print_to = EXCLUDED.print_to,
+       composition = EXCLUDED.composition, special = EXCLUDED.special,
+       available_date = EXCLUDED.available_date, initial_stock = EXCLUDED.initial_stock,
+       alert_threshold = EXCLUDED.alert_threshold, available = EXCLUDED.available,
+       casses = EXCLUDED.casses`,
+    [
+      item.id, item.name, item.price, item.category, item.station,
+      JSON.stringify(item.print_to || ['cibo']),
+      item.composition ? JSON.stringify(item.composition) : null,
+      item.special ? 1 : 0,
+      item.available_date || null,
+      item.initial_stock || 100,
+      item.alert_threshold || 10,
+      item.available !== false ? 1 : 0,
+      JSON.stringify(item.casses || ['cassa_generale']),
+    ]
+  );
 }
 
-function deleteMenuItem(id) {
-  stmtDeleteMenuItem.run(id);
+async function deleteMenuItem(id) {
+  await pool.query('DELETE FROM menu_items WHERE id = $1', [id]);
 }
 
-// --- Warehouse ---
-function getWarehouse() {
+// --- Warehouse (materiali e consumabili) ---
+
+async function getWarehouse() {
+  const { rows } = await pool.query('SELECT * FROM warehouse ORDER BY name ASC');
   const result = {};
-  stmtGetWarehouse.all().forEach(row => {
-    result[row.id] = { ...row };
+  rows.forEach(row => {
+    result[row.id] = {
+      id: row.id,
+      name: row.name,
+      quantity: row.quantity,
+      total: row.total,
+      alert_threshold: row.alert_threshold,
+      category: row.category,
+      created_at: parseInt(row.created_at),
+      updated_at: row.updated_at ? parseInt(row.updated_at) : null,
+    };
   });
   return result;
 }
 
-function saveWarehouseItem(item) {
-  stmtUpsertWarehouse.run(item);
+async function saveWarehouseItem(item) {
+  await pool.query(
+    `INSERT INTO warehouse (id, name, quantity, total, alert_threshold, category, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (id) DO UPDATE SET
+       name = EXCLUDED.name, quantity = EXCLUDED.quantity, total = EXCLUDED.total,
+       alert_threshold = EXCLUDED.alert_threshold, category = EXCLUDED.category,
+       updated_at = EXCLUDED.updated_at`,
+    [
+      item.id, item.name, item.quantity || 0, item.total || 0,
+      item.alert_threshold || null, item.category || null,
+      item.created_at, item.updated_at || null,
+    ]
+  );
 }
 
-function updateWarehouseQty(id, quantity) {
-  stmtUpdateWarehouseQty.run(quantity, id);
+async function updateWarehouseQty(id, quantity) {
+  await pool.query(
+    'UPDATE warehouse SET quantity = $1, updated_at = $2 WHERE id = $3',
+    [quantity, Date.now(), id]
+  );
 }
 
-function deleteWarehouseItem(id) {
-  stmtDeleteWarehouse.run(id);
+async function deleteWarehouseItem(id) {
+  await pool.query('DELETE FROM warehouse WHERE id = $1', [id]);
 }
 
 // =============================================
@@ -432,6 +459,7 @@ function deleteWarehouseItem(id) {
 // =============================================
 
 module.exports = {
+  createTables,
   // Meta
   getOrderCounter, setOrderCounter,
   // Orders

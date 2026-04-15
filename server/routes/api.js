@@ -6,58 +6,81 @@ const db = require('../db');
 
 const router = express.Router();
 
-// --- Stato in-memory con persistenza SQLite (write-through cache) ---
+// --- Stato in-memory con persistenza PostgreSQL (write-through cache) ---
 // I dati restano in memoria per velocità. Ogni modifica viene scritta anche su DB.
-// Al riavvio, i dati vengono caricati dal DB.
+// Al riavvio, i dati vengono caricati dal DB tramite init() (chiamata da server/index.js).
 
-// Menu piatti — caricato da DB, seed da config.js se primo avvio
-const dbMenu = db.getMenuItems();
-if (dbMenu.length > 0) {
-  // DB ha gia' il menu (con tutte le modifiche fatte via admin) — lo usa
-  config.MENU.length = 0;
-  dbMenu.forEach(item => config.MENU.push(item));
-  console.log(`[Menu] Caricati ${dbMenu.length} piatti dal database`);
-} else {
-  // Primo avvio: seed da config.js → salva nel DB
-  config.MENU.forEach(item => {
-    if (item.available === undefined) item.available = true;
-    if (!item.casses) {
-      item.casses = item.category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale'];
+// Dichiarazione variabili — tutte popolate da init() prima che il server inizi ad accettare richieste
+let counters = {};
+let inventory = {};
+let orders = [];
+let orderCounter = 0;
+let archivedSessions = [];
+let inventoryPresets = {};
+let warehouse = {};
+
+// Inizializza tutti i dati in memoria dal database PostgreSQL.
+// Chiamata da server/index.js con await prima di server.listen().
+async function init() {
+  await db.createTables();
+  console.log('[DB] Tabelle PostgreSQL pronte');
+
+  // Carica il menu dal DB; se vuoto, fa seed da config.js (primo avvio)
+  const dbMenu = await db.getMenuItems();
+  if (dbMenu.length > 0) {
+    config.MENU.length = 0;
+    dbMenu.forEach(item => config.MENU.push(item));
+    console.log(`[Menu] Caricati ${dbMenu.length} piatti dal database`);
+  } else {
+    for (const item of config.MENU) {
+      if (item.available === undefined) item.available = true;
+      if (!item.casses) item.casses = item.category === 'bevanda' ? ['cassa_bar'] : ['cassa_generale'];
+      await db.saveMenuItem(item);
     }
-    db.saveMenuItem(item);
-  });
-  console.log(`[Menu] Primo avvio — salvati ${config.MENU.length} piatti da config.js nel database`);
-}
-
-// Contatori monitor cuochi — caricati da DB, seed se primo avvio
-db.seedCounters(config.MONITOR_ITEMS);
-const counters = db.getCounters();
-// Assicura che tutti gli item di config siano presenti in memoria
-config.MONITOR_ITEMS.forEach(item => {
-  if (!counters[item]) counters[item] = { pronto: 0, vendute: 0, evasi: 0 };
-});
-
-// Inventario / scorte — caricato da DB, seed piatti nuovi dal menu
-db.seedInventory(config.MENU);
-const inventory = db.getInventory();
-// Assicura che tutti i piatti del menu siano in inventario
-config.MENU.forEach(item => {
-  if (!inventory[item.id]) {
-    inventory[item.id] = {
-      id: item.id, name: item.name, station: item.station, price: item.price,
-      category: item.category, stock: item.initial_stock || 999,
-      initial_stock: item.initial_stock || 999, alert_threshold: item.alert_threshold || 20,
-      status: 'available',
-    };
+    console.log(`[Menu] Primo avvio — salvati ${config.MENU.length} piatti da config.js nel database`);
   }
-});
 
-// Ordini — caricati da DB
-const orders = db.getAllOrders();
-let orderCounter = db.getOrderCounter();
+  // Contatori monitor cuochi
+  await db.seedCounters(config.MONITOR_ITEMS);
+  const dbCounters = await db.getCounters();
+  config.MONITOR_ITEMS.forEach(item => {
+    counters[item] = dbCounters[item] || { pronto: 0, vendute: 0, evasi: 0 };
+  });
 
-// Archivio serate chiuse — caricato da DB
-const archivedSessions = db.getArchivedSessions();
+  // Inventario / scorte
+  await db.seedInventory(config.MENU);
+  const dbInventory = await db.getInventory();
+  Object.assign(inventory, dbInventory);
+  config.MENU.forEach(item => {
+    if (!inventory[item.id]) {
+      inventory[item.id] = {
+        id: item.id, name: item.name, station: item.station, price: item.price,
+        category: item.category, stock: item.initial_stock || 999,
+        initial_stock: item.initial_stock || 999, alert_threshold: item.alert_threshold || 20,
+        status: 'available',
+      };
+    }
+  });
+
+  // Ordini e contatore
+  const dbOrders = await db.getAllOrders();
+  orders.push(...dbOrders);
+  orderCounter = await db.getOrderCounter();
+
+  // Archivio serate chiuse
+  const dbSessions = await db.getArchivedSessions();
+  archivedSessions.push(...dbSessions);
+
+  // Preset scorte
+  const dbPresets = await db.getPresets();
+  Object.assign(inventoryPresets, dbPresets);
+
+  // Magazzino materiali
+  const dbWarehouse = await db.getWarehouse();
+  Object.assign(warehouse, dbWarehouse);
+
+  console.log(`[Init] DB caricato: ${orders.length} ordini, ${config.MENU.length} piatti, ${Object.keys(inventory).length} scorte`);
+}
 
 // Sessioni admin attive
 const adminSessions = new Map();
@@ -156,8 +179,8 @@ function updateInventoryStatus(itemId) {
     item.status = 'available';
   }
 
-  // Persiste su DB
-  db.updateInventoryStock(itemId, item.stock, item.status);
+  // Persiste su DB (fire-and-forget — lo stato in memoria è già aggiornato)
+  db.updateInventoryStock(itemId, item.stock, item.status).catch(err => console.error('[DB] updateInventoryStock:', err));
 
   if (io) {
     io.emit('inventory_updated', {
@@ -228,7 +251,7 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
     menuItem.initial_stock = parseInt(initial_stock);
     if (inventory[menuItem.id]) {
       inventory[menuItem.id].initial_stock = menuItem.initial_stock;
-      db.saveInventoryItem(inventory[menuItem.id]);
+      db.saveInventoryItem(inventory[menuItem.id]).catch(err => console.error('[DB] saveInventoryItem:', err));
     }
   }
   if (alert_threshold !== undefined) {
@@ -239,8 +262,8 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
     }
   }
 
-  // Persisti su SQLite (write-through)
-  db.saveMenuItem(menuItem);
+  // Persisti su DB (write-through)
+  db.saveMenuItem(menuItem).catch(err => console.error('[DB] saveMenuItem:', err));
 
   // Notifica le casse in tempo reale
   if (io) io.emit('menu_updated', { item: menuItem });
@@ -282,9 +305,9 @@ router.post('/menu', requireAdmin, (req, res) => {
     if (available_date) newItem.available_date = available_date;
   }
 
-  // Aggiungi al menu, persisti su SQLite e aggiorna inventario
+  // Aggiungi al menu, persisti su DB e aggiorna inventario
   config.MENU.push(newItem);
-  db.saveMenuItem(newItem);
+  db.saveMenuItem(newItem).catch(err => console.error('[DB] saveMenuItem:', err));
   inventory[id] = {
     id, name: newItem.name, station, price: newItem.price, category,
     stock: newItem.initial_stock, initial_stock: newItem.initial_stock,
@@ -304,7 +327,7 @@ router.delete('/menu/:id', requireAdmin, (req, res) => {
   }
 
   const removed = config.MENU.splice(idx, 1)[0];
-  db.deleteMenuItem(req.params.id);
+  db.deleteMenuItem(req.params.id).catch(err => console.error('[DB] deleteMenuItem:', err));
   delete inventory[req.params.id];
 
   if (io) io.emit('menu_updated', { item: removed, action: 'deleted' });
@@ -405,7 +428,7 @@ router.post('/orders/:id/cancel', (req, res) => {
   const wasFulfilled = order.status === 'completed';
   order.status = 'cancelled';
   order.cancelled_at = Date.now();
-  db.updateOrderStatus(order.id, 'cancelled', null, order.cancelled_at);
+  db.updateOrderStatus(order.id, 'cancelled', null, order.cancelled_at).catch(err => console.error('[DB] updateOrderStatus:', err));
 
   // Ripristina le scorte magazzino (come se l'ordine non fosse mai stato fatto)
   order.items.forEach(item => {
@@ -437,7 +460,7 @@ router.post('/orders/:id/cancel', (req, res) => {
 
   // Persiste contatori modificati su DB
   if (countersChanged) {
-    config.MONITOR_ITEMS.forEach(item => { if (counters[item]) db.saveCounter(item, counters[item]); });
+    config.MONITOR_ITEMS.forEach(item => { if (counters[item]) db.saveCounter(item, counters[item]).catch(err => console.error('[DB] saveCounter:', err)); });
   }
 
   if (io) {
@@ -497,7 +520,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 
   order.status = 'completed';
   order.completed_at = Date.now();
-  db.updateOrderStatus(order.id, 'completed', order.completed_at, null);
+  db.updateOrderStatus(order.id, 'completed', order.completed_at, null).catch(err => console.error('[DB] updateOrderStatus:', err));
 
   // Incrementa "evasi" — i pezzi escono dallo scaldavivande
   // Questo fa scendere "nello scaldavivande" (pronto - evasi) sul monitor
@@ -507,7 +530,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].evasi += count * item.qty;
-          db.saveCounter(piece, counters[piece]);
+          db.saveCounter(piece, counters[piece]).catch(err => console.error('[DB] saveCounter:', err));
         }
       }
     }
@@ -535,7 +558,7 @@ router.post('/orders', (req, res) => {
   }
 
   orderCounter++;
-  db.setOrderCounter(orderCounter);
+  db.setOrderCounter(orderCounter).catch(err => console.error('[DB] setOrderCounter:', err));
 
   // Costruisce l'ordine con info dal menu
   const items = [];
@@ -570,7 +593,7 @@ router.post('/orders', (req, res) => {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].vendute += count * q;
-          db.saveCounter(piece, counters[piece]);
+          db.saveCounter(piece, counters[piece]).catch(err => console.error('[DB] saveCounter:', err));
         }
       }
     }
@@ -625,7 +648,7 @@ router.post('/orders', (req, res) => {
   };
 
   orders.push(order);
-  db.insertOrder(order);
+  db.insertOrder(order).catch(err => console.error('[DB] insertOrder:', err));
 
   // Broadcast contatori aggiornati (vendute cambiate → da_cucinare cambia sul monitor)
   if (io) {
@@ -1138,9 +1161,6 @@ router.post('/inventory/reset', requireAdmin, (req, res) => {
 // INVENTARIO — PRESET (salva/carica configurazioni scorte)
 // =============================================
 
-// Preset caricati da DB
-const inventoryPresets = db.getPresets();
-
 // Salva preset: snapshot delle scorte attuali con un nome
 router.post('/inventory/presets', requireAdmin, (req, res) => {
   const { name } = req.body;
@@ -1155,7 +1175,7 @@ router.post('/inventory/presets', requireAdmin, (req, res) => {
 
   const savedAt = Date.now();
   inventoryPresets[name] = { name, stocks: snapshot, saved_at: savedAt };
-  db.savePreset(name, snapshot, savedAt);
+  db.savePreset(name, snapshot, savedAt).catch(err => console.error('[DB] savePreset:', err));
   res.json({ success: true, preset: inventoryPresets[name] });
 });
 
@@ -1191,7 +1211,7 @@ router.delete('/inventory/presets/:name', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Preset non trovato' });
   }
   delete inventoryPresets[req.params.name];
-  db.deletePreset(req.params.name);
+  db.deletePreset(req.params.name).catch(err => console.error('[DB] deletePreset:', err));
   res.json({ success: true });
 });
 
@@ -1199,8 +1219,6 @@ router.delete('/inventory/presets/:name', requireAdmin, (req, res) => {
 // MAGAZZINO MATERIALI — Inventario consumabili (bicchieri, posate, ecc.)
 // Nessun legame con menu o casse
 // =============================================
-
-const warehouse = db.getWarehouse();
 
 router.get('/warehouse', requireAdmin, (req, res) => {
   res.json(Object.values(warehouse));
@@ -1245,7 +1263,7 @@ router.post('/warehouse/import', requireAdmin, (req, res) => {
     item.alert_threshold = row.soglia_allarme !== undefined && row.soglia_allarme !== '' ? parseInt(row.soglia_allarme) : (item.alert_threshold || null);
     item.updated_at = Date.now();
     warehouse[id] = item;
-    db.saveWarehouseItem(item);
+    db.saveWarehouseItem(item).catch(err => console.error('[DB] saveWarehouseItem:', err));
     imported++;
   });
   if (io) io.emit('warehouse_updated', { action: 'bulk_import' });
@@ -1275,7 +1293,7 @@ router.post('/warehouse', requireAdmin, (req, res) => {
   };
 
   warehouse[id] = item;
-  db.saveWarehouseItem(item);
+  db.saveWarehouseItem(item).catch(err => console.error('[DB] saveWarehouseItem:', err));
 
   if (io) io.emit('warehouse_updated', { action: 'added', item });
   res.status(201).json(item);
@@ -1293,7 +1311,7 @@ router.put('/warehouse/:id', requireAdmin, (req, res) => {
   if (category !== undefined) item.category = category ? String(category).trim() : null;
   item.updated_at = Date.now();
 
-  db.saveWarehouseItem(item);
+  db.saveWarehouseItem(item).catch(err => console.error('[DB] saveWarehouseItem:', err));
   if (io) io.emit('warehouse_updated', { action: 'updated', item });
   res.json(item);
 });
@@ -1309,7 +1327,7 @@ router.post('/warehouse/:id/adjust', requireAdmin, (req, res) => {
 
   item.quantity = Math.max(0, item.quantity + parseInt(delta));
   item.updated_at = Date.now();
-  db.updateWarehouseQty(item.id, item.quantity);
+  db.updateWarehouseQty(item.id, item.quantity).catch(err => console.error('[DB] updateWarehouseQty:', err));
   if (io) io.emit('warehouse_updated', { action: 'adjusted', item });
   res.json(item);
 });
@@ -1320,7 +1338,7 @@ router.delete('/warehouse/:id', requireAdmin, (req, res) => {
   }
   const removed = warehouse[req.params.id];
   delete warehouse[req.params.id];
-  db.deleteWarehouseItem(req.params.id);
+  db.deleteWarehouseItem(req.params.id).catch(err => console.error('[DB] deleteWarehouseItem:', err));
   if (io) io.emit('warehouse_updated', { action: 'deleted', item: removed });
   res.json({ success: true });
 });
@@ -1344,7 +1362,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
     if (existing) {
       mergeRecap(existing.recap, recap);
       existing.closed_at = now.getTime();
-      db.updateArchivedSession(existing.id, existing.closed_at, existing.recap);
+      db.updateArchivedSession(existing.id, existing.closed_at, existing.recap).catch(err => console.error('[DB] updateArchivedSession:', err));
       console.log(`[Admin] Serata ${sessionDate} aggiornata (${existing.recap.totalOrders} ordini totali, €${existing.recap.totalRevenue.toFixed(2)})`);
     } else {
       const session = {
@@ -1354,7 +1372,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
         recap,
       };
       archivedSessions.push(session);
-      db.insertArchivedSession(session);
+      db.insertArchivedSession(session).catch(err => console.error('[DB] insertArchivedSession:', err));
       console.log(`[Admin] Serata ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
     }
   }
@@ -1362,8 +1380,8 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   // Azzera ordini
   orders.length = 0;
   orderCounter = 0;
-  db.deleteAllOrders();
-  db.setOrderCounter(0);
+  db.deleteAllOrders().catch(err => console.error('[DB] deleteAllOrders:', err));
+  db.setOrderCounter(0).catch(err => console.error('[DB] setOrderCounter:', err));
 
   // Azzera contatori monitor cuochi
   config.MONITOR_ITEMS.forEach(item => {
@@ -1371,7 +1389,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
     counters[item].vendute = 0;
     counters[item].evasi = 0;
   });
-  db.resetCounters();
+  db.resetCounters().catch(err => console.error('[DB] resetCounters:', err));
 
   // Resetta scorte ai valori iniziali
   config.MENU.forEach(menuItem => {
@@ -1379,7 +1397,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
     if (item) {
       item.stock = menuItem.initial_stock || 999;
       item.status = 'available';
-      db.updateInventoryStock(menuItem.id, item.stock, item.status);
+      db.updateInventoryStock(menuItem.id, item.stock, item.status).catch(err => console.error('[DB] updateInventoryStock:', err));
     }
   });
 
@@ -1398,7 +1416,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
 
 router.post('/orders/test', (req, res) => {
   orderCounter++;
-  db.setOrderCounter(orderCounter);
+  db.setOrderCounter(orderCounter).catch(err => console.error('[DB] setOrderCounter:', err));
 
   // Seleziona 1-3 piatti random dal menu (escluse bevande e condimenti per semplicità)
   const foodMenu = config.MENU.filter(i =>
@@ -1428,7 +1446,7 @@ router.post('/orders/test', (req, res) => {
       for (const [piece, count] of Object.entries(item.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].vendute += count * qty;
-          db.saveCounter(piece, counters[piece]);
+          db.saveCounter(piece, counters[piece]).catch(err => console.error('[DB] saveCounter:', err));
         }
       }
     }
@@ -1456,7 +1474,7 @@ router.post('/orders/test', (req, res) => {
   }
 
   orders.push(order);
-  db.insertOrder(order);
+  db.insertOrder(order).catch(err => console.error('[DB] insertOrder:', err));
 
   if (io) {
     io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
@@ -1469,11 +1487,11 @@ router.post('/orders/test', (req, res) => {
 
 // Funzione per persistere un contatore su DB (chiamata da index.js per lo scaldavivande)
 function persistCounter(item) {
-  if (counters[item]) db.saveCounter(item, counters[item]);
+  if (counters[item]) db.saveCounter(item, counters[item]).catch(err => console.error('[DB] saveCounter:', err));
 }
 
 module.exports = {
-  router, setIO, counters, inventory, orders,
+  router, setIO, init, counters, inventory, orders,
   setActiveProxyId: (id) => { activeProxyId = id; },
   flushPrintQueue,
   computeTotalCoperti,
