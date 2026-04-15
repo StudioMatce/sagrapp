@@ -796,6 +796,79 @@
       pointer-events: none;
     }
 
+    /* ===== CALCOLATRICE RESTO ===== */
+    .resto-block {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .resto-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .resto-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(240, 244, 248, 0.4);
+    }
+
+    .resto-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 5px 8px;
+      cursor: text;
+      transition: border-color 150ms ease;
+    }
+
+    .resto-input-wrap:focus-within {
+      border-color: rgba(78, 204, 163, 0.3);
+    }
+
+    .resto-euro {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .resto-input {
+      width: 58px;
+      background: none;
+      border: none;
+      outline: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #f0f4f8;
+      text-align: right;
+      -moz-appearance: textfield;
+    }
+
+    .resto-input::-webkit-outer-spin-button,
+    .resto-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .resto-input::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+    .dare-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 800;
+      color: #4ecca3;
+      transition: color 150ms ease;
+    }
+
+    .dare-value.zero { color: rgba(78, 204, 163, 0.2); }
+    .dare-value.negative { color: #e94560; }
+
     /* ===== FEEDBACK INLINE (sotto bottone ORDINA) ===== */
     .order-progress {
       width: 100%;
@@ -1140,13 +1213,13 @@
           <input type="text" id="nameInput" placeholder="opzionale" autocomplete="off">
         </div>
 
-        <!-- Tavolo -->
-        <div class="form-field flex-1" id="tableField">
+        <!-- Tavolo — clic sull'intera cella focalizza l'input -->
+        <div class="form-field flex-1" id="tableField" onclick="this.querySelector('input').focus()">
           <span class="field-label">Tav</span>
           <input type="number" id="tableInput" inputmode="numeric" min="1" max="99" placeholder="&mdash;">
         </div>
-        <!-- Coperti -->
-        <div class="form-field flex-1" id="copertiField">
+        <!-- Coperti — idem -->
+        <div class="form-field flex-1" id="copertiField" onclick="this.querySelector('input').focus()">
           <span class="field-label">Cop</span>
           <input type="number" id="copertiInput" inputmode="numeric" min="0" max="50" placeholder="&mdash;">
         </div>
@@ -1210,6 +1283,21 @@
           <div class="total-row grand-total">
             <span class="total-label">Da Pagare</span>
             <span class="total-value empty" id="grandTotal">&euro; 0,00</span>
+          </div>
+
+          <!-- Calcolatrice resto (nascosta con POS o senza articoli) -->
+          <div class="resto-block" id="restoBlock" style="display:none">
+            <div class="resto-row">
+              <span class="resto-label">Ricevuto</span>
+              <div class="resto-input-wrap" onclick="document.getElementById('ricevutoInput').focus()">
+                <span class="resto-euro">&euro;</span>
+                <input type="number" id="ricevutoInput" class="resto-input" inputmode="decimal" min="0" step="0.5" placeholder="0,00">
+              </div>
+            </div>
+            <div class="resto-row">
+              <span class="resto-label">Dare</span>
+              <span class="dare-value zero" id="dareValue">&euro; &mdash;</span>
+            </div>
           </div>
         </div>
         <button class="btn-order disabled" id="btnOrder" onclick="submitOrder()">ORDINA</button>
@@ -1291,6 +1379,7 @@
     let currentTab = 'cibo';
     let asportoActive = false;
     let posActive = false;
+    let currentTotal = 0; // Tiene traccia del totale finale per la calcolatrice resto
 
     // ===== GENERA HTML per una riga piatto =====
     function renderItemRow(itemId) {
@@ -1468,6 +1557,27 @@
     function togglePos() {
       posActive = !posActive;
       document.getElementById('posToggle').classList.toggle('active', posActive);
+      // Con POS non serve il resto
+      document.getElementById('restoBlock').style.display = (posActive || currentTotal === 0) ? 'none' : '';
+      if (!posActive) updateResto();
+    }
+
+    // ===== CALCOLATRICE RESTO =====
+    function updateResto() {
+      var ricevuto = parseFloat(document.getElementById('ricevutoInput').value) || 0;
+      var dare = ricevuto - currentTotal;
+      var dareEl = document.getElementById('dareValue');
+      if (ricevuto <= 0) {
+        dareEl.textContent = '\u20AC \u2014';
+        dareEl.className = 'dare-value zero';
+      } else if (dare < 0) {
+        // Manca — mostra in rosso quanto manca
+        dareEl.textContent = '-\u20AC ' + Math.abs(dare).toFixed(2).replace('.', ',');
+        dareEl.className = 'dare-value negative';
+      } else {
+        dareEl.textContent = '\u20AC ' + dare.toFixed(2).replace('.', ',');
+        dareEl.className = 'dare-value' + (dare === 0 ? ' zero' : '');
+      }
     }
 
     // ===== CALCOLA TOTALE CON SCONTO E OMAGGIO =====
@@ -1605,6 +1715,16 @@
       grandTotal.textContent = formatPrice(total);
       grandTotal.classList.toggle('empty', totalItems === 0);
       grandTotal.classList.toggle('courtesy', hasCourtesy);
+
+      // Aggiorna calcolatrice resto
+      currentTotal = total;
+      var restoBlock = document.getElementById('restoBlock');
+      if (totalItems > 0 && !posActive) {
+        restoBlock.style.display = '';
+        updateResto();
+      } else {
+        restoBlock.style.display = 'none';
+      }
 
       // Abilita/disabilita bottone ORDINA
       const tableValue = document.getElementById('tableInput').value;
@@ -1768,6 +1888,7 @@
       document.getElementById('copertiInput').value = '';
       document.getElementById('nameInput').value = '';
       document.getElementById('discountInput').value = '';
+      document.getElementById('ricevutoInput').value = '';
 
       // Reset flag omaggio
       if (activeCourtesy) {
@@ -1992,6 +2113,7 @@
     document.getElementById('copertiInput').addEventListener('input', updateOrderColumn);
     document.getElementById('nameInput').addEventListener('input', updateOrderColumn);
     document.getElementById('discountInput').addEventListener('input', updateOrderColumn);
+    document.getElementById('ricevutoInput').addEventListener('input', updateResto);
 
     // Init
     updateTabBadges();
