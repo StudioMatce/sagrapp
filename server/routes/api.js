@@ -79,7 +79,14 @@ async function init() {
   const dbWarehouse = await db.getWarehouse();
   Object.assign(warehouse, dbWarehouse);
 
-  console.log(`[Init] DB caricato: ${orders.length} ordini, ${config.MENU.length} piatti, ${Object.keys(inventory).length} scorte`);
+  // Sessioni admin — caricate dal DB per sopravvivere ai deploy
+  await db.cleanExpiredAdminSessions();
+  const dbSessions = await db.loadAdminSessions();
+  dbSessions.forEach(s => adminSessions.set(s.token, {
+    role: s.role, created: Number(s.created), expires: Number(s.expires),
+  }));
+
+  console.log(`[Init] DB caricato: ${orders.length} ordini, ${config.MENU.length} piatti, ${Object.keys(inventory).length} scorte, ${adminSessions.size} sessioni admin`);
 }
 
 // Sessioni admin attive
@@ -779,11 +786,12 @@ router.post('/login', (req, res) => {
   }
 
   const token = crypto.randomBytes(32).toString('hex');
-  adminSessions.set(token, {
-    role: pinConfig.role,
-    created: Date.now(),
-    expires: Date.now() + 12 * 60 * 60 * 1000,
-  });
+  const created = Date.now();
+  const expires = created + 12 * 60 * 60 * 1000;
+  adminSessions.set(token, { role: pinConfig.role, created, expires });
+  // Persiste la sessione su DB — sopravvive ai riavvii/deploy
+  db.insertAdminSession(token, pinConfig.role, created, expires)
+    .catch(err => console.error('[DB] insertAdminSession:', err));
 
   const response = {
     success: true,
@@ -811,11 +819,11 @@ router.post('/admin/login', (req, res) => {
   }
 
   const token = crypto.randomBytes(32).toString('hex');
-  adminSessions.set(token, {
-    role: 'admin',
-    created: Date.now(),
-    expires: Date.now() + 12 * 60 * 60 * 1000,
-  });
+  const created = Date.now();
+  const expires = created + 12 * 60 * 60 * 1000;
+  adminSessions.set(token, { role: 'admin', created, expires });
+  db.insertAdminSession(token, 'admin', created, expires)
+    .catch(err => console.error('[DB] insertAdminSession:', err));
 
   res.json({ success: true, token });
 });
@@ -828,6 +836,7 @@ router.get('/admin/verify', (req, res) => {
   const session = adminSessions.get(token);
   if (Date.now() > session.expires) {
     adminSessions.delete(token);
+    db.deleteAdminSession(token).catch(err => console.error('[DB] deleteAdminSession:', err));
     return res.json({ valid: false });
   }
   res.json({ valid: true });

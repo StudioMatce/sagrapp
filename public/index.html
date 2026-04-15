@@ -482,8 +482,10 @@
         // Login riuscito: salva token
         sessionStorage.setItem('sagrapp_token', data.token);
         if (data.role === 'admin') {
-          // Compatibilita' con pagine admin che controllano admin_token
           sessionStorage.setItem('admin_token', data.token);
+        } else {
+          // Rimuovi token admin da sessioni precedenti (stesso dispositivo/tab)
+          sessionStorage.removeItem('admin_token');
         }
 
         loginToken = data.token;

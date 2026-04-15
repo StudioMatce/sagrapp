@@ -117,6 +117,14 @@ async function createTables() {
       available       INTEGER NOT NULL DEFAULT 1,
       casses          TEXT NOT NULL DEFAULT '["cassa_generale"]'
     )`,
+
+    // Sessioni admin — persistono tra riavvii server/deploy
+    `CREATE TABLE IF NOT EXISTS admin_sessions (
+      token      TEXT PRIMARY KEY,
+      role       TEXT NOT NULL,
+      created    BIGINT NOT NULL,
+      expires    BIGINT NOT NULL
+    )`,
   ];
 
   for (const q of queries) {
@@ -457,6 +465,32 @@ async function deleteWarehouseItem(id) {
   await pool.query('DELETE FROM warehouse WHERE id = $1', [id]);
 }
 
+// --- Admin Sessions (persistenza tra riavvii) ---
+
+async function insertAdminSession(token, role, created, expires) {
+  await pool.query(
+    `INSERT INTO admin_sessions (token, role, created, expires) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (token) DO NOTHING`,
+    [token, role, created, expires]
+  );
+}
+
+async function loadAdminSessions() {
+  const { rows } = await pool.query(
+    'SELECT token, role, created, expires FROM admin_sessions WHERE expires > $1',
+    [Date.now()]
+  );
+  return rows;
+}
+
+async function deleteAdminSession(token) {
+  await pool.query('DELETE FROM admin_sessions WHERE token = $1', [token]);
+}
+
+async function cleanExpiredAdminSessions() {
+  await pool.query('DELETE FROM admin_sessions WHERE expires <= $1', [Date.now()]);
+}
+
 // =============================================
 // EXPORT
 // =============================================
@@ -479,4 +513,6 @@ module.exports = {
   getWarehouse, saveWarehouseItem, updateWarehouseQty, deleteWarehouseItem,
   // Menu Items (persistenza menu piatti)
   getMenuItems, saveMenuItem, deleteMenuItem,
+  // Admin Sessions (persistenza tra riavvii)
+  insertAdminSession, loadAdminSessions, deleteAdminSession, cleanExpiredAdminSessions,
 };
