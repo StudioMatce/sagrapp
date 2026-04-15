@@ -1048,11 +1048,16 @@ Report completo post-servizio. Dati statici (non real-time), calcolati alla chiu
 Inventario per **materiali e consumabili** della sagra (bicchieri, posate, rotoli carta, detersivi, ecc.). **Nessun legame con il menu o le casse** — gli articoli qui sono completamente indipendenti dal sistema ordini.
 
 **Funzionalità:**
+- **Tab categorie** in alto: "Tutti" + un tab per ogni categoria presente (auto-generati dagli articoli)
+  - Tab visibili solo se ci sono 2+ categorie diverse
+  - In vista "Tutti": articoli raggruppati per categoria con header di sezione (nome verde + linea separatrice + conteggio)
+  - Articoli senza categoria finiscono in "Altro" (sempre in fondo)
 - Lista articoli con quantità attuale/totale e indicatore colorato (verde/giallo/rosso)
 - Pulsanti rapidi −5/−1/+1/+5/+10 per aggiornamento veloce
 - Click sulla quantità per impostare valore esatto
 - Pulsante "+ Nuovo" per aggiungere un articolo
-- Modale per nuovo/modifica: nome, quantità attuale, quantità totale, soglia allarme (opzionale)
+- Modale per nuovo/modifica: nome, **categoria** (datalist con esistenti + creazione nuova), quantità attuale, quantità totale, soglia allarme (opzionale)
+- **CSV Export/Import**: esportazione CSV completa, importazione con merge per nome
 - Eliminazione articolo con conferma
 - Aggiornamento real-time via Socket.IO (`warehouse_updated`)
 
@@ -1063,7 +1068,7 @@ Inventario per **materiali e consumabili** della sagra (bicchieri, posate, rotol
 - `POST /api/warehouse/:id/adjust` — Aggiustamento rapido (+/- delta)
 - `DELETE /api/warehouse/:id` — Elimina articolo
 
-**Database:** Tabella `warehouse` separata (id, name, quantity, total, alert_threshold, created_at).
+**Database:** Tabella `warehouse` separata (id, name, quantity, total, alert_threshold, category, created_at, updated_at).
 
 ### 5.14 — Componente: Gestione Menu e Scorte (public/admin-menu.html)
 
