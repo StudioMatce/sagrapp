@@ -635,6 +635,154 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ===== CONFRONTO SERATE ===== */
+    .serate-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .serata-row {
+      display: grid;
+      grid-template-columns: 76px 1fr 120px;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: border-color 150ms ease;
+    }
+
+    .serata-row.best {
+      border-color: rgba(78,204,163,0.3);
+      background: rgba(78,204,163,0.03);
+    }
+
+    .serata-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: #6c7a89;
+      line-height: 1.3;
+    }
+
+    .serata-date .day-num {
+      display: block;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 2px;
+      letter-spacing: -1px;
+    }
+
+    .serata-bar-area {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .serata-bar-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .serata-revenue {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 17px;
+      color: #fff;
+    }
+
+    .serata-trend {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.02em;
+    }
+
+    .serata-trend.up   { color: #4ecca3; background: rgba(78,204,163,0.12); }
+    .serata-trend.down { color: #e94560; background: rgba(233,69,96,0.12); }
+    .serata-trend.eq   { color: #6c7a89; background: rgba(108,122,137,0.1); }
+
+    .serata-bar-track {
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .serata-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #4ecca3 0%, #22d3ee 100%);
+      transform-origin: left;
+      animation: bar-grow 700ms cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .serata-row.best .serata-bar-fill {
+      background: linear-gradient(90deg, #4ecca3 0%, #a7f3d0 100%);
+    }
+
+    @keyframes bar-grow {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    .serata-sub {
+      font-size: 11px;
+      color: #374151;
+    }
+
+    .serata-sub b {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: rgba(226,232,240,0.45);
+    }
+
+    .serata-meta {
+      text-align: right;
+    }
+
+    .serata-top-piatto {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(78,204,163,0.75);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+      display: block;
+    }
+
+    .serata-top-qty {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 11px;
+      color: #6c7a89;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .confronto-empty {
+      padding: 28px 0;
+      text-align: center;
+      font-size: 13px;
+      color: #374151;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .serata-row {
+        grid-template-columns: 60px 1fr;
+      }
+      .serata-meta { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -735,6 +883,19 @@
       <div class="card-body">
         <div class="waste-grid" id="wasteGrid">
           <div class="stock-empty">Nessun dato griglia</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Confronto Serate -->
+    <section class="card" id="confrontoSection" style="display:none">
+      <div class="card-header">
+        <span class="card-label">Storico Serate</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#4ecca3" id="confrontoCount"></span>
+      </div>
+      <div class="card-body">
+        <div id="confrontoContent">
+          <div class="confronto-empty">Caricamento...</div>
         </div>
       </div>
     </section>
@@ -1113,10 +1274,109 @@
     });
 
     // =============================================
+    // CONFRONTO SERATE — storico serate archiviate
+    // =============================================
+    async function loadConfronto() {
+      try {
+        const res = await fetch('/api/admin/sessions', {
+          headers: { 'X-Admin-Token': TOKEN },
+        });
+        if (!res.ok) return;
+        const sessions = await res.json();
+
+        const section = document.getElementById('confrontoSection');
+
+        if (!sessions || sessions.length === 0) {
+          section.style.display = '';
+          document.getElementById('confrontoContent').innerHTML =
+            '<div class="confronto-empty">Nessuna serata archiviata — i dati appariranno dopo la prima chiusura turno</div>';
+          return;
+        }
+
+        // Ultime 6 serate (già ordinate dalla più recente)
+        const recent = sessions.slice(0, 6);
+
+        // Carica il recap completo per ogni serata in parallelo
+        const recaps = await Promise.all(
+          recent.map(s =>
+            fetch(`/api/admin/sessions/${s.id}/recap`, { headers: { 'X-Admin-Token': TOKEN } })
+              .then(r => r.ok ? r.json() : null).catch(() => null)
+          )
+        );
+
+        const data = recent.map((s, i) => ({
+          ...s,
+          totalCoperti: recaps[i]?.totalCoperti || 0,
+          topPiatto: recaps[i]?.salesRanking?.[0]?.name || null,
+          topQty: recaps[i]?.salesRanking?.[0]?.qty || 0,
+        }));
+
+        const maxRevenue = Math.max(...data.map(d => d.totalRevenue), 1);
+
+        const html = '<div class="serate-list">' + data.map((s, i) => {
+          const barPct = Math.round((s.totalRevenue / maxRevenue) * 100);
+          const isBest = s.totalRevenue === maxRevenue;
+
+          // Trend incasso vs serata precedente
+          let trendHtml = '';
+          if (i < data.length - 1 && data[i + 1].totalRevenue > 0) {
+            const prev = data[i + 1].totalRevenue;
+            const diff = Math.round((s.totalRevenue - prev) / prev * 100);
+            const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'eq';
+            const sign = diff > 0 ? '↑' : diff < 0 ? '↓' : '=';
+            trendHtml = `<span class="serata-trend ${cls}">${sign}${Math.abs(diff)}%</span>`;
+          }
+
+          // Formatta data: "11\nVen Apr"
+          const dt = new Date(s.date + 'T12:00:00');
+          const dayNum = dt.getDate();
+          const wd = dt.toLocaleDateString('it-IT', { weekday: 'short' });
+          const mo = dt.toLocaleDateString('it-IT', { month: 'short' });
+          const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
+
+          // Sottotitolo: ordini + coperti
+          const subParts = [`<b>${s.totalOrders}</b> ordini`];
+          if (s.totalCoperti > 0) subParts.push(`<b>${s.totalCoperti}</b> cop.`);
+
+          return `
+            <div class="serata-row${isBest ? ' best' : ''}">
+              <div class="serata-date">
+                <span class="day-num">${dayNum}</span>
+                ${cap(wd)} ${cap(mo)}
+              </div>
+              <div class="serata-bar-area">
+                <div class="serata-bar-label">
+                  <span class="serata-revenue">${formatCurrency(s.totalRevenue)}</span>
+                  ${trendHtml}
+                </div>
+                <div class="serata-bar-track">
+                  <div class="serata-bar-fill" style="width:${barPct}%;animation-delay:${i * 80}ms"></div>
+                </div>
+                <div class="serata-sub">${subParts.join(' · ')}</div>
+              </div>
+              <div class="serata-meta">
+                ${s.topPiatto ? `
+                  <span class="serata-top-piatto" title="${escHTML(s.topPiatto)}">${escHTML(s.topPiatto)}</span>
+                  <span class="serata-top-qty">${s.topQty}× venduto</span>
+                ` : ''}
+              </div>
+            </div>`;
+        }).join('') + '</div>';
+
+        document.getElementById('confrontoCount').textContent = `${data.length} serate`;
+        document.getElementById('confrontoContent').innerHTML = html;
+        section.style.display = '';
+      } catch (e) {
+        // Errore silenzioso — sezione rimane nascosta
+      }
+    }
+
+    // =============================================
     // POLLING — recupera i dati ogni 5 secondi
     // =============================================
     fetchStats();
     loadAllOrders();
+    loadConfronto();
     setInterval(fetchStats, 5000);
 
     // =============================================
