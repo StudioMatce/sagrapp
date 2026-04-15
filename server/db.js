@@ -330,6 +330,10 @@ async function insertArchivedSession(session) {
   );
 }
 
+async function deleteArchivedSession(id) {
+  await pool.query('DELETE FROM archived_sessions WHERE id = $1', [id]);
+}
+
 async function updateArchivedSession(id, closedAt, recap) {
   await pool.query(
     'UPDATE archived_sessions SET closed_at = $1, recap = $2 WHERE id = $3',
@@ -506,7 +510,7 @@ module.exports = {
   // Inventory
   getInventory, saveInventoryItem, updateInventoryStock, deleteInventoryItem, seedInventory,
   // Archived Sessions
-  getArchivedSessions, getArchivedSessionByDate, insertArchivedSession, updateArchivedSession,
+  getArchivedSessions, getArchivedSessionByDate, insertArchivedSession, updateArchivedSession, deleteArchivedSession,
   // Presets
   getPresets, savePreset, deletePreset,
   // Warehouse (materiali/consumabili)

@@ -1094,6 +1094,7 @@ router.get('/admin/sessions', requireAdmin, (req, res) => {
     id: s.id,
     date: s.date,
     closed_at: s.closed_at,
+    label: s.recap._label || null,
     totalOrders: s.recap.totalOrders,
     totalRevenue: s.recap.totalRevenue,
     totalCoperti: s.recap.totalCoperti || 0,
@@ -1112,6 +1113,32 @@ router.get('/admin/sessions/:id/recap', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Serata non trovata' });
   }
   res.json({ ...session.recap, _sessionDate: session.date });
+});
+
+// Rinomina una serata archiviata (aggiorna _label nel recap)
+router.patch('/admin/sessions/:id/label', requireAdmin, (req, res) => {
+  const session = archivedSessions.find(s => s.id === req.params.id);
+  if (!session) return res.status(404).json({ error: 'Serata non trovata' });
+  const { label } = req.body;
+  // Salva il label nel recap (campo _label); stringa vuota = rimuove il label custom
+  if (label && label.trim()) {
+    session.recap._label = label.trim();
+  } else {
+    delete session.recap._label;
+  }
+  db.updateArchivedSession(session.id, session.closed_at, session.recap)
+    .catch(err => console.error('[DB] updateArchivedSession label:', err));
+  res.json({ success: true, label: session.recap._label || null });
+});
+
+// Elimina una serata archiviata
+router.delete('/admin/sessions/:id', requireAdmin, (req, res) => {
+  const idx = archivedSessions.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Serata non trovata' });
+  archivedSessions.splice(idx, 1);
+  db.deleteArchivedSession(req.params.id)
+    .catch(err => console.error('[DB] deleteArchivedSession:', err));
+  res.json({ success: true });
 });
 
 // =============================================
