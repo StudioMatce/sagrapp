@@ -267,10 +267,11 @@
   // Intercetta i click sui link admin, carica solo il contenuto senza refresh completo.
   // Le pagine non-admin (casse, monitor, ecc.) fanno navigazione normale.
 
+  // Solo le pagine admin pure usano la soft navigation (PJAX).
+  // Le pagine operative (casse, monitor, ecc.) fanno navigazione normale —
+  // il loro Socket.IO e i loro script non funzionano se iniettati via PJAX.
   function isAdminPage(path) {
-    return path.startsWith('/admin') || path === '/setup' ||
-      path === '/cassa' || path === '/cassa-bar' || path === '/cassa-casetta' ||
-      path === '/monitor' || path === '/scaldavivande' || path === '/controllo';
+    return path.startsWith('/admin') || path === '/setup';
   }
 
   function setupSoftNav() {
