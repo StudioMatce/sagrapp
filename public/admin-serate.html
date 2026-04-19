@@ -436,13 +436,16 @@
 
     // ─── download report ─────────────────────────────────────
     async function downloadReport(id, dateStr, btn) {
+      console.log('[Download] id:', id, 'date:', dateStr, 'TOKEN:', TOKEN ? 'ok' : 'MANCANTE');
       btn.classList.add('loading');
       btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> ...';
 
       try {
         var res = await fetch('/api/admin/sessions/'+id+'/recap', { headers:{'X-Admin-Token':TOKEN} });
+        console.log('[Download] fetch status:', res.status);
         if (!res.ok) throw new Error('Errore '+res.status);
         var r = await res.json();
+        console.log('[Download] recap ricevuto, chiavi:', Object.keys(r));
 
         var s = SESSIONS.find(function(x){return x.id===id;});
         var titolo = s && s.label ? s.label : fDate(dateStr);
@@ -497,14 +500,14 @@
         lines.push('Generato da SagrApp — '+new Date().toLocaleString('it-IT'));
 
         var text = lines.join('\n');
-        // Scarica via data URI — compatibile Safari macOS/iOS
-        var dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+        var blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+        var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
-        a.href = dataUri;
+        a.href = url;
         a.download = 'sagrapp-report-'+dateStr+'.txt';
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
 
         btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg> OK';
         setTimeout(function(){
