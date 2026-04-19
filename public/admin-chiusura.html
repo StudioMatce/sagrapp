@@ -921,13 +921,18 @@
           rows.push('CLASSIFICA VENDITE');
           var hasCost = recap.salesRanking.some(function(i){ return i.totalCost > 0; });
           rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          var totQty = 0, totRev = 0, totCost = 0;
           recap.salesRanking.forEach(function(item, i) {
+            totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
             var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
             if (hasCost) {
               row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
+          var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+          if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
+          rows.push(totRow);
           rows.push('');
         }
 
