@@ -966,10 +966,16 @@ function computeRecap() {
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
 
   const salesByItem = {};
+  // Inizializza con TUTTI i piatti del menu (così appaiono anche quelli a 0)
+  config.MENU.forEach(m => {
+    salesByItem[m.id] = {
+      id: m.id, name: m.name, qty: 0, revenue: 0,
+      cost_price: m.cost_price != null ? m.cost_price : null, totalCost: 0,
+    };
+  });
   orders.forEach(o => {
     (o.items || []).forEach(oi => {
       if (!salesByItem[oi.id]) {
-        // Prende cost_price dal menu corrente
         const menuRef = config.MENU.find(m => m.id === oi.id);
         const costPrice = menuRef && menuRef.cost_price != null ? menuRef.cost_price : null;
         salesByItem[oi.id] = { id: oi.id, name: oi.name, qty: 0, revenue: 0, cost_price: costPrice, totalCost: 0 };
