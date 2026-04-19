@@ -969,13 +969,23 @@ function computeRecap() {
   orders.forEach(o => {
     (o.items || []).forEach(oi => {
       if (!salesByItem[oi.id]) {
-        salesByItem[oi.id] = { id: oi.id, name: oi.name, qty: 0, revenue: 0 };
+        // Prende cost_price dal menu corrente
+        const menuRef = config.MENU.find(m => m.id === oi.id);
+        const costPrice = menuRef && menuRef.cost_price != null ? menuRef.cost_price : null;
+        salesByItem[oi.id] = { id: oi.id, name: oi.name, qty: 0, revenue: 0, cost_price: costPrice, totalCost: 0 };
       }
       salesByItem[oi.id].qty += oi.qty;
       salesByItem[oi.id].revenue += oi.qty * oi.price;
+      if (salesByItem[oi.id].cost_price != null) {
+        salesByItem[oi.id].totalCost += oi.qty * salesByItem[oi.id].cost_price;
+      }
     });
   });
   const salesRanking = Object.values(salesByItem).sort((a, b) => b.qty - a.qty);
+
+  // Totale costi e margine lordo
+  const totalCost = salesRanking.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+  const grossMargin = totalRevenue - totalCost;
 
   const ordersByHour = {};
   orders.forEach(o => {
@@ -1040,6 +1050,8 @@ function computeRecap() {
   return {
     totalOrders,
     totalRevenue,
+    totalCost,
+    grossMargin,
     totalCoperti,
     totalAsporto,
     salesRanking,
@@ -1061,6 +1073,8 @@ function computeRecap() {
 function mergeRecap(target, source) {
   target.totalOrders += source.totalOrders;
   target.totalRevenue += source.totalRevenue;
+  target.totalCost = (target.totalCost || 0) + (source.totalCost || 0);
+  target.grossMargin = (target.grossMargin || 0) + (source.grossMargin || 0);
   target.totalCoperti = (target.totalCoperti || 0) + (source.totalCoperti || 0);
   target.totalAsporto = (target.totalAsporto || 0) + (source.totalAsporto || 0);
   target.discountTotal += source.discountTotal;
@@ -1079,13 +1093,14 @@ function mergeRecap(target, source) {
     }
   }
 
-  // Classifica vendite: somma quantita' e ricavi per piatto
+  // Classifica vendite: somma quantita', ricavi e costi per piatto
   const salesMap = {};
   (target.salesRanking || []).forEach(i => { salesMap[i.id] = { ...i }; });
   (source.salesRanking || []).forEach(i => {
     if (salesMap[i.id]) {
       salesMap[i.id].qty += i.qty;
       salesMap[i.id].revenue += i.revenue;
+      salesMap[i.id].totalCost = (salesMap[i.id].totalCost || 0) + (i.totalCost || 0);
     } else {
       salesMap[i.id] = { ...i };
     }

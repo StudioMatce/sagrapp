@@ -299,22 +299,6 @@
       flex-shrink: 0;
       min-width: 72px;
       text-align: right;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 2px;
-    }
-
-    .cost-display {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--text-dim);
-      padding: 0 8px;
-    }
-
-    .cost-display small {
-      color: var(--yellow);
-      font-size: 10px;
     }
 
     .price-display {
@@ -1126,11 +1110,6 @@
       // Price
       html += '<div class="dish-price">';
       html += '<span class="price-display" data-id="' + item.id + '">&euro; ' + priceStr + '</span>';
-      if (item.cost_price != null) {
-        var costStr = item.cost_price.toFixed(2).replace('.', ',');
-        var margin = item.price > 0 ? Math.round((1 - item.cost_price / item.price) * 100) : 0;
-        html += '<span class="cost-display">&euro; ' + costStr + ' <small>(' + margin + '%)</small></span>';
-      }
       html += '</div>';
 
       // Stock inline
