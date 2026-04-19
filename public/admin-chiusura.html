@@ -902,12 +902,13 @@
 
         // Metodo pagamento
         rows.push('METODO PAGAMENTO');
-        rows.push('Metodo' + SEP + 'Incasso');
+        rows.push('Metodo' + SEP + 'Lordo' + SEP + 'Commissioni' + SEP + 'Netto');
         var contanti = recap.revenueByPayment && recap.revenueByPayment.contanti ? recap.revenueByPayment.contanti : 0;
         var pos = recap.revenueByPayment && recap.revenueByPayment.pos ? recap.revenueByPayment.pos : 0;
-        rows.push('Contanti' + SEP + fNum(contanti));
-        rows.push('POS (carta)' + SEP + fNum(pos));
-        if (recap.posCommission > 0) rows.push('Commissioni POS' + SEP + fNum(recap.posCommission));
+        var posComm = recap.posCommission || 0;
+        rows.push('Contanti' + SEP + fNum(contanti) + SEP + fNum(0) + SEP + fNum(contanti));
+        rows.push('POS (carta)' + SEP + fNum(pos) + SEP + fNum(posComm) + SEP + fNum(pos - posComm));
+        rows.push('Totale' + SEP + fNum(contanti + pos) + SEP + fNum(posComm) + SEP + fNum(contanti + pos - posComm));
         rows.push('');
 
         // Omaggi dettaglio
@@ -941,7 +942,7 @@
 
         rows.push('Generato da SagrApp' + SEP + new Date().toLocaleString('it-IT'));
 
-        var csv = '\uFEFF' + rows.join('\n');
+        var csv = '\uFEFF' + 'sep=;\n' + rows.join('\n');
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
