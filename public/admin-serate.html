@@ -447,43 +447,44 @@
         var s = SESSIONS.find(function(x){return x.id===id;});
         var titolo = s && s.label ? s.label : fDate(dateStr);
 
-        // Genera CSV con BOM per Excel
+        // Genera CSV con separatore ; (standard italiano per Excel/Numbers)
+        var SEP = ';';
         var csvVal = function(v) {
           var str = String(v == null ? '' : v);
-          if (str.indexOf(',') >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
+          if (str.indexOf(SEP) >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
             return '"' + str.replace(/"/g, '""') + '"';
           return str;
         };
-        var fNum = function(v) { return (v||0).toFixed(2); };
+        var fNum = function(v) { return (v||0).toFixed(2).replace('.', ','); };
         var rows = [];
 
         // Intestazione
         rows.push('SAGRAPP - REPORT SERATA');
-        rows.push('Serata,' + csvVal(titolo));
-        rows.push('Data,' + fDate(dateStr));
+        rows.push('Serata' + SEP + csvVal(titolo));
+        rows.push('Data' + SEP + fDate(dateStr));
         rows.push('');
 
         // Riepilogo
         rows.push('RIEPILOGO');
-        rows.push('Voce,Valore');
-        rows.push('Incasso totale,' + fNum(r.totalRevenue));
-        rows.push('Ordini totali,' + (r.totalOrders||0));
-        rows.push('Coperti,' + (r.totalCoperti||0));
-        rows.push('Ordini asporto,' + (r.totalAsporto||0));
-        if (r.discountTotal > 0) rows.push('Sconti,' + fNum(r.discountTotal));
+        rows.push('Voce' + SEP + 'Valore');
+        rows.push('Incasso totale' + SEP + fNum(r.totalRevenue));
+        rows.push('Ordini totali' + SEP + (r.totalOrders||0));
+        rows.push('Coperti' + SEP + (r.totalCoperti||0));
+        rows.push('Ordini asporto' + SEP + (r.totalAsporto||0));
+        if (r.discountTotal > 0) rows.push('Sconti' + SEP + fNum(r.discountTotal));
         if (r.totalCost > 0) {
-          rows.push('Costo materie,' + fNum(r.totalCost));
-          rows.push('Netto,' + fNum(r.grossMargin));
+          rows.push('Costo materie' + SEP + fNum(r.totalCost));
+          rows.push('Netto' + SEP + fNum(r.grossMargin));
         }
         rows.push('');
 
         // Incasso per cassa
         if (r.revenueByCassa) {
           rows.push('INCASSO PER CASSA');
-          rows.push('Cassa,Incasso');
+          rows.push('Cassa' + SEP + 'Incasso');
           var nomi = {principale:'Cassa Generale', bar:'Cassa Bar', casetta:'Casetta'};
           Object.entries(r.revenueByCassa).forEach(function(e) {
-            rows.push(csvVal(nomi[e[0]]||e[0]) + ',' + fNum(e[1]));
+            rows.push(csvVal(nomi[e[0]]||e[0]) + SEP + fNum(e[1]));
           });
           rows.push('');
         }
@@ -491,22 +492,22 @@
         // Metodo pagamento
         if (r.revenueByPayment) {
           rows.push('METODO PAGAMENTO');
-          rows.push('Metodo,Incasso');
+          rows.push('Metodo' + SEP + 'Incasso');
           Object.entries(r.revenueByPayment).forEach(function(e) {
-            rows.push((e[0]==='pos'?'POS (carta)':'Contanti') + ',' + fNum(e[1]));
+            rows.push((e[0]==='pos'?'POS (carta)':'Contanti') + SEP + fNum(e[1]));
           });
-          if (r.posCommission > 0) rows.push('Commissioni POS,' + fNum(r.posCommission));
+          if (r.posCommission > 0) rows.push('Commissioni POS' + SEP + fNum(r.posCommission));
           rows.push('');
         }
 
         // Omaggi
         if (r.courtesy && r.courtesy.total && r.courtesy.total.count > 0) {
           rows.push('OMAGGI');
-          rows.push('Tipo,Ordini,Valore');
+          rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
           var omN = {sponsor:'Sponsor', don_pierino:'Don Pierino', amici:'Amici'};
           ['sponsor','don_pierino','amici'].forEach(function(t) {
             var om = r.courtesy[t];
-            if (om && om.count > 0) rows.push(csvVal(omN[t]||t) + ',' + om.count + ',' + fNum(om.realValue));
+            if (om && om.count > 0) rows.push(csvVal(omN[t]||t) + SEP + om.count + SEP + fNum(om.realValue));
           });
           rows.push('');
         }
@@ -515,18 +516,18 @@
         if (r.salesRanking && r.salesRanking.length > 0) {
           rows.push('CLASSIFICA VENDITE');
           var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
-          rows.push('#,Piatto,Quantita,Incasso' + (hasCost ? ',Costo,Margine' : ''));
+          rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
           r.salesRanking.forEach(function(item, i) {
-            var row = (i+1) + ',' + csvVal(item.name) + ',' + item.qty + ',' + fNum(item.revenue);
+            var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
             if (hasCost) {
-              row += ',' + fNum(item.totalCost||0) + ',' + fNum(item.revenue - (item.totalCost||0));
+              row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
           rows.push('');
         }
 
-        rows.push('Generato da SagrApp,' + new Date().toLocaleString('it-IT'));
+        rows.push('Generato da SagrApp' + SEP + new Date().toLocaleString('it-IT'));
 
         // BOM UTF-8 per apertura corretta in Excel
         var csv = '\uFEFF' + rows.join('\n');

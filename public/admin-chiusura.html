@@ -859,59 +859,60 @@
         var recap = await res.json();
 
         var today = new Date().toISOString().slice(0, 10);
+        var SEP = ';';
         var csvVal = function(v) {
           var str = String(v == null ? '' : v);
-          if (str.indexOf(',') >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
+          if (str.indexOf(SEP) >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
             return '"' + str.replace(/"/g, '""') + '"';
           return str;
         };
-        var fNum = function(v) { return (v||0).toFixed(2); };
+        var fNum = function(v) { return (v||0).toFixed(2).replace('.', ','); };
         var rows = [];
 
         rows.push('SAGRAPP - REPORT SERATA');
-        rows.push('Data,' + today);
+        rows.push('Data' + SEP + today);
         rows.push('');
 
         rows.push('RIEPILOGO');
-        rows.push('Voce,Valore');
-        rows.push('Incasso totale,' + fNum(recap.totalRevenue));
-        rows.push('Ordini totali,' + (recap.totalOrders || 0));
-        rows.push('Coperti,' + (recap.totalCoperti || 0));
-        rows.push('Ordini asporto,' + (recap.totalAsporto || 0));
-        if (recap.discountTotal > 0) rows.push('Sconti,' + fNum(recap.discountTotal));
+        rows.push('Voce' + SEP + 'Valore');
+        rows.push('Incasso totale' + SEP + fNum(recap.totalRevenue));
+        rows.push('Ordini totali' + SEP + (recap.totalOrders || 0));
+        rows.push('Coperti' + SEP + (recap.totalCoperti || 0));
+        rows.push('Ordini asporto' + SEP + (recap.totalAsporto || 0));
+        if (recap.discountTotal > 0) rows.push('Sconti' + SEP + fNum(recap.discountTotal));
         if (recap.totalCost > 0) {
-          rows.push('Costo materie,' + fNum(recap.totalCost));
-          rows.push('Netto,' + fNum(recap.grossMargin));
+          rows.push('Costo materie' + SEP + fNum(recap.totalCost));
+          rows.push('Netto' + SEP + fNum(recap.grossMargin));
         }
         rows.push('');
 
         if (recap.revenueByCassa) {
           rows.push('INCASSO PER CASSA');
-          rows.push('Cassa,Incasso');
+          rows.push('Cassa' + SEP + 'Incasso');
           var nomi = { principale: 'Cassa Generale', bar: 'Cassa Bar', casetta: 'Casetta' };
           Object.entries(recap.revenueByCassa).forEach(function(e) {
-            rows.push(csvVal(nomi[e[0]] || e[0]) + ',' + fNum(e[1]));
+            rows.push(csvVal(nomi[e[0]] || e[0]) + SEP + fNum(e[1]));
           });
           rows.push('');
         }
 
         if (recap.revenueByPayment) {
           rows.push('METODO PAGAMENTO');
-          rows.push('Metodo,Incasso');
+          rows.push('Metodo' + SEP + 'Incasso');
           Object.entries(recap.revenueByPayment).forEach(function(e) {
-            rows.push((e[0] === 'pos' ? 'POS (carta)' : 'Contanti') + ',' + fNum(e[1]));
+            rows.push((e[0] === 'pos' ? 'POS (carta)' : 'Contanti') + SEP + fNum(e[1]));
           });
-          if (recap.posCommission > 0) rows.push('Commissioni POS,' + fNum(recap.posCommission));
+          if (recap.posCommission > 0) rows.push('Commissioni POS' + SEP + fNum(recap.posCommission));
           rows.push('');
         }
 
         if (recap.courtesy && recap.courtesy.total && recap.courtesy.total.count > 0) {
           rows.push('OMAGGI');
-          rows.push('Tipo,Ordini,Valore');
+          rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
           var omNomi = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
           ['sponsor','don_pierino','amici'].forEach(function(t) {
             var om = recap.courtesy[t];
-            if (om && om.count > 0) rows.push(csvVal(omNomi[t] || t) + ',' + om.count + ',' + fNum(om.realValue));
+            if (om && om.count > 0) rows.push(csvVal(omNomi[t] || t) + SEP + om.count + SEP + fNum(om.realValue));
           });
           rows.push('');
         }
@@ -919,18 +920,18 @@
         if (recap.salesRanking && recap.salesRanking.length > 0) {
           rows.push('CLASSIFICA VENDITE');
           var hasCost = recap.salesRanking.some(function(i){ return i.totalCost > 0; });
-          rows.push('#,Piatto,Quantita,Incasso' + (hasCost ? ',Costo,Margine' : ''));
+          rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
           recap.salesRanking.forEach(function(item, i) {
-            var row = (i+1) + ',' + csvVal(item.name) + ',' + item.qty + ',' + fNum(item.revenue);
+            var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
             if (hasCost) {
-              row += ',' + fNum(item.totalCost||0) + ',' + fNum(item.revenue - (item.totalCost||0));
+              row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
           rows.push('');
         }
 
-        rows.push('Generato da SagrApp,' + new Date().toLocaleString('it-IT'));
+        rows.push('Generato da SagrApp' + SEP + new Date().toLocaleString('it-IT'));
 
         var csv = '\uFEFF' + rows.join('\n');
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
