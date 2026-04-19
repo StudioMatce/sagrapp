@@ -299,6 +299,22 @@
       flex-shrink: 0;
       min-width: 72px;
       text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .cost-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 0 8px;
+    }
+
+    .cost-display small {
+      color: var(--yellow);
+      font-size: 10px;
     }
 
     .price-display {
@@ -866,8 +882,12 @@
             <input class="field-input" id="fName" type="text" placeholder="es. Gnocchi al ragu">
           </div>
           <div class="field" style="max-width: 120px;">
-            <label class="field-label">Prezzo</label>
+            <label class="field-label">Prezzo vendita</label>
             <input class="field-input" id="fPrice" type="number" step="0.10" min="0" placeholder="0.00" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+          </div>
+          <div class="field" style="max-width: 120px;">
+            <label class="field-label">Costo</label>
+            <input class="field-input" id="fCostPrice" type="number" step="0.01" min="0" placeholder="—" style="font-family: 'JetBrains Mono', monospace; opacity: 0.7;">
           </div>
         </div>
 
@@ -1106,6 +1126,11 @@
       // Price
       html += '<div class="dish-price">';
       html += '<span class="price-display" data-id="' + item.id + '">&euro; ' + priceStr + '</span>';
+      if (item.cost_price != null) {
+        var costStr = item.cost_price.toFixed(2).replace('.', ',');
+        var margin = item.price > 0 ? Math.round((1 - item.cost_price / item.price) * 100) : 0;
+        html += '<span class="cost-display">&euro; ' + costStr + ' <small>(' + margin + '%)</small></span>';
+      }
       html += '</div>';
 
       // Stock inline
@@ -1538,6 +1563,7 @@
       document.getElementById('modalTitle').textContent = 'Nuovo piatto';
       document.getElementById('fName').value = '';
       document.getElementById('fPrice').value = '';
+      document.getElementById('fCostPrice').value = '';
       fCategory.value = 'primo';
       fStation.value = 'cucina';
       document.getElementById('fCGen').checked = true;
@@ -1563,6 +1589,7 @@
       document.getElementById('modalTitle').textContent = 'Modifica piatto';
       document.getElementById('fName').value = item.name;
       document.getElementById('fPrice').value = item.price;
+      document.getElementById('fCostPrice').value = item.cost_price != null ? item.cost_price : '';
       fCategory.value = item.category;
       fStation.value = item.station;
 
@@ -1594,6 +1621,8 @@
     async function handleSave() {
       var name = document.getElementById('fName').value.trim();
       var price = parseFloat(document.getElementById('fPrice').value);
+      var costPriceVal = document.getElementById('fCostPrice').value.trim();
+      var cost_price = costPriceVal !== '' ? parseFloat(costPriceVal) : null;
       var category = fCategory.value;
       var station = fStation.value;
 
@@ -1608,7 +1637,7 @@
       if (document.getElementById('fCBar').checked) casses.push('cassa_bar');
       if (document.getElementById('fCCas').checked) casses.push('cassa_casetta');
 
-      var payload = { name: name, price: price, category: category, station: station, casses: casses };
+      var payload = { name: name, price: price, cost_price: cost_price, category: category, station: station, casses: casses };
 
       // Composizione (solo se griglia)
       if (station === 'griglia') {

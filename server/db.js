@@ -106,6 +106,7 @@ async function createTables() {
       id              TEXT PRIMARY KEY,
       name            TEXT NOT NULL,
       price           DOUBLE PRECISION NOT NULL,
+      cost_price      DOUBLE PRECISION,
       category        TEXT NOT NULL,
       station         TEXT NOT NULL,
       print_to        TEXT NOT NULL DEFAULT '["cibo"]',
@@ -129,6 +130,14 @@ async function createTables() {
 
   for (const q of queries) {
     await pool.query(q);
+  }
+
+  // Migrations — aggiunta colonne a tabelle esistenti
+  const migrations = [
+    `ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS cost_price DOUBLE PRECISION`,
+  ];
+  for (const m of migrations) {
+    await pool.query(m).catch(() => {}); // ignora se già esiste
   }
 }
 
@@ -372,6 +381,7 @@ function dbRowToMenuItem(row) {
     id: row.id,
     name: row.name,
     price: parseFloat(row.price),
+    cost_price: row.cost_price != null ? parseFloat(row.cost_price) : null,
     category: row.category,
     station: row.station,
     print_to: JSON.parse(row.print_to),
@@ -394,18 +404,19 @@ async function getMenuItems() {
 
 async function saveMenuItem(item) {
   await pool.query(
-    `INSERT INTO menu_items (id, name, price, category, station, print_to,
+    `INSERT INTO menu_items (id, name, price, cost_price, category, station, print_to,
        composition, special, available_date, initial_stock, alert_threshold, available, casses)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      ON CONFLICT (id) DO UPDATE SET
-       name = EXCLUDED.name, price = EXCLUDED.price, category = EXCLUDED.category,
-       station = EXCLUDED.station, print_to = EXCLUDED.print_to,
+       name = EXCLUDED.name, price = EXCLUDED.price, cost_price = EXCLUDED.cost_price,
+       category = EXCLUDED.category, station = EXCLUDED.station, print_to = EXCLUDED.print_to,
        composition = EXCLUDED.composition, special = EXCLUDED.special,
        available_date = EXCLUDED.available_date, initial_stock = EXCLUDED.initial_stock,
        alert_threshold = EXCLUDED.alert_threshold, available = EXCLUDED.available,
        casses = EXCLUDED.casses`,
     [
-      item.id, item.name, item.price, item.category, item.station,
+      item.id, item.name, item.price, item.cost_price != null ? item.cost_price : null,
+      item.category, item.station,
       JSON.stringify(item.print_to || ['cibo']),
       item.composition ? JSON.stringify(item.composition) : null,
       item.special ? 1 : 0,

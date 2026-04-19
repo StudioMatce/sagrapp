@@ -233,9 +233,10 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Piatto non trovato' });
   }
 
-  const { name, price, available, available_date, casses, composition, category, station, print_to } = req.body;
+  const { name, price, cost_price, available, available_date, casses, composition, category, station, print_to } = req.body;
   if (name !== undefined) menuItem.name = String(name).trim();
   if (price !== undefined) menuItem.price = parseFloat(price);
+  if (cost_price !== undefined) menuItem.cost_price = cost_price === null || cost_price === '' ? null : parseFloat(cost_price);
   if (available !== undefined) menuItem.available = !!available;
   if (available_date !== undefined) menuItem.available_date = available_date;
   if (casses !== undefined && Array.isArray(casses)) menuItem.casses = casses;
@@ -280,7 +281,7 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
 
 // Aggiunge un nuovo piatto al menu
 router.post('/menu', requireAdmin, (req, res) => {
-  const { name, price, category, station, print_to, casses, composition, available_date, initial_stock, alert_threshold } = req.body;
+  const { name, price, cost_price, category, station, print_to, casses, composition, available_date, initial_stock, alert_threshold } = req.body;
 
   if (!name || price === undefined || !category || !station) {
     return res.status(400).json({ error: 'Campi obbligatori: name, price, category, station' });
@@ -296,6 +297,7 @@ router.post('/menu', requireAdmin, (req, res) => {
     id,
     name: String(name).trim(),
     price: parseFloat(price),
+    cost_price: cost_price !== undefined && cost_price !== null && cost_price !== '' ? parseFloat(cost_price) : null,
     category,
     station,
     print_to: print_to || (category === 'bevanda' ? ['bevande'] : ['cibo']),
