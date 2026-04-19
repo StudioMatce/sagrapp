@@ -436,75 +436,105 @@
 
     // ─── download report ─────────────────────────────────────
     async function downloadReport(id, dateStr, btn) {
-      console.log('[Download] id:', id, 'date:', dateStr, 'TOKEN:', TOKEN ? 'ok' : 'MANCANTE');
       btn.classList.add('loading');
       btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> ...';
 
       try {
         var res = await fetch('/api/admin/sessions/'+id+'/recap', { headers:{'X-Admin-Token':TOKEN} });
-        console.log('[Download] fetch status:', res.status);
         if (!res.ok) throw new Error('Errore '+res.status);
         var r = await res.json();
-        console.log('[Download] recap ricevuto, chiavi:', Object.keys(r));
 
         var s = SESSIONS.find(function(x){return x.id===id;});
         var titolo = s && s.label ? s.label : fDate(dateStr);
-        var sep = '─'.repeat(48);
-        var lines = [
-          'SAGRAPP — REPORT SERATA', sep,
-          'Serata:  '+titolo,
-          'Data:    '+fDate(dateStr),
-          sep, '',
-          'RIEPILOGO',
-          '  Incasso totale:  '+fEuro(r.totalRevenue),
-          '  Ordini totali:   '+(r.totalOrders||0),
-          '  Coperti:         '+(r.totalCoperti||0),
-          '  Ordini asporto:  '+(r.totalAsporto||0),
-        ];
-        if (r.discountTotal>0) lines.push('  Sconti:          '+fEuro(r.discountTotal));
-        lines.push('');
 
+        // Genera CSV con BOM per Excel
+        var csvVal = function(v) {
+          var str = String(v == null ? '' : v);
+          if (str.indexOf(',') >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
+            return '"' + str.replace(/"/g, '""') + '"';
+          return str;
+        };
+        var fNum = function(v) { return (v||0).toFixed(2); };
+        var rows = [];
+
+        // Intestazione
+        rows.push('SAGRAPP - REPORT SERATA');
+        rows.push('Serata,' + csvVal(titolo));
+        rows.push('Data,' + fDate(dateStr));
+        rows.push('');
+
+        // Riepilogo
+        rows.push('RIEPILOGO');
+        rows.push('Voce,Valore');
+        rows.push('Incasso totale,' + fNum(r.totalRevenue));
+        rows.push('Ordini totali,' + (r.totalOrders||0));
+        rows.push('Coperti,' + (r.totalCoperti||0));
+        rows.push('Ordini asporto,' + (r.totalAsporto||0));
+        if (r.discountTotal > 0) rows.push('Sconti,' + fNum(r.discountTotal));
+        if (r.totalCost > 0) {
+          rows.push('Costo materie,' + fNum(r.totalCost));
+          rows.push('Netto,' + fNum(r.grossMargin));
+        }
+        rows.push('');
+
+        // Incasso per cassa
         if (r.revenueByCassa) {
-          lines.push('INCASSO PER CASSA');
-          var nomi={principale:'Cassa Generale',bar:'Cassa Bar',casetta:'Casetta'};
-          Object.entries(r.revenueByCassa).forEach(function(e){
-            lines.push('  '+(nomi[e[0]]||e[0])+': '+fEuro(e[1]));
+          rows.push('INCASSO PER CASSA');
+          rows.push('Cassa,Incasso');
+          var nomi = {principale:'Cassa Generale', bar:'Cassa Bar', casetta:'Casetta'};
+          Object.entries(r.revenueByCassa).forEach(function(e) {
+            rows.push(csvVal(nomi[e[0]]||e[0]) + ',' + fNum(e[1]));
           });
-          lines.push('');
+          rows.push('');
         }
-        if (r.revenueByPayment) {
-          lines.push('METODO PAGAMENTO');
-          Object.entries(r.revenueByPayment).forEach(function(e){
-            lines.push('  '+(e[0]==='pos'?'POS (carta)':'Contanti')+': '+fEuro(e[1]));
-          });
-          lines.push('');
-        }
-        if (r.courtesy && r.courtesy.total && r.courtesy.total.count>0) {
-          lines.push('OMAGGI');
-          var omN={sponsor:'Sponsor',don_pierino:'Don Pierino',amici:'Amici'};
-          ['sponsor','don_pierino','amici'].forEach(function(t){
-            var om=r.courtesy[t];
-            if(om&&om.count>0) lines.push('  '+(omN[t]||t)+': '+om.count+' ordini — val. '+fEuro(om.realValue));
-          });
-          lines.push('');
-        }
-        if (r.salesRanking && r.salesRanking.length>0) {
-          lines.push('CLASSIFICA VENDITE');
-          r.salesRanking.forEach(function(item,i){
-            var rank=('  '+(i+1)+'.').slice(-4);
-            lines.push(rank+' '+item.name+': '+item.qty+' pz — '+fEuro(item.revenue));
-          });
-          lines.push('');
-        }
-        lines.push(sep);
-        lines.push('Generato da SagrApp — '+new Date().toLocaleString('it-IT'));
 
-        var text = lines.join('\n');
-        var blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+        // Metodo pagamento
+        if (r.revenueByPayment) {
+          rows.push('METODO PAGAMENTO');
+          rows.push('Metodo,Incasso');
+          Object.entries(r.revenueByPayment).forEach(function(e) {
+            rows.push((e[0]==='pos'?'POS (carta)':'Contanti') + ',' + fNum(e[1]));
+          });
+          if (r.posCommission > 0) rows.push('Commissioni POS,' + fNum(r.posCommission));
+          rows.push('');
+        }
+
+        // Omaggi
+        if (r.courtesy && r.courtesy.total && r.courtesy.total.count > 0) {
+          rows.push('OMAGGI');
+          rows.push('Tipo,Ordini,Valore');
+          var omN = {sponsor:'Sponsor', don_pierino:'Don Pierino', amici:'Amici'};
+          ['sponsor','don_pierino','amici'].forEach(function(t) {
+            var om = r.courtesy[t];
+            if (om && om.count > 0) rows.push(csvVal(omN[t]||t) + ',' + om.count + ',' + fNum(om.realValue));
+          });
+          rows.push('');
+        }
+
+        // Classifica vendite
+        if (r.salesRanking && r.salesRanking.length > 0) {
+          rows.push('CLASSIFICA VENDITE');
+          var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
+          rows.push('#,Piatto,Quantita,Incasso' + (hasCost ? ',Costo,Margine' : ''));
+          r.salesRanking.forEach(function(item, i) {
+            var row = (i+1) + ',' + csvVal(item.name) + ',' + item.qty + ',' + fNum(item.revenue);
+            if (hasCost) {
+              row += ',' + fNum(item.totalCost||0) + ',' + fNum(item.revenue - (item.totalCost||0));
+            }
+            rows.push(row);
+          });
+          rows.push('');
+        }
+
+        rows.push('Generato da SagrApp,' + new Date().toLocaleString('it-IT'));
+
+        // BOM UTF-8 per apertura corretta in Excel
+        var csv = '\uFEFF' + rows.join('\n');
+        var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'sagrapp-report-'+dateStr+'.txt';
+        a.download = 'sagrapp-report-'+dateStr+'.csv';
         document.body.appendChild(a);
         a.click();
         setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);

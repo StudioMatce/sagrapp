@@ -533,7 +533,7 @@
             Apri report completo
           </a>
           <button class="btn btn-secondary" id="btnDownloadReport" onclick="downloadCurrentReport()">
-            &#8595; Scarica report (.txt)
+            &#8595; Scarica report (.csv)
           </button>
         </div>
         <button class="btn btn-next" onclick="completeStep(2)">Passo successivo</button>
@@ -859,77 +859,92 @@
         var recap = await res.json();
 
         var today = new Date().toISOString().slice(0, 10);
-        var fEuro = function(v) {
-          return '€' + (v || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var csvVal = function(v) {
+          var str = String(v == null ? '' : v);
+          if (str.indexOf(',') >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
+            return '"' + str.replace(/"/g, '""') + '"';
+          return str;
         };
-        var sep = '─'.repeat(48);
-        var lines = [
-          'SAGRAPP — REPORT SERATA',
-          sep,
-          'Data:    ' + today,
-          sep, '',
-          'RIEPILOGO GENERALE',
-          '  Incasso totale:  ' + fEuro(recap.totalRevenue),
-          '  Ordini totali:   ' + (recap.totalOrders || 0),
-          '  Coperti:         ' + (recap.totalCoperti || 0),
-          '  Ordini asporto:  ' + (recap.totalAsporto || 0),
-        ];
-        if (recap.discountTotal > 0) lines.push('  Sconti:          ' + fEuro(recap.discountTotal));
-        lines.push('');
+        var fNum = function(v) { return (v||0).toFixed(2); };
+        var rows = [];
+
+        rows.push('SAGRAPP - REPORT SERATA');
+        rows.push('Data,' + today);
+        rows.push('');
+
+        rows.push('RIEPILOGO');
+        rows.push('Voce,Valore');
+        rows.push('Incasso totale,' + fNum(recap.totalRevenue));
+        rows.push('Ordini totali,' + (recap.totalOrders || 0));
+        rows.push('Coperti,' + (recap.totalCoperti || 0));
+        rows.push('Ordini asporto,' + (recap.totalAsporto || 0));
+        if (recap.discountTotal > 0) rows.push('Sconti,' + fNum(recap.discountTotal));
+        if (recap.totalCost > 0) {
+          rows.push('Costo materie,' + fNum(recap.totalCost));
+          rows.push('Netto,' + fNum(recap.grossMargin));
+        }
+        rows.push('');
 
         if (recap.revenueByCassa) {
-          lines.push('INCASSO PER CASSA');
+          rows.push('INCASSO PER CASSA');
+          rows.push('Cassa,Incasso');
           var nomi = { principale: 'Cassa Generale', bar: 'Cassa Bar', casetta: 'Casetta' };
           Object.entries(recap.revenueByCassa).forEach(function(e) {
-            lines.push('  ' + (nomi[e[0]] || e[0]) + ': ' + fEuro(e[1]));
+            rows.push(csvVal(nomi[e[0]] || e[0]) + ',' + fNum(e[1]));
           });
-          lines.push('');
+          rows.push('');
         }
 
         if (recap.revenueByPayment) {
-          lines.push('METODO DI PAGAMENTO');
+          rows.push('METODO PAGAMENTO');
+          rows.push('Metodo,Incasso');
           Object.entries(recap.revenueByPayment).forEach(function(e) {
-            lines.push('  ' + (e[0] === 'pos' ? 'POS (carta)' : 'Contanti') + ': ' + fEuro(e[1]));
+            rows.push((e[0] === 'pos' ? 'POS (carta)' : 'Contanti') + ',' + fNum(e[1]));
           });
-          lines.push('');
+          if (recap.posCommission > 0) rows.push('Commissioni POS,' + fNum(recap.posCommission));
+          rows.push('');
         }
 
         if (recap.courtesy && recap.courtesy.total && recap.courtesy.total.count > 0) {
-          lines.push('OMAGGI');
+          rows.push('OMAGGI');
+          rows.push('Tipo,Ordini,Valore');
           var omNomi = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
           ['sponsor','don_pierino','amici'].forEach(function(t) {
             var om = recap.courtesy[t];
-            if (om && om.count > 0)
-              lines.push('  ' + (omNomi[t] || t) + ': ' + om.count + ' ordini — val. ' + fEuro(om.realValue));
+            if (om && om.count > 0) rows.push(csvVal(omNomi[t] || t) + ',' + om.count + ',' + fNum(om.realValue));
           });
-          lines.push('');
+          rows.push('');
         }
 
         if (recap.salesRanking && recap.salesRanking.length > 0) {
-          lines.push('CLASSIFICA VENDITE');
+          rows.push('CLASSIFICA VENDITE');
+          var hasCost = recap.salesRanking.some(function(i){ return i.totalCost > 0; });
+          rows.push('#,Piatto,Quantita,Incasso' + (hasCost ? ',Costo,Margine' : ''));
           recap.salesRanking.forEach(function(item, i) {
-            var rank = ('  ' + (i + 1) + '.').slice(-4);
-            lines.push(rank + ' ' + item.name + ': ' + item.qty + ' pz — ' + fEuro(item.revenue));
+            var row = (i+1) + ',' + csvVal(item.name) + ',' + item.qty + ',' + fNum(item.revenue);
+            if (hasCost) {
+              row += ',' + fNum(item.totalCost||0) + ',' + fNum(item.revenue - (item.totalCost||0));
+            }
+            rows.push(row);
           });
-          lines.push('');
+          rows.push('');
         }
 
-        lines.push(sep);
-        lines.push('Generato da SagrApp — ' + new Date().toLocaleString('it-IT'));
+        rows.push('Generato da SagrApp,' + new Date().toLocaleString('it-IT'));
 
-        var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+        var csv = '\uFEFF' + rows.join('\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'sagrapp-report-' + today + '.txt';
+        a.download = 'sagrapp-report-' + today + '.csv';
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
 
-        if (btn) { btn.textContent = '✓ Scaricato'; setTimeout(function() { btn.disabled = false; btn.textContent = '↓ Scarica report (.txt)'; }, 2500); }
+        if (btn) { btn.textContent = '✓ Scaricato'; setTimeout(function() { btn.disabled = false; btn.textContent = '↓ Scarica report (.csv)'; }, 2500); }
       } catch (e) {
-        if (btn) { btn.disabled = false; btn.textContent = '↓ Scarica report (.txt)'; }
+        if (btn) { btn.disabled = false; btn.textContent = '↓ Scarica report (.csv)'; }
         alert('Errore download: ' + e.message);
       }
     }
