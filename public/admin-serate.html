@@ -471,7 +471,10 @@
         rows.push('Ordini totali' + SEP + (r.totalOrders||0));
         rows.push('Coperti' + SEP + (r.totalCoperti||0));
         rows.push('Ordini asporto' + SEP + (r.totalAsporto||0));
-        if (r.discountTotal > 0) rows.push('Sconti' + SEP + fNum(r.discountTotal));
+        rows.push('Sconti applicati' + SEP + fNum(r.discountTotal || 0));
+        var omTot = r.courtesy && r.courtesy.total ? r.courtesy.total : {count:0, realValue:0};
+        rows.push('Omaggi (n. ordini)' + SEP + (omTot.count || 0));
+        rows.push('Omaggi (valore)' + SEP + fNum(omTot.realValue || 0));
         if (r.totalCost > 0) {
           rows.push('Costo materie' + SEP + fNum(r.totalCost));
           rows.push('Netto' + SEP + fNum(r.grossMargin));
@@ -479,38 +482,35 @@
         rows.push('');
 
         // Incasso per cassa
+        rows.push('INCASSO PER CASSA');
+        rows.push('Cassa' + SEP + 'Incasso');
+        var nomi = {principale:'Cassa Generale', bar:'Cassa Bar', casetta:'Casetta'};
         if (r.revenueByCassa) {
-          rows.push('INCASSO PER CASSA');
-          rows.push('Cassa' + SEP + 'Incasso');
-          var nomi = {principale:'Cassa Generale', bar:'Cassa Bar', casetta:'Casetta'};
           Object.entries(r.revenueByCassa).forEach(function(e) {
             rows.push(csvVal(nomi[e[0]]||e[0]) + SEP + fNum(e[1]));
           });
-          rows.push('');
         }
+        rows.push('');
 
         // Metodo pagamento
-        if (r.revenueByPayment) {
-          rows.push('METODO PAGAMENTO');
-          rows.push('Metodo' + SEP + 'Incasso');
-          Object.entries(r.revenueByPayment).forEach(function(e) {
-            rows.push((e[0]==='pos'?'POS (carta)':'Contanti') + SEP + fNum(e[1]));
-          });
-          if (r.posCommission > 0) rows.push('Commissioni POS' + SEP + fNum(r.posCommission));
-          rows.push('');
-        }
+        rows.push('METODO PAGAMENTO');
+        rows.push('Metodo' + SEP + 'Incasso');
+        var contanti = r.revenueByPayment && r.revenueByPayment.contanti ? r.revenueByPayment.contanti : 0;
+        var pos = r.revenueByPayment && r.revenueByPayment.pos ? r.revenueByPayment.pos : 0;
+        rows.push('Contanti' + SEP + fNum(contanti));
+        rows.push('POS (carta)' + SEP + fNum(pos));
+        if (r.posCommission > 0) rows.push('Commissioni POS' + SEP + fNum(r.posCommission));
+        rows.push('');
 
-        // Omaggi
-        if (r.courtesy && r.courtesy.total && r.courtesy.total.count > 0) {
-          rows.push('OMAGGI');
-          rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
-          var omN = {sponsor:'Sponsor', don_pierino:'Don Pierino', amici:'Amici'};
-          ['sponsor','don_pierino','amici'].forEach(function(t) {
-            var om = r.courtesy[t];
-            if (om && om.count > 0) rows.push(csvVal(omN[t]||t) + SEP + om.count + SEP + fNum(om.realValue));
-          });
-          rows.push('');
-        }
+        // Omaggi dettaglio
+        rows.push('OMAGGI DETTAGLIO');
+        rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
+        var omN = {sponsor:'Sponsor', don_pierino:'Don Pierino', amici:'Amici'};
+        ['sponsor','don_pierino','amici'].forEach(function(t) {
+          var om = r.courtesy ? r.courtesy[t] : null;
+          rows.push(csvVal(omN[t]||t) + SEP + (om ? om.count : 0) + SEP + fNum(om ? om.realValue : 0));
+        });
+        rows.push('');
 
         // Classifica vendite
         if (r.salesRanking && r.salesRanking.length > 0) {
