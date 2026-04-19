@@ -598,7 +598,8 @@ router.post('/orders', (req, res) => {
 
     // Scomponi in pezzi singoli per i contatori del monitor cuochi
     // Esempio: "Costicine con polenta" → costicine +3, polenta +1
-    if (menuItem.composition) {
+    // Ordini bar: non passano dalla cucina, skip contatori
+    if (menuItem.composition && source !== 'bar') {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].vendute += count * q;
@@ -656,6 +657,12 @@ router.post('/orders', (req, res) => {
     completed_at: null,
   };
 
+  // Ordini bar: auto-completati (non richiedono evasione da zona controllo)
+  if ((source || 'principale') === 'bar') {
+    order.status = 'completed';
+    order.completed_at = Date.now();
+  }
+
   orders.push(order);
   db.insertOrder(order).catch(err => console.error('[DB] insertOrder:', err));
 
@@ -675,7 +682,8 @@ router.post('/orders', (req, res) => {
   const cassa = order.cassa || 'principale';
 
   if (cassa === 'bar') {
-    // 1. Ricevuta → .206
+    // Cassa bar: SOLO ricevuta cliente su .206 — nessuna comanda cucina/bevande/speciali
+    // L'ordine viene auto-completato (non richiede evasione da zona controllo)
     const receiptData = printer.buildReceipt(order);
     const barPrinter = config.PRINTERS.find(p => p.id === 4);
     if (io && barPrinter) {
@@ -686,35 +694,6 @@ router.post('/orders', (req, res) => {
         job_id: `receipt-bar-${order.id}-${Date.now()}`,
       });
       prints.receipt = true;
-    }
-    // 2. Comanda cibo → .205 (se ci sono piatti di cucina)
-    //    L'header mostrerà "BAR" invece del numero tavolo
-    if (hasFood) {
-      const foodData = printer.buildFoodOrder(order);
-      const foodPrinter = config.PRINTERS.find(p => p.id === 3);
-      if (io && foodData && foodPrinter) {
-        emitToProxy('print', {
-          printer_id: 3,
-          printer_ip: foodPrinter.ip,
-          data: Array.from(foodData),
-          job_id: `food-bar-${order.id}-${Date.now()}`,
-        });
-        prints.food = true;
-      }
-    }
-    // 3. Piatti speciali → .207
-    if (hasSpecial) {
-      const specialData = printer.buildSpecialOrder(order);
-      const specialPrinter = config.PRINTERS.find(p => p.id === 5);
-      if (io && specialData && specialPrinter) {
-        emitToProxy('print', {
-          printer_id: 5,
-          printer_ip: specialPrinter.ip,
-          data: Array.from(specialData),
-          job_id: `special-bar-${order.id}-${Date.now()}`,
-        });
-        prints.special = true;
-      }
     }
   } else if (cassa === 'casetta') {
     // 1. Ricevuta → .208
