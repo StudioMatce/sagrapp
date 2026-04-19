@@ -497,22 +497,14 @@
         lines.push('Generato da SagrApp — '+new Date().toLocaleString('it-IT'));
 
         var text = lines.join('\n');
-        var blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-        var url  = URL.createObjectURL(blob);
-
-        // Usa navigatorAPI se disponibile (Chrome 86+), altrimenti fallback a link
-        if (navigator.msSaveBlob) {
-          navigator.msSaveBlob(blob, 'sagrapp-report-'+dateStr+'.txt');
-        } else {
-          var a = document.createElement('a');
-          a.href = url;
-          a.download = 'sagrapp-report-'+dateStr+'.txt';
-          a.style.position = 'fixed';
-          a.style.left = '-9999px';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-        }
+        // Scarica via data URI — compatibile Safari macOS/iOS
+        var dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+        var a = document.createElement('a');
+        a.href = dataUri;
+        a.download = 'sagrapp-report-'+dateStr+'.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
         btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg> OK';
         setTimeout(function(){
