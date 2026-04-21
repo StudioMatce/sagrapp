@@ -557,6 +557,12 @@
         alert('Errore download: '+e.message);
       }
     }
+    // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
+    window.downloadReport = downloadReport;
+    window.deleteSerata = deleteSerata;
+    window.startRename = startRename;
+    window.saveRename = saveRename;
+    window.cancelRename = cancelRename;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

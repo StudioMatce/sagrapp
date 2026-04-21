@@ -1435,6 +1435,11 @@
     // Ordine evaso o annullato: ricarica lista ordini
     socket.on('order_fulfilled_broadcast', () => { fetchStats(); loadAllOrders(); });
     socket.on('order_cancelled', () => { fetchStats(); loadAllOrders(); });
+
+    // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
+    window.reactivateItem = reactivateItem;
+    window.adjustStock = adjustStock;
+    window.cancelOrder = cancelOrder;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>
