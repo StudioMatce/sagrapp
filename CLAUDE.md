@@ -9,7 +9,7 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 - **Frontend:** HTML/CSS/JS vanilla + Socket.IO client (no framework)
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
 - **Accesso:** Login unificato con PIN (config.js → PINS). Sidebar solo per admin
-- **Navigazione:** Sidebar (js/sidebar.js) visibile su tutte le pagine quando loggato come admin (incluse monitor, scaldavivande, controllo). Pulsante "Esci" su pagine non-admin
+- **Navigazione:** Sidebar (js/sidebar.js) visibile su tutte le pagine quando loggato come admin (incluse monitor, scaldavivande, controllo). Pulsante "Esci" su pagine non-admin. Soft navigation PJAX per pagine admin — funzioni onclick devono essere esportate su `window` per compatibilità
 - **Deploy:** Railway (con variabile d'ambiente DATABASE_URL impostata nel progetto)
 
 ## Struttura file
@@ -35,11 +35,11 @@ public/
   admin.html        # Dashboard admin LIVE (con sidebar)
   admin-recap.html  # Report post-serata (con omaggi e sconti)
   admin-magazzino.html # Magazzino materiali e consumabili (bicchieri, posate, ecc.)
-  admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo)
-  admin-chiusura.html  # Procedura chiusura turno (flash summary + scarica report + PIN re-entry)
+  admin-hardware.html  # Pannello controllo hardware (dispositivi + test completo + pre-flight check integrato)
+  admin-chiusura.html  # Procedura chiusura turno (selettore pranzo/cena + flash summary + scarica report + PIN re-entry)
   admin-menu.html   # Gestione menu: piatti, prezzi, casse, composizione pezzi, scorte inline
-  admin-serate.html # Storico serate: tabella comparativa con download report per serata
-  setup.html        # Wizard setup inizio turno (progress bar + device checks)
+  admin-serate.html # Storico serate: tabella comparativa con download report, badge turno, recap weekend/totale
+  setup.html        # Wizard setup inizio turno (legacy — pre-flight check ora integrato in admin-hardware)
   js/sidebar.js     # Sidebar navigazione (pagine admin + monitor + scaldavivande + controllo)
 ```
 
@@ -178,7 +178,7 @@ L'operatore può annullare un ordine aperto (con conferma):
 ## Admin RECAP
 Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Totale ordini e incasso
-- Classifica vendite per piatto
+- Classifica vendite per piatto **raggruppata per categoria** (primo, secondo, speciale, contorno, condimento, bevanda) in **ordine alfabetico**, tutti i piatti visibili anche con venduto 0
 - Distribuzione ordini per ora
 - Incasso per cassa e per metodo pagamento
 - Report magazzino (iniziale → venduto → rimanente)
@@ -187,12 +187,26 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - **Coperti totali** della serata (esclusi annullati)
 - **Ordini asporto** totali
 - Ordini incompleti
+- Supporta URL params: `?mode=total` (recap totale sagra), `?ids=id1,id2` (recap aggregato sessioni specifiche)
+
+### Turni pranzo/cena
+- La chiusura turno (`POST /admin/reset`) accetta `{ turno: "pranzo" | "cena" }` nel body
+- Auto-detect: prima delle 16:00 = pranzo, dopo = cena
+- Pranzo e cena dello stesso giorno sono **sessioni separate** (con badge colorato nello storico)
+- Chiudere lo stesso turno due volte nella stessa giornata **mergia** i dati come prima
+- DB: colonna `turno` in `archived_sessions` (nullable, retrocompatibile con serate vecchie)
 
 ### Archivio serate
 - **Selettore serate** nell'header del recap per visualizzare lo storico
-- Alla chiusura turno (`POST /admin/reset`), lo snapshot viene salvato in `archivedSessions`
-- Se si chiude più volte nella stessa giornata, i dati vengono **aggregati** in un'unica sessione (merge di ordini, vendite, omaggi, scorte)
-- API: `GET /api/admin/sessions` (lista serate), `GET /api/admin/sessions/:id/recap` (recap archiviato)
+- Alla chiusura turno, lo snapshot viene salvato in `archivedSessions` con il turno (pranzo/cena)
+- API: `GET /api/admin/sessions` (lista serate con turno), `GET /api/admin/sessions/:id/recap` (recap archiviato)
+- **Recap aggregati**: `GET /api/admin/recap/aggregate?mode=total` (totale sagra), `?ids=id1,id2` (sessioni specifiche)
+- Nello storico serate: pulsante "Recap Totale Sagra" + pulsanti "Recap Weekend" automatici per ogni coppia Sab-Dom
+
+### Export CSV
+- Formato unificato in tutte le pagine (recap, serate, chiusura): separatore `;`, BOM UTF-8, `sep=;` per Excel
+- Classifica vendite raggruppata per categoria con header sezione, ordine alfabetico, piatti a venduto 0 inclusi
+- Sezioni: RIEPILOGO, INCASSO PER CASSA, METODO PAGAMENTO (lordo/commissioni/netto), OMAGGI DETTAGLIO, CLASSIFICA VENDITE
 
 ## Layout casse
 Tutte e tre le casse usano il **layout a due pannelli 70/30**:
@@ -224,6 +238,7 @@ Tutte e tre le casse usano il **layout a due pannelli 70/30**:
 - Usare `/frontend-design` per qualsiasi nuova pagina o modifica UI
 - I commenti nel codice sono in italiano per le parti complesse
 - Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
+- **PJAX**: la sidebar wrappa gli script delle pagine admin in IIFE. Le funzioni usate in attributi HTML `onclick` **devono** essere esportate su `window` (es. `window.myFunc = myFunc;`) — altrimenti non funzionano dopo navigazione via sidebar
 - Il documento tecnico completo è in `SagrApp_Claude_Code_v4.4.md` (aggiornato al 13/04/2026)
 
 ## Comandi
@@ -254,7 +269,7 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/monitor` — Monitor cuochi TV (accesso diretto, no PIN)
 - `/scaldavivande` — Tablet scaldavivande (PIN 0002 → scelta ruolo)
 - `/controllo` — Tablet operatore fisso (PIN 0002 → scelta ruolo)
-- `/setup` — Wizard setup inizio turno (admin)
+- `/setup` — Wizard setup inizio turno (legacy, pre-flight check ora in `/admin/hardware`)
 - `/admin` — Dashboard admin LIVE (PIN 0000)
 - `/admin/recap` — Report post-serata (admin)
 - `/admin/magazzino` — Magazzino materiali e consumabili (admin)
