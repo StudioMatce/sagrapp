@@ -38,6 +38,7 @@
         { name: 'Dashboard Live', url: '/admin', icon: '\uD83D\uDCCA' },
         { name: 'Report Serata', url: '/admin/recap', icon: '\uD83D\uDCC8' },
         { name: 'Storico Serate', url: '/admin/serate', icon: '\uD83D\uDDC2\uFE0F' },
+        { name: 'Recap Totale', url: '/admin/recap?mode=total', icon: '\uD83C\uDFC6' },
         { name: 'Gestione Menu', url: '/admin/menu', icon: '\uD83C\uDF7D\uFE0F' },
         { name: 'Magazzino', url: '/admin/magazzino', icon: '\uD83D\uDCE6' },
         { name: 'Pannello Hardware', url: '/admin/hardware', icon: '\uD83D\uDD27' },
@@ -47,6 +48,7 @@
   ];
 
   var currentPath = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+  var currentSearch = window.location.search || '';
   var STORAGE_KEY = 'sagrapp_sidebar_open';
   var sidebarOpen = localStorage.getItem(STORAGE_KEY) !== 'false';
 
@@ -199,8 +201,11 @@
         var link = document.createElement('a');
         link.className = 'sa-nav-item';
         link.href = item.url;
-        var itemPath = item.url.replace(/\/$/, '') || '/';
-        if (currentPath === itemPath) {
+        var itemUrl = new URL(item.url, window.location.origin);
+        var itemPath = itemUrl.pathname.replace(/\/$/, '') || '/';
+        var itemSearch = itemUrl.search || '';
+        // Match esatto: pathname + query string (per distinguere /admin/recap da /admin/recap?mode=total)
+        if (currentPath === itemPath && currentSearch === itemSearch) {
           link.classList.add('active');
         }
         link.innerHTML = '<span class="sa-nav-item-icon">' + item.icon + '</span> ' + item.name;
@@ -280,13 +285,15 @@
       if (!link || !link.href) return;
       if (e.ctrlKey || e.metaKey || e.shiftKey) return;
 
-      var targetPath = new URL(link.href).pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+      var targetUrl = new URL(link.href);
+      var targetPath = targetUrl.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+      var targetSearch = targetUrl.search || '';
 
       // Solo pagine admin usano soft navigation
       if (!isAdminPage(targetPath)) return;
 
-      // Già sulla stessa pagina
-      if (targetPath === currentPath) { e.preventDefault(); return; }
+      // Già sulla stessa pagina (pathname + query string)
+      if (targetPath === currentPath && targetSearch === currentSearch) { e.preventDefault(); return; }
 
       e.preventDefault();
       softNavigate(link.href);
@@ -355,10 +362,14 @@
 
       // 7. Aggiorna URL e voce attiva
       if (!isPopState) history.pushState(null, '', url);
-      currentPath = new URL(url).pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+      var navUrl = new URL(url);
+      currentPath = navUrl.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+      currentSearch = navUrl.search || '';
       document.querySelectorAll('.sa-nav-item').forEach(function(item) {
-        var p = item.getAttribute('href').replace(/\/$/, '') || '/';
-        item.classList.toggle('active', currentPath === p);
+        var iu = new URL(item.getAttribute('href'), window.location.origin);
+        var ip = iu.pathname.replace(/\/$/, '') || '/';
+        var is = iu.search || '';
+        item.classList.toggle('active', currentPath === ip && currentSearch === is);
       });
 
     }).catch(function(err) {
