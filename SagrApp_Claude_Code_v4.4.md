@@ -48,10 +48,10 @@ Il codice prodotto in questa fase **non è usa e getta**: il server, la connessi
 | **Runtime** | Node.js | Leggero, ottimo per I/O async, WebSocket nativo |
 | **Framework backend** | Express.js | Semplice, ampiamente supportato |
 | **Real-time** | Socket.IO | WebSocket con fallback, rooms, broadcast |
-| **Database** | SQLite (via better-sqlite3) | Zero configurazione, file singolo, perfetto per sagra |
+| **Database** | PostgreSQL su Neon (cloud) via `pg` (node-postgres) | Persistenza cloud, connection string in `DATABASE_URL` |
 | **Frontend** | HTML/CSS/JS vanilla + Socket.IO client | Nessun framework frontend necessario, deve girare su qualsiasi browser |
 | **Stampa** | escpos + node-thermal-printer via rete TCP | Stampa diretta ESC/POS su stampanti LAN |
-| **Deploy** | VPS (Hetzner/DigitalOcean) con Node.js + PM2 | Processo persistente, auto-restart |
+| **Deploy** | Railway (con variabile `DATABASE_URL`) | Deploy automatico da GitHub, auto-restart |
 
 ### Architettura di rete
 
@@ -358,7 +358,7 @@ sagrapp/
 │
 ├── public/
 │   ├── index.html            # Landing page — selezione ruolo dispositivo
-│   ├── setup.html            # Wizard setup inizio turno
+│   ├── setup.html            # Wizard setup inizio turno (legacy — pre-flight check ora in admin-hardware)
 │   ├── cassa.html            # Interfaccia cassa generale (layout come foglio cartaceo)
 │   ├── cassa-bar.html        # Interfaccia cassa bar (solo bevande)
 │   ├── cassa-casetta.html    # Interfaccia cassa casetta aperitivi
@@ -369,8 +369,9 @@ sagrapp/
 │   ├── admin-recap.html      # Dashboard admin RECAP (report post servizio)
 │   ├── admin-magazzino.html  # Magazzino materiali e consumabili (bicchieri, posate, ecc.)
 │   ├── admin-menu.html       # Gestione menu + scorte inline (piatti, prezzi, casse, stock)
-│   ├── admin-hardware.html   # Pannello controllo hardware in tempo reale
-│   ├── admin-chiusura.html   # Procedura chiusura turno guidata
+│   ├── admin-hardware.html   # Pannello controllo hardware + pre-flight check integrato
+│   ├── admin-chiusura.html   # Procedura chiusura turno guidata (con selettore pranzo/cena)
+│   ├── admin-serate.html     # Storico serate: tabella, badge turno, recap weekend/totale
 │   ├── css/
 │   │   └── style.css         # Stili
 │   └── js/
@@ -441,7 +442,6 @@ La sidebar è visibile **solo per l'utente Admin**. Gli altri ruoli vanno dirett
 | | Magazzino Materiali | /admin/magazzino |
 | | Menu e Scorte | /admin/menu |
 | | Controllo Hardware | /admin/hardware |
-| | Setup Turno | /setup |
 | | Chiusura Turno | /admin/chiusura |
 
 **Comportamento sidebar (solo admin):**
@@ -449,6 +449,7 @@ La sidebar è visibile **solo per l'utente Admin**. Gli altri ruoli vanno dirett
 - La sidebar è **comprimibile** (hamburger ☰)
 - L'admin può navigare a TUTTE le pagine del sistema (casse, monitor, scaldavivande, controllo, admin)
 - Tema scuro coerente con il resto della piattaforma
+- **PJAX**: la sidebar usa soft navigation per pagine admin (carica HTML senza refresh completo). Gli script vengono wrappati in IIFE — tutte le funzioni usate in attributi `onclick` HTML **devono** essere esportate su `window` (es. `window.myFunc = myFunc;`)
 
 **Sistema di Accesso — Login con PIN:**
 
@@ -548,8 +549,9 @@ Dopo la scelta → va diretto alla pagina, niente sidebar.
 | POST | /api/login | Verifica PIN → restituisce ruolo, token e destinazioni |
 | GET | /api/admin/stats/live | Dati live: ordini, incasso, stati (richiede auth) |
 | GET | /api/admin/stats/recap | Dati recap serata corrente con omaggi e sconti (richiede auth) |
-| GET | /api/admin/sessions | Lista serate archiviate (id, data, ordini, incasso) (richiede auth) |
+| GET | /api/admin/sessions | Lista serate archiviate (id, data, turno, ordini, incasso) (richiede auth) |
 | GET | /api/admin/sessions/:id/recap | Recap completo di una serata archiviata (richiede auth) |
+| GET | /api/admin/recap/aggregate | Recap aggregato: `?mode=total` (totale sagra) o `?ids=id1,id2` (sessioni specifiche) |
 | GET | /api/inventory | Lista piatti con scorte attuali |
 | PUT | /api/inventory/:id | Aggiorna scorta piatto (quantità, soglia, stato) |
 | POST | /api/inventory/:id/adjust | Aggiustamento rapido scorta (+/- quantità) |
@@ -1031,15 +1033,17 @@ Dashboard in tempo reale per il responsabile durante il servizio.
 Report completo post-servizio. Dati statici (non real-time), calcolati alla chiusura della serata.
 
 **Sezioni:**
-1. **Riepilogo incassi** — Totale, per cassa, per metodo pagamento
-2. **KPI principali** — Ordini totali, incasso, tempo medio evasione, coperti totali, ordini asporto
-3. **Classifica vendite** — Piatti ordinati dal più al meno venduto, con quantità e incasso
+1. **Riepilogo incassi** — Totale, per cassa, per metodo pagamento (con lordo/commissioni/netto POS)
+2. **KPI principali** — Ordini totali, incasso, tempo medio evasione, coperti totali, ordini asporto, costo materie, netto
+3. **Classifica vendite** — **Raggruppata per categoria** (Primi, Secondi, Speciali, Contorni, Condimenti, Bevande), **ordine alfabetico** dentro ogni categoria, **tutti i piatti visibili** anche con venduto 0 (opacità ridotta)
 4. **Performance** — Tempo medio evasione, distribuzione ordini nel tempo (grafico orario)
-5. **Magazzino** — Per ogni piatto: scorta iniziale → venduto → rimanente. Piatti esauriti con timestamp
-6. **Omaggi** — Totale omaggi suddiviso per tipo (Sponsor, Don Pierino, Amici), con valore economico reale di ciò che è stato regalato, numero ordini per tipo, dettaglio piatti omaggiati
-7. **Sconti** — Totale sconti applicati, numero ordini con sconto
-8. **Anomalie** — Ordini incompleti, sprechi griglia (prodotto vs venduto)
-9. **Pulsante esportazione** — CSV per importazione in Excel
+5. **Magazzino** — Per ogni piatto: scorta iniziale → venduto → rimanente
+6. **Omaggi** — Totale omaggi suddiviso per tipo (Sponsor, Don Pierino, Amici), con valore economico reale
+7. **Sconti** — Totale sconti applicati
+8. **Anomalie** — Ordini incompleti
+9. **Pulsante esportazione** — CSV unificato (sep=`;`, BOM UTF-8, piatti per categoria)
+
+**Recap aggregati:** Supporta URL params `?mode=total` (recap totale sagra) e `?ids=id1,id2` (sessioni specifiche, es. recap weekend). I dati vengono uniti server-side tramite `mergeRecap()`.
 
 **Layout:** usa /frontend-design — stile report, card per ogni sezione, numeri grandi per i KPI principali
 
@@ -1104,49 +1108,21 @@ Pagina admin per configurare il menu della sagra: piatti, prezzi, disponibilità
 - I piatti speciali mostrano la data di disponibilità con icona calendario
 - Accessibile dalla sidebar admin
 
-### 5.15 — Componente: Setup Inizio Turno (public/setup.html)
+### 5.15 — Pre-flight Check (integrato in admin-hardware.html)
 
-Wizard guidato che verifica tutto l'hardware prima di iniziare il servizio. Accessibile solo dall'admin.
-
-**Layout — usa /frontend-design:**
-
-```
-╔══════════════════════════════════════════════════════════╗
-║  🚀 Setup Inizio Turno                                  ║
-╠══════════════════════════════════════════════════════════╣
-║                                                          ║
-║  ✅ Server cloud              Online (32ms)              ║
-║  ✅ Print proxy               Connesso                   ║
-║  ✅ vretti (ricevuta cassa)   .203 OK                    ║
-║  ✅ vretti (comanda cibo)     192.168.1.202 OK           ║
-║  ⏳ Fuhuihe (comanda bev.)   Test in corso...            ║
-║  ⬜ Monitor cuochi            In attesa                   ║
-║  ⬜ Tablet scaldavivande      In attesa                   ║
-║  ⬜ Tablet zona controllo     In attesa                   ║
-║                                                          ║
-║  ████████████░░░░░░░░░  62% completato                  ║
-║                                                          ║
-║  ┌──────────────────────────────────────────────────┐   ║
-║  │ ⚠ Fuhuihe: timeout connessione.                 │   ║
-║  │ Suggerimento: verifica che sia accesa e          │   ║
-║  │ collegata al Powerline con cavo LAN.             │   ║
-║  └──────────────────────────────────────────────────┘   ║
-║                                                          ║
-║  [▶ AVVIA SERVIZIO]  (attivo solo quando tutto ✅)      ║
-║  [⚠ Avvia con limitazioni]  (se dispositivi non critici)║
-║                                                          ║
-╚══════════════════════════════════════════════════════════╝
-```
+Il pre-flight check è **integrato nel Pannello Hardware** come sezione "Setup Turno" in cima alla pagina. Non è più una pagina separata nella sidebar (setup.html resta accessibile via URL diretto come legacy).
 
 **Comportamento:**
-- I check partono automaticamente uno dopo l'altro con animazione
-- Per ogni stampante: TCP ping (LAN) o device check (USB) + stampa di test opzionale
-- Per monitor e tablet: verifica che siano connessi via Socket.IO
-- Per tablet zona controllo: verifica connessione Socket.IO
-- Se un check fallisce: mostra il problema specifico e un suggerimento per risolverlo
-- Pulsante "Riprova" per ritentare un check fallito singolarmente
-- "Avvia Servizio" abilitato solo quando tutti i check critici (server, proxy, almeno 1 stampante) sono verdi
-- "Avvia con limitazioni" se mancano dispositivi non critici (monitor, scaldavivande, zona controllo)
+- Pulsante "Avvia Pre-flight Check" mostra il pannello con 5 check sequenziali:
+  1. Server HTTP connesso (fetch `/api/menu`)
+  2. Socket.IO connesso (riusa il socket della pagina hardware)
+  3. Print proxy online (via `device_status`)
+  4. Stampanti raggiungibili (ping via `request_printer_check`)
+  5. Dispositivi connessi — non critico (monitor, scaldavivande, controllo)
+- Progress bar animata con percentuale
+- Check critici: server, socket, proxy, stampanti. Dispositivi = warning
+- Risultato: "Tutto OK", "Dispositivi non critici mancanti" o "Problemi critici rilevati"
+- Pulsante diventa "Riavvia Pre-flight Check" dopo il primo run
 
 ### 5.16 — Componente: Controllo Hardware (public/admin-hardware.html)
 
@@ -1275,12 +1251,29 @@ Procedura guidata per chiudere il servizio a fine serata.
 ╚══════════════════════════════════════════════════════════╝
 ```
 
-**Comportamento:**
-- Step 1: mostra ordini incompleti. L'admin può chiuderli forzatamente o aspettare
-- Step 2: riepilogo numeri chiave della serata (non il report completo, quello è nella RECAP)
-- Step 3: richiede il PIN admin e conferma definitiva
-- Dopo la chiusura: tutte le casse mostrano "Servizio chiuso" e non accettano più ordini
+**Comportamento (5 step):**
+- Step 1: mostra ordini incompleti. L'admin può procedere comunque o aspettare
+- Step 2: riepilogo flash (incasso, ordini, piatti esauriti) + download CSV + **selettore turno PRANZO/CENA** (auto-detect: prima delle 16:00 = pranzo, dopo = cena)
+- Step 3: scorte finali (lista piatti con stock rimanente)
+- Step 4: conferma password + pulsante reset. Il turno selezionato viene inviato al server `POST /admin/reset { turno: "pranzo"|"cena" }`
+- Step 5: conferma "Turno chiuso con successo"
+- Dopo la chiusura: broadcast `service_closed` a tutti i client
+- Pranzo e cena dello stesso giorno vengono salvati come **sessioni separate**
 - Il report completo è disponibile nella dashboard RECAP
+
+### 5.19 — Componente: Storico Serate (public/admin-serate.html)
+
+Tabella comparativa di tutte le serate archiviate con possibilità di download report, rinomina e eliminazione.
+
+**Funzionalità:**
+- Tabella con colonne: #, Serata (nome + badge turno pranzo/cena), Incasso (con barra proporzionale), Ordini, Coperti, Top Piatto, Azioni (scarica CSV + elimina)
+- **Badge turno**: ogni sessione mostra "pranzo" (giallo) o "cena" (viola) accanto alla data
+- **Rinomina inline**: click sull'icona matita → input inline con salva/annulla
+- **Download report**: scarica CSV con formato unificato (sep=`;`, per categoria)
+- **Elimina serata**: con conferma, rimuove sessione dall'archivio
+- **Recap aggregati** (barra in alto):
+  - Pulsante "Recap Totale Sagra" → apre `/admin/recap?mode=total`
+  - Pulsanti "Weekend [date]" automatici per ogni coppia Sab-Dom → apre `/admin/recap?ids=id1,id2,...`
 
 ---
 
