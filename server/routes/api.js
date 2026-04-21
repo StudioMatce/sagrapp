@@ -948,7 +948,7 @@ function computeRecap() {
   // Inizializza con TUTTI i piatti del menu (così appaiono anche quelli a 0)
   config.MENU.forEach(m => {
     salesByItem[m.id] = {
-      id: m.id, name: m.name, qty: 0, revenue: 0,
+      id: m.id, name: m.name, category: m.category, qty: 0, revenue: 0,
       cost_price: m.cost_price != null ? m.cost_price : null, totalCost: 0,
     };
   });
@@ -957,7 +957,7 @@ function computeRecap() {
       if (!salesByItem[oi.id]) {
         const menuRef = config.MENU.find(m => m.id === oi.id);
         const costPrice = menuRef && menuRef.cost_price != null ? menuRef.cost_price : null;
-        salesByItem[oi.id] = { id: oi.id, name: oi.name, qty: 0, revenue: 0, cost_price: costPrice, totalCost: 0 };
+        salesByItem[oi.id] = { id: oi.id, name: oi.name, category: menuRef ? menuRef.category : 'altro', qty: 0, revenue: 0, cost_price: costPrice, totalCost: 0 };
       }
       salesByItem[oi.id].qty += oi.qty;
       salesByItem[oi.id].revenue += oi.qty * oi.price;
@@ -966,7 +966,16 @@ function computeRecap() {
       }
     });
   });
-  const salesRanking = Object.values(salesByItem).sort((a, b) => b.qty - a.qty);
+  // Ordine categorie per la visualizzazione raggruppata
+  const CATEGORY_ORDER = ['primo', 'secondo', 'speciale', 'contorno', 'condimento', 'bevanda'];
+  const salesRanking = Object.values(salesByItem).sort((a, b) => {
+    const catA = CATEGORY_ORDER.indexOf(a.category);
+    const catB = CATEGORY_ORDER.indexOf(b.category);
+    const ca = catA >= 0 ? catA : 99;
+    const cb = catB >= 0 ? catB : 99;
+    if (ca !== cb) return ca - cb;
+    return (a.name || '').localeCompare(b.name || '', 'it');
+  });
 
   // Totale costi e margine lordo
   const totalCost = salesRanking.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -1153,6 +1162,7 @@ router.get('/admin/sessions', requireAdmin, (req, res) => {
   const list = archivedSessions.map(s => ({
     id: s.id,
     date: s.date,
+    turno: s.turno || null,
     closed_at: s.closed_at,
     label: s.recap._label || null,
     totalOrders: s.recap.totalOrders,
@@ -1173,6 +1183,37 @@ router.get('/admin/sessions/:id/recap', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Serata non trovata' });
   }
   res.json({ ...session.recap, _sessionDate: session.date });
+});
+
+// Recap aggregato: unisce piu' sessioni (per recap weekend o totale sagra)
+// Uso: ?ids=id1,id2,id3  oppure  ?mode=total
+router.get('/admin/recap/aggregate', requireAdmin, (req, res) => {
+  let sessions;
+  if (req.query.mode === 'total') {
+    sessions = archivedSessions;
+  } else if (req.query.ids) {
+    const ids = req.query.ids.split(',');
+    sessions = archivedSessions.filter(s => ids.includes(s.id));
+  } else {
+    return res.status(400).json({ error: 'Specificare ids o mode=total' });
+  }
+  if (sessions.length === 0) {
+    return res.status(404).json({ error: 'Nessuna sessione trovata' });
+  }
+
+  // Clona il primo recap e mergia gli altri sopra
+  const merged = JSON.parse(JSON.stringify(sessions[0].recap));
+  for (let i = 1; i < sessions.length; i++) {
+    mergeRecap(merged, sessions[i].recap);
+  }
+
+  // Metadati utili per il frontend
+  const dates = sessions.map(s => s.date).sort();
+  merged._aggregateType = req.query.mode === 'total' ? 'total' : 'custom';
+  merged._aggregateDates = dates;
+  merged._aggregateCount = sessions.length;
+
+  res.json(merged);
 });
 
 // Rinomina una serata archiviata (aggiorna _label nel recap)
@@ -1447,32 +1488,39 @@ router.delete('/warehouse/:id', requireAdmin, (req, res) => {
 // =============================================
 
 router.post('/admin/reset', requireAdmin, (req, res) => {
+  // Turno: pranzo o cena (inviato dal client). Default: auto in base all'ora
+  const turno = (req.body && (req.body.turno === 'pranzo' || req.body.turno === 'cena'))
+    ? req.body.turno
+    : (new Date().getHours() < 16 ? 'pranzo' : 'cena');
+
   // Salva snapshot della serata corrente nell'archivio (solo se ci sono ordini)
   if (orders.length > 0) {
     const recap = computeRecap();
+    recap._turno = turno;
     const now = new Date();
     // Usa la data del primo ordine come data della serata (piu' accurato)
     const sessionDate = orders.length > 0
       ? new Date(orders[0].created_at).toISOString().slice(0, 10)
       : now.toISOString().slice(0, 10);
 
-    // Se esiste gia' un archivio per la stessa data, unisci i dati
-    const existing = archivedSessions.find(s => s.date === sessionDate);
+    // Se esiste gia' un archivio per la stessa data E stesso turno, unisci i dati
+    const existing = archivedSessions.find(s => s.date === sessionDate && s.turno === turno);
     if (existing) {
       mergeRecap(existing.recap, recap);
       existing.closed_at = now.getTime();
       db.updateArchivedSession(existing.id, existing.closed_at, existing.recap).catch(err => console.error('[DB] updateArchivedSession:', err));
-      console.log(`[Admin] Serata ${sessionDate} aggiornata (${existing.recap.totalOrders} ordini totali, €${existing.recap.totalRevenue.toFixed(2)})`);
+      console.log(`[Admin] ${turno} ${sessionDate} aggiornata (${existing.recap.totalOrders} ordini totali, €${existing.recap.totalRevenue.toFixed(2)})`);
     } else {
       const session = {
         id: 'session_' + now.getTime(),
         date: sessionDate,
+        turno,
         closed_at: now.getTime(),
         recap,
       };
       archivedSessions.push(session);
       db.insertArchivedSession(session).catch(err => console.error('[DB] insertArchivedSession:', err));
-      console.log(`[Admin] Serata ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
+      console.log(`[Admin] ${turno} ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
     }
   }
 

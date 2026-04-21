@@ -135,6 +135,7 @@ async function createTables() {
   // Migrations — aggiunta colonne a tabelle esistenti
   const migrations = [
     `ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS cost_price DOUBLE PRECISION`,
+    `ALTER TABLE archived_sessions ADD COLUMN IF NOT EXISTS turno TEXT`,
   ];
   for (const m of migrations) {
     await pool.query(m).catch(() => {}); // ignora se già esiste
@@ -315,6 +316,7 @@ async function getArchivedSessions() {
   return rows.map(row => ({
     id: row.id,
     date: row.date,
+    turno: row.turno || null,
     closed_at: parseInt(row.closed_at),
     recap: JSON.parse(row.recap),
   }));
@@ -334,8 +336,8 @@ async function getArchivedSessionByDate(date) {
 
 async function insertArchivedSession(session) {
   await pool.query(
-    'INSERT INTO archived_sessions (id, date, closed_at, recap) VALUES ($1, $2, $3, $4)',
-    [session.id, session.date, session.closed_at, JSON.stringify(session.recap)]
+    'INSERT INTO archived_sessions (id, date, closed_at, recap, turno) VALUES ($1, $2, $3, $4, $5)',
+    [session.id, session.date, session.closed_at, JSON.stringify(session.recap), session.turno || null]
   );
 }
 

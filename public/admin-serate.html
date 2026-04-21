@@ -196,6 +196,30 @@
     .btn-del:active { transform: scale(0.93); }
     .btn-del svg { width: 13px; height: 13px; pointer-events: none; }
 
+    /* turno badge */
+    .turno-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
+      font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+    }
+    .turno-badge.pranzo { color: #fbbf24; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.2); }
+    .turno-badge.cena { color: #818cf8; background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.2); }
+
+    /* aggregate buttons */
+    .aggregate-bar {
+      display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .btn-aggregate {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-raised);
+      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; cursor: pointer; transition: all 150ms ease;
+      text-decoration: none;
+    }
+    .btn-aggregate:hover { border-color: rgba(78,204,163,0.35); color: var(--green); background: var(--green-dim); }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 700px) {
       .page-body { padding: 18px 12px 40px; }
@@ -214,6 +238,9 @@
   </header>
 
   <div class="page-body">
+    <div class="aggregate-bar" id="aggregateBar" style="display:none;">
+      <a class="btn-aggregate" id="btnRecapTotal" href="#" onclick="openRecapTotal(); return false;">Recap Totale Sagra</a>
+    </div>
     <div id="root"><div class="state-center">Caricamento...</div></div>
   </div>
 
@@ -258,6 +285,7 @@
     function render() {
       var root = document.getElementById('root');
       if (!SESSIONS.length) {
+        document.getElementById('aggregateBar').style.display = 'none';
         root.innerHTML =
           '<div class="state-center">' +
             '<div class="state-center-icon">📋</div>' +
@@ -266,6 +294,11 @@
           '</div>';
         return;
       }
+
+      // Mostra barra aggregate + pulsanti weekend
+      var aggBar = document.getElementById('aggregateBar');
+      aggBar.style.display = 'flex';
+      buildWeekendButtons();
 
       var badge = document.getElementById('headerBadge');
       badge.style.display = '';
@@ -276,6 +309,7 @@
       var rows = SESSIONS.map(function(s, i) {
         var pct   = maxRev > 0 ? Math.round((s.totalRevenue/maxRev)*100) : 0;
         var label = s.label || fDate(s.date);
+        var turnoBadge = s.turno ? '<span class="turno-badge '+esc(s.turno)+'">'+esc(s.turno)+'</span>' : '';
         var topH  = s.topPiatto
           ? '<div class="top-name" title="'+esc(s.topPiatto)+'">'+esc(s.topPiatto)+'</div>' +
             '<div class="top-qty">'+(s.topPiattoQty||0)+' venduti</div>'
@@ -285,7 +319,7 @@
           '<td class="col-idx">'+(i+1)+'</td>' +
           '<td class="col-data">' +
             '<div id="name-'+esc(s.id)+'" class="rename-row">' +
-              '<span class="data-name">'+esc(label)+'</span>' +
+              '<span class="data-name">'+esc(label)+turnoBadge+'</span>' +
               '<button class="btn-icon edit" onclick="startRename(\''+esc(s.id)+'\',\''+esc(s.date)+'\')" title="Rinomina">' +
                 '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">' +
                   '<path d="M11 2l3 3-8 8H3v-3L11 2z"/>' +
@@ -513,20 +547,31 @@
         });
         rows.push('');
 
-        // Classifica vendite
+        // Classifica vendite raggruppata per categoria
         if (r.salesRanking && r.salesRanking.length > 0) {
           rows.push('CLASSIFICA VENDITE');
           var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
-          rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+          var currentCsvCat = null;
           var totQty = 0, totRev = 0, totCost = 0;
-          r.salesRanking.forEach(function(item, i) {
+          var num = 0;
+          r.salesRanking.forEach(function(item) {
+            var cat = item.category || 'altro';
+            if (cat !== currentCsvCat) {
+              currentCsvCat = cat;
+              rows.push('');
+              rows.push(catLabels[cat] || cat.toUpperCase());
+              rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+            }
+            num++;
             totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
-            var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
             if (hasCost) {
               row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
+          rows.push('');
           var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
           if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
           rows.push(totRow);
@@ -557,12 +602,74 @@
         alert('Errore download: '+e.message);
       }
     }
+    // ─── recap aggregati ──────────────────────────────────
+    function openRecapTotal() {
+      if (!SESSIONS.length) return;
+      window.location.href = '/admin/recap?mode=total';
+    }
+
+    function openRecapWeekend(ids, label) {
+      window.location.href = '/admin/recap?ids=' + ids.join(',') + '&label=' + encodeURIComponent(label);
+    }
+
+    // Raggruppa sessioni per weekend (Sab+Dom) e crea pulsanti
+    function buildWeekendButtons() {
+      var bar = document.getElementById('aggregateBar');
+      // Rimuovi vecchi bottoni weekend (mantieni solo recap totale)
+      var oldBtns = bar.querySelectorAll('.btn-weekend');
+      oldBtns.forEach(function(b) { b.remove(); });
+
+      // Raggruppa per data e trova coppie Sab-Dom
+      var byDate = {};
+      SESSIONS.forEach(function(s) {
+        if (!byDate[s.date]) byDate[s.date] = [];
+        byDate[s.date].push(s);
+      });
+
+      var weekends = {};
+      Object.keys(byDate).forEach(function(dateStr) {
+        var p = dateStr.split('-');
+        var d = new Date(+p[0], +p[1]-1, +p[2]);
+        var day = d.getDay(); // 0=Dom, 6=Sab
+        var satDate;
+        if (day === 6) satDate = dateStr; // Sabato
+        else if (day === 0) { // Domenica -> sabato precedente
+          var sat = new Date(d); sat.setDate(sat.getDate() - 1);
+          satDate = sat.toISOString().slice(0, 10);
+        } else return; // Non e' weekend
+
+        if (!weekends[satDate]) weekends[satDate] = [];
+        byDate[dateStr].forEach(function(s) { weekends[satDate].push(s); });
+      });
+
+      // Crea pulsanti per ogni weekend con 2+ sessioni
+      var satDates = Object.keys(weekends).sort().reverse();
+      satDates.forEach(function(satDate) {
+        var sessions = weekends[satDate];
+        if (sessions.length < 2) return;
+        var ids = sessions.map(function(s) { return s.id; });
+        var p = satDate.split('-');
+        var sat = new Date(+p[0], +p[1]-1, +p[2]);
+        var sun = new Date(sat); sun.setDate(sun.getDate() + 1);
+        var label = 'Weekend ' + sat.getDate() + '-' + sun.getDate() + ' ' + MONTHS[sat.getMonth()];
+
+        var btn = document.createElement('a');
+        btn.className = 'btn-aggregate btn-weekend';
+        btn.href = '#';
+        btn.textContent = label;
+        btn.onclick = function(e) { e.preventDefault(); openRecapWeekend(ids, label); };
+        bar.appendChild(btn);
+      });
+    }
+
     // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
     window.downloadReport = downloadReport;
     window.deleteSerata = deleteSerata;
     window.startRename = startRename;
     window.saveRename = saveRename;
     window.cancelRename = cancelRename;
+    window.openRecapTotal = openRecapTotal;
+    window.openRecapWeekend = openRecapWeekend;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

@@ -330,6 +330,47 @@
       border-color: var(--red);
     }
 
+    /* ===== TURNO SELECTOR ===== */
+    .turno-selector {
+      display: flex;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .turno-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      color: var(--text-mid);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 150ms ease;
+      text-align: center;
+    }
+
+    .turno-btn:hover { border-color: rgba(78,204,163,0.3); color: var(--text); }
+
+    .turno-btn.active {
+      border-color: var(--green);
+      background: rgba(78,204,163,0.1);
+      color: var(--green);
+    }
+
+    .turno-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
     .btn-row {
       display: flex;
       gap: 8px;
@@ -536,6 +577,12 @@
             &#8595; Scarica report (.csv)
           </button>
         </div>
+        <!-- Selettore turno: pranzo o cena -->
+        <div class="turno-label">Quale turno stai chiudendo?</div>
+        <div class="turno-selector">
+          <button class="turno-btn" id="btnTurnoPranzo" onclick="selectTurno('pranzo')">Pranzo</button>
+          <button class="turno-btn" id="btnTurnoCena" onclick="selectTurno('cena')">Cena</button>
+        </div>
         <button class="btn btn-next" onclick="completeStep(2)">Passo successivo</button>
       </div>
     </div>
@@ -625,6 +672,20 @@
     // Flag: true quando il PIN è stato verificato nello step 4
     var pinVerified = false;
 
+    // Turno selezionato: auto-detect in base all'ora (pranzo < 16:00, cena >= 16:00)
+    var selectedTurno = new Date().getHours() < 16 ? 'pranzo' : 'cena';
+
+    function selectTurno(turno) {
+      selectedTurno = turno;
+      document.getElementById('btnTurnoPranzo').classList.toggle('active', turno === 'pranzo');
+      document.getElementById('btnTurnoCena').classList.toggle('active', turno === 'cena');
+    }
+
+    // Attiva il turno di default appena lo step 2 diventa visibile
+    function initTurnoSelector() {
+      selectTurno(selectedTurno);
+    }
+
     function setStepState(n, state) {
       var step = document.getElementById('step-' + n);
       var dot = document.getElementById('pdot-' + n);
@@ -647,7 +708,7 @@
         setStepState(next, 'active');
 
         // Carica dati per lo step attivo
-        if (next === 2) loadFlashSummary();
+        if (next === 2) { loadFlashSummary(); initTurnoSelector(); }
         if (next === 3) loadStep3();
       }
     }
@@ -826,6 +887,7 @@
             'Content-Type': 'application/json',
             'X-Admin-Token': TOKEN,
           },
+          body: JSON.stringify({ turno: selectedTurno }),
         });
         var data = await res.json();
 
@@ -924,16 +986,27 @@
         if (recap.salesRanking && recap.salesRanking.length > 0) {
           rows.push('CLASSIFICA VENDITE');
           var hasCost = recap.salesRanking.some(function(i){ return i.totalCost > 0; });
-          rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+          var currentCsvCat = null;
           var totQty = 0, totRev = 0, totCost = 0;
-          recap.salesRanking.forEach(function(item, i) {
+          var num = 0;
+          recap.salesRanking.forEach(function(item) {
+            var cat = item.category || 'altro';
+            if (cat !== currentCsvCat) {
+              currentCsvCat = cat;
+              rows.push('');
+              rows.push(catLabels[cat] || cat.toUpperCase());
+              rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+            }
+            num++;
             totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
-            var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
             if (hasCost) {
               row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
+          rows.push('');
           var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
           if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
           rows.push(totRow);
@@ -966,6 +1039,7 @@
     window.verifyPin = verifyPin;
     window.handleReset = handleReset;
     window.downloadCurrentReport = downloadCurrentReport;
+    window.selectTurno = selectTurno;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

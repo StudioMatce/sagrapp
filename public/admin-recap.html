@@ -443,6 +443,25 @@
       opacity: 0.6;
     }
 
+    .ranking-category-header {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green);
+      padding: 14px 14px 4px;
+      border-bottom: 1px solid rgba(78, 204, 163, 0.15);
+      margin-top: 4px;
+    }
+
+    .ranking-category-header:first-child {
+      margin-top: 0;
+    }
+
+    .ranking-item.zero-sales {
+      opacity: 0.4;
+    }
+
     /* ===== GRAFICO ORARIO (CSS bars) ===== */
     .chart-container {
       padding: 8px 0;
@@ -995,8 +1014,14 @@
     // ===================================================
     // CARICAMENTO DATI
     // ===================================================
-    let recapData = null; // Salva i dati per l'export CSV
-    let currentSessionId = null; // null = serata corrente
+    var recapData = null; // Salva i dati per l'export CSV
+    var currentSessionId = null; // null = serata corrente
+
+    // Controlla URL params per recap aggregati (weekend/totale sagra)
+    var urlParams = new URLSearchParams(window.location.search);
+    var aggregateMode = urlParams.get('mode'); // 'total' o null
+    var aggregateIds = urlParams.get('ids'); // 'id1,id2,...' o null
+    var aggregateLabel = urlParams.get('label') || null;
 
     // ===================================================
     // SESSION SELECTOR: carica lista serate e gestisce selezione
@@ -1035,7 +1060,7 @@
           : '';
         html += '<div class="session-item" data-id="' + s.id + '">' +
           '<div class="session-item-left">' +
-            '<div class="session-item-date">' + dateStr + '</div>' +
+            '<div class="session-item-date">' + dateStr + (s.turno ? ' <span style="font-size:9px;font-weight:700;text-transform:uppercase;opacity:0.6">' + s.turno + '</span>' : '') + '</div>' +
             '<div class="session-item-label">' + s.totalOrders + ' ordini</div>' +
           '</div>' +
           (revenue ? '<div class="session-item-revenue">' + revenue + '</div>' : '') +
@@ -1113,11 +1138,18 @@
 
     async function loadRecap() {
       try {
-        var url = currentSessionId
-          ? '/api/admin/sessions/' + encodeURIComponent(currentSessionId) + '/recap'
-          : '/api/admin/stats/recap';
+        var url;
+        if (aggregateMode === 'total') {
+          url = '/api/admin/recap/aggregate?mode=total';
+        } else if (aggregateIds) {
+          url = '/api/admin/recap/aggregate?ids=' + encodeURIComponent(aggregateIds);
+        } else if (currentSessionId) {
+          url = '/api/admin/sessions/' + encodeURIComponent(currentSessionId) + '/recap';
+        } else {
+          url = '/api/admin/stats/recap';
+        }
 
-        const res = await fetch(url, {
+        var res = await fetch(url, {
           headers: { 'X-Admin-Token': TOKEN },
         });
 
@@ -1145,8 +1177,14 @@
       document.getElementById('reportHeader').style.display = 'flex';
       document.getElementById('reportWrap').style.display = 'block';
 
-      // Data nell'header: mostra la data della serata selezionata o quella corrente
-      if (currentSessionId && data._sessionDate) {
+      // Titolo e data nell'header
+      if (aggregateMode === 'total') {
+        document.getElementById('reportDate').textContent = 'Recap Totale Sagra (' + (data._aggregateCount || 0) + ' turni)';
+        document.querySelector('.header-title').textContent = 'Recap Totale Sagra';
+      } else if (aggregateIds) {
+        document.getElementById('reportDate').textContent = aggregateLabel || ('Recap aggregato — ' + (data._aggregateCount || 0) + ' turni');
+        document.querySelector('.header-title').textContent = aggregateLabel || 'Recap Aggregato';
+      } else if (currentSessionId && data._sessionDate) {
         var sd = new Date(data._sessionDate + 'T12:00:00');
         document.getElementById('reportDate').textContent = sd.toLocaleDateString('it-IT', {
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -1229,32 +1267,49 @@
     // ===================================================
     // RENDER: classifica vendite
     // ===================================================
+    // Nomi categorie in italiano
+    var CATEGORY_LABELS = {
+      primo: 'Primi', secondo: 'Secondi', speciale: 'Speciali',
+      contorno: 'Contorni', condimento: 'Condimenti', bevanda: 'Bevande',
+    };
+
     function renderRanking(salesRanking) {
-      const list = document.getElementById('rankingList');
+      var list = document.getElementById('rankingList');
 
       if (!salesRanking || salesRanking.length === 0) {
         list.innerHTML = '<div class="empty-msg">Nessuna vendita registrata</div>';
         return;
       }
 
-      list.innerHTML = salesRanking.map(function (item, i) {
-        var rank = i + 1;
-        // Classe speciale per il podio (top 3)
-        var rankClass = rank <= 3 ? ' rank-' + rank : '';
+      // Il server li invia gia' ordinati per categoria + alfabetico.
+      // Raggruppa per categoria con header.
+      var html = '';
+      var currentCat = null;
+      var rank = 0;
+      salesRanking.forEach(function (item) {
+        var cat = item.category || 'altro';
+        if (cat !== currentCat) {
+          currentCat = cat;
+          html += '<div class="ranking-category-header">' + (CATEGORY_LABELS[cat] || cat) + '</div>';
+        }
+        rank++;
+        var zeroClass = item.qty === 0 ? ' zero-sales' : '';
         var marginHtml = '';
         if (item.totalCost > 0) {
           var itemMargin = item.revenue - item.totalCost;
-          var marginPct = Math.round((itemMargin / item.revenue) * 100);
+          var marginPct = item.revenue > 0 ? Math.round((itemMargin / item.revenue) * 100) : 0;
           marginHtml = '<div class="ranking-margin">+' + formatCurrency(itemMargin) + ' <small>(' + marginPct + '%)</small></div>';
         }
-        return '<div class="ranking-item' + rankClass + '">' +
-          '<div class="ranking-rank">' + rank + '</div>' +
+        html += '<div class="ranking-item' + zeroClass + '">' +
+          '<div class="ranking-rank" style="color:var(--text-dim)">' + rank + '</div>' +
           '<div class="ranking-name">' + item.name + '</div>' +
           '<div class="ranking-qty">' + item.qty + ' pz</div>' +
           '<div class="ranking-revenue">&euro; ' + formatCurrency(item.revenue) + '</div>' +
           marginHtml +
           '</div>';
-      }).join('');
+      });
+
+      list.innerHTML = html;
     }
 
     // ===================================================
@@ -1451,20 +1506,31 @@
       });
       rows.push('');
 
-      // Classifica vendite (con costo/margine se disponibili + riga totale)
+      // Classifica vendite raggruppata per categoria (ordine alfabetico, anche venduto 0)
       if (data.salesRanking && data.salesRanking.length > 0) {
         rows.push('CLASSIFICA VENDITE');
         var hasCost = data.salesRanking.some(function(i) { return i.totalCost > 0; });
-        rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+        var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+        var currentCsvCat = null;
         var totQty = 0, totRev = 0, totCost = 0;
-        data.salesRanking.forEach(function(item, i) {
+        var num = 0;
+        data.salesRanking.forEach(function(item) {
+          var cat = item.category || 'altro';
+          if (cat !== currentCsvCat) {
+            currentCsvCat = cat;
+            rows.push('');
+            rows.push(catLabels[cat] || cat.toUpperCase());
+            rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          }
+          num++;
           totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost || 0);
-          var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+          var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
           if (hasCost) {
             row += SEP + fNum(item.totalCost || 0) + SEP + fNum(item.revenue - (item.totalCost || 0));
           }
           rows.push(row);
         });
+        rows.push('');
         var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
         if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
         rows.push(totRow);
