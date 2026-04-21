@@ -255,6 +255,10 @@
       border-top: 1px solid var(--border-dim);
       background: rgba(255,255,255,0.01);
     }
+    .group-footer-left {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .group-dl:hover { background: var(--green-dim) !important; }
     .group-total-label {
       font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
       text-transform: uppercase; letter-spacing: 0.06em;
@@ -544,9 +548,16 @@
           });
         });
 
-        // Footer con totali
+        // Footer con totali + download aggregato
+        var gIds = g.sessions.map(function(s){return s.id;});
+        var gIdsStr = gIds.map(function(id){return "\'"+esc(id)+"\'";}).join(',');
         html += '<div class="group-footer">' +
-          '<span class="group-total-label">Totale' + (isWeekend ? ' weekend' : '') + '</span>' +
+          '<div class="group-footer-left">' +
+            '<span class="group-total-label">Totale' + (isWeekend ? ' weekend' : '') + '</span>' +
+            (g.sessions.length > 1 ? '<button class="btn-sm dl group-dl" onclick="event.stopPropagation(); downloadGroupReport(['+gIdsStr+'],\'' + esc(g.dates[0]) + '\',\'' + esc(groupTitle) + '\',this)" title="Scarica CSV giornata">' +
+              '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg>' +
+            '</button>' : '') +
+          '</div>' +
           '<div class="group-total-values">' +
             '<span class="group-total-orders">' + gTotalOrd + ' ordini</span>' +
             '<span class="group-total-revenue">' + fEuro(gTotalRev) + '</span>' +
@@ -791,6 +802,122 @@
       window.location.href = '/admin/recap?ids=' + ids.join(',') + '&label=' + encodeURIComponent(label);
     }
 
+    // ─── download report aggregato (giornata/weekend) ──────
+    async function downloadGroupReport(ids, dateStr, label, btn) {
+      btn.classList.add('loading');
+      try {
+        var res = await fetch('/api/admin/recap/aggregate?ids=' + ids.join(','), { headers:{'X-Admin-Token':TOKEN} });
+        if (!res.ok) throw new Error('Errore '+res.status);
+        var r = await res.json();
+
+        var SEP = ';';
+        var csvVal = function(v) {
+          var str = String(v == null ? '' : v);
+          if (str.indexOf(SEP) >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
+            return '"' + str.replace(/"/g, '""') + '"';
+          return str;
+        };
+        var fNum = function(v) { return (v||0).toFixed(2).replace('.', ','); };
+        var rows = [];
+
+        rows.push('SAGRAPP - REPORT GIORNATA');
+        rows.push('Giornata' + SEP + csvVal(label));
+        rows.push('Turni aggregati' + SEP + ids.length);
+        rows.push('');
+
+        rows.push('RIEPILOGO');
+        rows.push('Voce' + SEP + 'Valore');
+        rows.push('Incasso totale' + SEP + fNum(r.totalRevenue));
+        rows.push('Ordini totali' + SEP + (r.totalOrders||0));
+        rows.push('Coperti' + SEP + (r.totalCoperti||0));
+        rows.push('Ordini asporto' + SEP + (r.totalAsporto||0));
+        rows.push('Sconti applicati' + SEP + fNum(r.discountTotal || 0));
+        var omTot = r.courtesy && r.courtesy.total ? r.courtesy.total : {count:0, realValue:0};
+        rows.push('Omaggi (n. ordini)' + SEP + (omTot.count || 0));
+        rows.push('Omaggi (valore)' + SEP + fNum(omTot.realValue || 0));
+        if (r.totalCost > 0) {
+          rows.push('Costo materie' + SEP + fNum(r.totalCost));
+          rows.push('Netto' + SEP + fNum(r.grossMargin));
+        }
+        rows.push('');
+
+        rows.push('INCASSO PER CASSA');
+        rows.push('Cassa' + SEP + 'Incasso');
+        var nomi = {principale:'Cassa Generale', bar:'Cassa Bar', casetta:'Casetta'};
+        if (r.revenueByCassa) {
+          Object.entries(r.revenueByCassa).forEach(function(e) {
+            rows.push(csvVal(nomi[e[0]]||e[0]) + SEP + fNum(e[1]));
+          });
+        }
+        rows.push('');
+
+        rows.push('METODO PAGAMENTO');
+        rows.push('Metodo' + SEP + 'Lordo' + SEP + 'Commissioni' + SEP + 'Netto');
+        var contanti = r.revenueByPayment && r.revenueByPayment.contanti ? r.revenueByPayment.contanti : 0;
+        var pos = r.revenueByPayment && r.revenueByPayment.pos ? r.revenueByPayment.pos : 0;
+        var posComm = r.posCommission || 0;
+        rows.push('Contanti' + SEP + fNum(contanti) + SEP + fNum(0) + SEP + fNum(contanti));
+        rows.push('POS (carta)' + SEP + fNum(pos) + SEP + fNum(posComm) + SEP + fNum(pos - posComm));
+        rows.push('Totale' + SEP + fNum(contanti + pos) + SEP + fNum(posComm) + SEP + fNum(contanti + pos - posComm));
+        rows.push('');
+
+        rows.push('OMAGGI DETTAGLIO');
+        rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
+        var omN = {sponsor:'Sponsor', don_pierino:'Don Pierino', amici:'Amici'};
+        ['sponsor','don_pierino','amici'].forEach(function(t) {
+          var om = r.courtesy ? r.courtesy[t] : null;
+          rows.push(csvVal(omN[t]||t) + SEP + (om ? om.count : 0) + SEP + fNum(om ? om.realValue : 0));
+        });
+        rows.push('');
+
+        if (r.salesRanking && r.salesRanking.length > 0) {
+          rows.push('CLASSIFICA VENDITE');
+          var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
+          var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+          var currentCsvCat = null;
+          var totQty = 0, totRev = 0, totCost = 0;
+          var num = 0;
+          r.salesRanking.forEach(function(item) {
+            var cat = item.category || 'altro';
+            if (cat !== currentCsvCat) {
+              currentCsvCat = cat;
+              rows.push('');
+              rows.push(catLabels[cat] || cat.toUpperCase());
+              rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+            }
+            num++;
+            totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
+            var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            if (hasCost) {
+              row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
+            }
+            rows.push(row);
+          });
+          rows.push('');
+          var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+          if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
+          rows.push(totRow);
+          rows.push('');
+        }
+
+        rows.push('Generato da SagrApp' + SEP + new Date().toLocaleString('it-IT'));
+
+        var csv = '\uFEFF' + 'sep=;\n' + rows.join('\n');
+        var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'sagrapp-report-' + dateStr + '-aggregato.csv';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+        btn.classList.remove('loading');
+      } catch(e) {
+        btn.classList.remove('loading');
+        alert('Errore download: '+e.message);
+      }
+    }
+
     // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
     window.downloadReport = downloadReport;
     window.deleteSerata = deleteSerata;
@@ -800,6 +927,7 @@
     window.openRecapTotal = openRecapTotal;
     window.openRecapWeekend = openRecapWeekend;
     window.openSessionRecap = openSessionRecap;
+    window.downloadGroupReport = downloadGroupReport;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>
