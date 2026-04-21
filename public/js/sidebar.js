@@ -17,6 +17,7 @@
         { name: 'Cassa Generale', url: '/cassa', icon: '\uD83D\uDED2' },
         { name: 'Cassa Bar', url: '/cassa-bar', icon: '\uD83C\uDF7A' },
         { name: 'Cassa Casetta', url: '/cassa-casetta', icon: '\uD83C\uDFE0' },
+        { name: 'Cassa Mobile', url: '/mobile/cassa', icon: '\uD83D\uDCF1' },
       ],
     },
     {
