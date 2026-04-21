@@ -1017,11 +1017,14 @@
     var recapData = null; // Salva i dati per l'export CSV
     var currentSessionId = null; // null = serata corrente
 
-    // Controlla URL params per recap aggregati (weekend/totale sagra)
+    // Controlla URL params per recap aggregati (weekend/totale sagra) o sessione specifica
     var urlParams = new URLSearchParams(window.location.search);
     var aggregateMode = urlParams.get('mode'); // 'total' o null
     var aggregateIds = urlParams.get('ids'); // 'id1,id2,...' o null
     var aggregateLabel = urlParams.get('label') || null;
+    // Sessione specifica da storico serate (click su riga turno)
+    var urlSessionId = urlParams.get('session') || null;
+    if (urlSessionId) currentSessionId = urlSessionId;
 
     // ===================================================
     // SESSION SELECTOR: carica lista serate e gestisce selezione

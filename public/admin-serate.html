@@ -6,24 +6,30 @@
   <title>SagrApp — Storico Serate</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg:         #060a12;
-      --bg-surface: #0c1220;
+      --bg-surface: #0b1120;
       --bg-raised:  #111827;
       --border:     #1e293b;
-      --border-dim: rgba(30,41,59,0.6);
+      --border-dim: rgba(30,41,59,0.5);
       --green:      #4ecca3;
-      --green-dim:  rgba(78,204,163,0.12);
+      --green-dim:  rgba(78,204,163,0.10);
       --red:        #e94560;
-      --red-dim:    rgba(233,69,96,0.1);
+      --red-dim:    rgba(233,69,96,0.10);
+      --amber:      #fbbf24;
+      --amber-dim:  rgba(251,191,36,0.10);
+      --indigo:     #818cf8;
+      --indigo-dim: rgba(129,140,248,0.10);
+      --cyan:       #22d3ee;
       --text:       #e2e8f0;
-      --text-dim:   rgba(226,232,240,0.5);
+      --text-dim:   rgba(226,232,240,0.45);
       --text-muted: #475569;
       --radius:     10px;
+      --radius-sm:  7px;
     }
 
     html { font-size: 16px; background: var(--bg); }
@@ -46,14 +52,14 @@
     }
     .header-title { font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; }
     .header-badge {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
       font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--green); background: var(--green-dim);
       border: 1px solid rgba(78,204,163,0.2); border-radius: 20px; padding: 3px 10px;
     }
 
     /* ===== BODY ===== */
-    .page-body { max-width: 1040px; margin: 0 auto; padding: 28px 24px 60px; }
+    .page-body { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
 
     /* ===== EMPTY / ERROR ===== */
     .state-center {
@@ -61,7 +67,7 @@
       justify-content: center; gap: 12px; padding: 80px 24px;
       color: var(--text-muted); font-size: 0.9rem;
     }
-    .state-center-icon { font-size: 2.5rem; opacity: 0.4; }
+    .state-center-icon { font-size: 2.5rem; opacity: 0.35; }
     .state-center-title { font-weight: 600; color: var(--text-dim); }
     .state-center-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-align: center; }
     .state-error {
@@ -69,164 +75,251 @@
       border-radius: var(--radius); padding: 16px 20px; font-size: 0.85rem; color: var(--red);
     }
 
-    /* ===== TABELLA ===== */
-    .serate-table {
-      width: 100%; border-collapse: separate; border-spacing: 0 6px;
+    /* ===== HERO — RECAP TOTALE ===== */
+    .hero-card {
+      background: linear-gradient(135deg, rgba(78,204,163,0.06) 0%, rgba(34,211,238,0.04) 100%);
+      border: 1px solid rgba(78,204,163,0.18);
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+      transition: all 200ms ease;
+      animation: fadeSlide 400ms ease both;
     }
-    .serate-table thead th {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);
-      padding: 0 12px 8px; text-align: left;
+    .hero-card:hover {
+      border-color: rgba(78,204,163,0.35);
+      background: linear-gradient(135deg, rgba(78,204,163,0.10) 0%, rgba(34,211,238,0.06) 100%);
     }
-    .serate-row {
-      background: var(--bg-surface); border: 1px solid var(--border-dim);
-      border-radius: var(--radius);
-      transition: border-color 200ms, background 200ms;
-      animation: fadeIn 300ms ease both;
-    }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    .serate-row:hover { border-color: rgba(78,204,163,0.2); background: #0d1626; }
-    .serate-row.deleting { opacity: 0.3; pointer-events: none; transition: opacity 300ms; }
+    .hero-card:active { transform: scale(0.99); }
 
-    .serate-row td { padding: 13px 12px; vertical-align: middle; }
-    .serate-row td:first-child { border-radius: var(--radius) 0 0 var(--radius); padding-left: 16px; }
-    .serate-row td:last-child  { border-radius: 0 var(--radius) var(--radius) 0; padding-right: 12px; }
+    .hero-left { display: flex; flex-direction: column; gap: 4px; }
+    .hero-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--green); opacity: 0.8;
+    }
+    .hero-revenue {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800; font-size: 1.6rem; color: #fff;
+      letter-spacing: -0.02em; line-height: 1.1;
+    }
+    .hero-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; color: var(--text-dim); margin-top: 2px;
+    }
+    .hero-arrow {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(78,204,163,0.08); border: 1px solid rgba(78,204,163,0.15);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--green); flex-shrink: 0;
+      transition: all 200ms ease;
+    }
+    .hero-card:hover .hero-arrow {
+      background: rgba(78,204,163,0.15); border-color: rgba(78,204,163,0.3);
+    }
+    .hero-arrow svg { width: 16px; height: 16px; }
 
-    /* indice */
-    .col-idx {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
-      color: var(--text-muted); font-weight: 700; width: 28px; text-align: right;
+    /* ===== GROUP CARD ===== */
+    .group-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-dim);
+      border-radius: 12px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      animation: fadeSlide 400ms ease both;
     }
 
-    /* colonna data / nome */
-    .col-data { min-width: 170px; }
-    .data-name {
-      font-weight: 600; font-size: 0.88rem; line-height: 1.3;
-    }
-    .data-sub {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
-      color: var(--text-muted); margin-top: 2px;
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* rename inline */
-    .rename-row { display: flex; align-items: center; gap: 6px; }
-    .rename-input {
-      background: var(--bg-raised); border: 1px solid rgba(78,204,163,0.4);
-      border-radius: 6px; color: var(--text); font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem; font-weight: 600; padding: 4px 8px;
-      outline: none; width: 160px;
+    .group-card.deleting { opacity: 0.2; pointer-events: none; transition: opacity 300ms; }
+
+    /* weekend accent strip */
+    .group-card.weekend { border-color: rgba(78,204,163,0.12); }
+
+    .group-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px 10px;
     }
-    .rename-input:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(78,204,163,0.15); }
-    .btn-icon {
+    .group-header-left { display: flex; align-items: center; gap: 10px; }
+    .group-title {
+      font-weight: 700; font-size: 0.88rem; color: var(--text);
+    }
+    .group-type-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .group-type-badge.weekend {
+      color: var(--green); background: var(--green-dim);
+      border: 1px solid rgba(78,204,163,0.15);
+    }
+
+    .group-recap-btn {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+      font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted); background: transparent;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 5px 12px; cursor: pointer;
+      transition: all 150ms ease; text-decoration: none;
+    }
+    .group-recap-btn:hover {
+      color: var(--green); border-color: rgba(78,204,163,0.3);
+      background: var(--green-dim);
+    }
+
+    /* day sub-header inside group */
+    .day-header {
+      padding: 6px 18px;
+      font-size: 0.72rem; font-weight: 600; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      border-top: 1px solid var(--border-dim);
+    }
+    .day-header:first-child { border-top: none; }
+
+    /* ===== TURNO ROW ===== */
+    .turno-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 18px;
+      cursor: pointer;
+      transition: background 150ms ease;
+      border-top: 1px solid rgba(30,41,59,0.3);
+    }
+    .turno-row:hover { background: rgba(255,255,255,0.02); }
+    .turno-row:active { background: rgba(255,255,255,0.04); }
+
+    .turno-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+      font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px;
+      min-width: 56px; text-align: center; flex-shrink: 0;
+    }
+    .turno-badge.pranzo {
+      color: var(--amber); background: var(--amber-dim);
+      border: 1px solid rgba(251,191,36,0.2);
+    }
+    .turno-badge.cena {
+      color: var(--indigo); background: var(--indigo-dim);
+      border: 1px solid rgba(129,140,248,0.2);
+    }
+    .turno-badge.unico {
+      color: var(--text-dim); background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-dim);
+    }
+
+    .turno-label {
+      font-size: 0.78rem; font-weight: 500; color: var(--text-dim);
+      flex-shrink: 0; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .turno-revenue {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700; font-size: 0.88rem; color: var(--green);
+      margin-left: auto; flex-shrink: 0;
+    }
+
+    .turno-orders {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; color: var(--text-muted);
+      min-width: 52px; text-align: right; flex-shrink: 0;
+    }
+
+    .turno-actions {
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+      margin-left: 4px;
+    }
+
+    /* small icon buttons */
+    .btn-sm {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border-radius: 6px; border: 1px solid transparent;
-      background: transparent; cursor: pointer; flex-shrink: 0;
-      transition: all 150ms ease; color: var(--text-muted);
+      width: 30px; height: 30px; border-radius: var(--radius-sm);
+      border: 1px solid transparent; background: transparent;
+      color: var(--text-muted); cursor: pointer;
+      transition: all 150ms ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-icon:hover { border-color: var(--border); background: var(--bg-raised); color: var(--text); }
-    .btn-icon.edit:hover { color: var(--green); border-color: rgba(78,204,163,0.3); }
-    .btn-icon.save { color: var(--green); }
-    .btn-icon.save:hover { background: var(--green-dim); border-color: rgba(78,204,163,0.4); }
-    .btn-icon.cancel:hover { color: var(--red); border-color: rgba(233,69,96,0.3); }
-    .btn-icon svg { width: 13px; height: 13px; pointer-events: none; }
+    .btn-sm:hover { border-color: var(--border); background: var(--bg-raised); color: var(--text); }
+    .btn-sm svg { width: 13px; height: 13px; pointer-events: none; }
+    .btn-sm.dl:hover { color: var(--green); border-color: rgba(78,204,163,0.3); }
+    .btn-sm.dl.loading { opacity: 0.4; pointer-events: none; }
+    .btn-sm.del:hover { color: var(--red); border-color: rgba(233,69,96,0.3); background: var(--red-dim); }
+    .btn-sm.rename:hover { color: var(--cyan); border-color: rgba(34,211,238,0.3); }
 
-    /* incasso */
-    .col-incasso { min-width: 170px; }
-    .incasso-val {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.92rem;
-      font-weight: 700; color: var(--green);
+    /* ===== GROUP FOOTER ===== */
+    .group-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 18px 12px;
+      border-top: 1px solid var(--border-dim);
+      background: rgba(255,255,255,0.01);
     }
-    .bar-track {
-      height: 3px; background: rgba(255,255,255,0.06);
-      border-radius: 2px; margin-top: 6px; overflow: hidden;
+    .group-total-label {
+      font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
     }
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--green), rgba(78,204,163,0.4));
-      border-radius: 2px;
-      transition: width 600ms cubic-bezier(0.4,0,0.2,1);
+    .group-total-values {
+      display: flex; align-items: center; gap: 16px;
     }
-
-    /* metriche */
-    .col-num { text-align: center; min-width: 68px; }
-    .metric-val {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.92rem;
-      font-weight: 700; display: block;
+    .group-total-revenue {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800; font-size: 0.92rem; color: var(--green);
     }
-    .metric-lbl {
-      font-size: 0.6rem; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.05em;
-      display: block; margin-top: 2px;
+    .group-total-orders {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; color: var(--text-muted);
     }
 
-    /* top piatto */
-    .col-top { min-width: 130px; }
-    .top-name {
-      font-size: 0.8rem; font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
+    /* ===== RENAME MODAL (inline overlay) ===== */
+    .rename-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 150ms ease;
     }
-    .top-qty { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--text-muted); margin-top: 2px; }
-    .top-none { font-size: 0.78rem; color: var(--text-muted); font-style: italic; }
-
-    /* azioni */
-    .col-actions { text-align: right; white-space: nowrap; }
-    .actions-group { display: inline-flex; align-items: center; gap: 6px; }
-
-    .btn-dl {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 6px 11px; border-radius: 7px;
-      border: 1px solid var(--border); background: var(--bg-raised);
-      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
-      font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; cursor: pointer; transition: all 150ms ease;
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .rename-modal {
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; width: 340px; max-width: 90vw;
     }
-    .btn-dl:hover { border-color: rgba(78,204,163,0.35); color: var(--green); background: var(--green-dim); }
-    .btn-dl:active { transform: scale(0.96); }
-    .btn-dl.loading { opacity: 0.55; pointer-events: none; }
-    .btn-dl svg { width: 12px; height: 12px; }
-
-    .btn-del {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 30px; height: 30px; border-radius: 7px;
-      border: 1px solid var(--border); background: var(--bg-raised);
-      color: var(--text-muted); cursor: pointer; transition: all 150ms ease;
+    .rename-modal-title {
+      font-weight: 700; font-size: 0.92rem; margin-bottom: 14px;
     }
-    .btn-del:hover { border-color: rgba(233,69,96,0.4); color: var(--red); background: var(--red-dim); }
-    .btn-del:active { transform: scale(0.93); }
-    .btn-del svg { width: 13px; height: 13px; pointer-events: none; }
-
-    /* turno badge */
-    .turno-badge {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
-      font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+    .rename-input {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Outfit', sans-serif;
+      font-size: 0.88rem; font-weight: 500; outline: none;
+      transition: border-color 150ms;
     }
-    .turno-badge.pranzo { color: #fbbf24; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.2); }
-    .turno-badge.cena { color: #818cf8; background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.2); }
-
-    /* aggregate buttons */
-    .aggregate-bar {
-      display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    .rename-input:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(78,204,163,0.12); }
+    .rename-btns {
+      display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end;
     }
-    .btn-aggregate {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 8px;
-      border: 1px solid var(--border); background: var(--bg-raised);
-      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; cursor: pointer; transition: all 150ms ease;
-      text-decoration: none;
+    .rename-btn {
+      padding: 8px 18px; border-radius: var(--radius-sm);
+      font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 150ms;
     }
-    .btn-aggregate:hover { border-color: rgba(78,204,163,0.35); color: var(--green); background: var(--green-dim); }
+    .rename-btn.cancel {
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .rename-btn.cancel:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+    .rename-btn.save {
+      background: var(--green); border: none; color: var(--bg); font-weight: 700;
+    }
+    .rename-btn.save:hover { box-shadow: 0 0 16px rgba(78,204,163,0.3); }
 
     /* ===== RESPONSIVE ===== */
-    @media (max-width: 700px) {
-      .page-body { padding: 18px 12px 40px; }
-      .col-top, .hide-m { display: none; }
-      .col-incasso { min-width: 110px; }
-      .incasso-val { font-size: 0.82rem; }
-      .rename-input { width: 120px; }
+    @media (max-width: 600px) {
+      .page-body { padding: 16px 10px 48px; }
+      .hero-revenue { font-size: 1.3rem; }
+      .turno-row { gap: 8px; padding: 10px 12px; }
+      .turno-label { display: none; }
+      .turno-orders { min-width: 44px; }
+      .group-header { padding: 12px 14px 8px; }
+      .group-footer { padding: 8px 14px 10px; }
+      .day-header { padding: 5px 14px; }
     }
   </style>
 </head>
@@ -238,11 +331,11 @@
   </header>
 
   <div class="page-body">
-    <div class="aggregate-bar" id="aggregateBar" style="display:none;">
-      <a class="btn-aggregate" id="btnRecapTotal" href="#" onclick="openRecapTotal(); return false;">Recap Totale Sagra</a>
-    </div>
     <div id="root"><div class="state-center">Caricamento...</div></div>
   </div>
+
+  <!-- Rename overlay container -->
+  <div id="renameOverlay"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -259,119 +352,217 @@
     })();
 
     // ─── helpers ─────────────────────────────────────────────
-    var DAYS   = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-    var MONTHS = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    var DAYS_FULL = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    var MONTHS    = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+    var MONTHS_S  = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
 
-    function fDate(dateStr) {
+    function parseDate(dateStr) {
       var p = dateStr.split('-');
-      var d = new Date(+p[0], +p[1]-1, +p[2]);
-      return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + p[0];
+      return new Date(+p[0], +p[1]-1, +p[2]);
     }
-    function fTime(ts) {
-      return 'Chiusa ' + new Date(ts).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    function fDateFull(dateStr) {
+      var d = parseDate(dateStr);
+      return DAYS_FULL[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+    }
+    function fDateShort(dateStr) {
+      var d = parseDate(dateStr);
+      return DAYS_FULL[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS_S[d.getMonth()];
     }
     function fEuro(v) {
-      return '€' + (v||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+      return '\u20AC' + (v||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
     function esc(s) {
       return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                           .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
-    // ─── stato sessioni in memoria (per aggiornamenti senza reload) ──
+    // ─── stato ───────────────────────────────────────────────
     var SESSIONS = [];
+
+    // ─── raggruppamento ──────────────────────────────────────
+    // Raggruppa le sessioni in blocchi: weekend (Sab+Dom) o singole giornate
+    function buildGroups() {
+      // Raggruppa per data
+      var byDate = {};
+      var dateOrder = [];
+      SESSIONS.forEach(function(s) {
+        if (!byDate[s.date]) { byDate[s.date] = []; dateOrder.push(s.date); }
+        byDate[s.date].push(s);
+      });
+      // Ordina date dal piu' recente
+      dateOrder.sort(function(a,b) { return b.localeCompare(a); });
+
+      // Identifica i weekend: se Sabato+Domenica adiacenti esistono, raggruppali
+      var used = {};
+      var groups = [];
+
+      dateOrder.forEach(function(dateStr) {
+        if (used[dateStr]) return;
+        var d = parseDate(dateStr);
+        var day = d.getDay(); // 0=Dom, 6=Sab
+
+        // Prova a formare un weekend
+        var satDate = null, sunDate = null;
+        if (day === 6) { // Sabato — cerca Domenica
+          var sun = new Date(d); sun.setDate(sun.getDate() + 1);
+          sunDate = sun.toISOString().slice(0,10);
+          if (byDate[sunDate]) {
+            satDate = dateStr;
+          } else {
+            sunDate = null; // Nessuna domenica, giorno singolo
+          }
+        } else if (day === 0) { // Domenica — cerca Sabato
+          var sat = new Date(d); sat.setDate(sat.getDate() - 1);
+          satDate = sat.toISOString().slice(0,10);
+          if (byDate[satDate]) {
+            sunDate = dateStr;
+          } else {
+            satDate = null; // Nessun sabato, giorno singolo
+          }
+        }
+
+        if (satDate && sunDate && !used[satDate] && !used[sunDate]) {
+          // Weekend!
+          used[satDate] = true;
+          used[sunDate] = true;
+          var allSessions = (byDate[satDate] || []).concat(byDate[sunDate] || []);
+          groups.push({
+            type: 'weekend',
+            dates: [satDate, sunDate],
+            days: [
+              { date: satDate, sessions: byDate[satDate] || [] },
+              { date: sunDate, sessions: byDate[sunDate] || [] },
+            ],
+            sessions: allSessions,
+          });
+        } else {
+          // Giorno singolo
+          used[dateStr] = true;
+          groups.push({
+            type: 'single',
+            dates: [dateStr],
+            days: [{ date: dateStr, sessions: byDate[dateStr] }],
+            sessions: byDate[dateStr],
+          });
+        }
+      });
+
+      return groups;
+    }
 
     // ─── render ──────────────────────────────────────────────
     function render() {
       var root = document.getElementById('root');
       if (!SESSIONS.length) {
-        document.getElementById('aggregateBar').style.display = 'none';
         root.innerHTML =
           '<div class="state-center">' +
-            '<div class="state-center-icon">📋</div>' +
+            '<div class="state-center-icon">\uD83D\uDCCB</div>' +
             '<div class="state-center-title">Nessuna serata archiviata</div>' +
             '<div class="state-center-sub">Le serate vengono salvate al termine<br>di ogni turno tramite Chiusura Turno.</div>' +
           '</div>';
         return;
       }
 
-      // Mostra barra aggregate + pulsanti weekend
-      var aggBar = document.getElementById('aggregateBar');
-      aggBar.style.display = 'flex';
-      buildWeekendButtons();
-
       var badge = document.getElementById('headerBadge');
       badge.style.display = '';
-      badge.textContent = SESSIONS.length + ' ' + (SESSIONS.length === 1 ? 'serata' : 'serate');
+      badge.textContent = SESSIONS.length + ' ' + (SESSIONS.length === 1 ? 'turno' : 'turni');
 
-      var maxRev = Math.max.apply(null, SESSIONS.map(function(s){ return s.totalRevenue||0; }));
+      var groups = buildGroups();
 
-      var rows = SESSIONS.map(function(s, i) {
-        var pct   = maxRev > 0 ? Math.round((s.totalRevenue/maxRev)*100) : 0;
-        var label = s.label || fDate(s.date);
-        var turnoBadge = s.turno ? '<span class="turno-badge '+esc(s.turno)+'">'+esc(s.turno)+'</span>' : '';
-        var topH  = s.topPiatto
-          ? '<div class="top-name" title="'+esc(s.topPiatto)+'">'+esc(s.topPiatto)+'</div>' +
-            '<div class="top-qty">'+(s.topPiattoQty||0)+' venduti</div>'
-          : '<div class="top-none">—</div>';
+      // Calcola totali sagra
+      var totalRev = 0, totalOrd = 0;
+      SESSIONS.forEach(function(s) { totalRev += (s.totalRevenue||0); totalOrd += (s.totalOrders||0); });
 
-        return '<tr class="serate-row" id="row-'+esc(s.id)+'" style="animation-delay:'+(i*40)+'ms">' +
-          '<td class="col-idx">'+(i+1)+'</td>' +
-          '<td class="col-data">' +
-            '<div id="name-'+esc(s.id)+'" class="rename-row">' +
-              '<span class="data-name">'+esc(label)+turnoBadge+'</span>' +
-              '<button class="btn-icon edit" onclick="startRename(\''+esc(s.id)+'\',\''+esc(s.date)+'\')" title="Rinomina">' +
-                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">' +
-                  '<path d="M11 2l3 3-8 8H3v-3L11 2z"/>' +
-                '</svg>' +
-              '</button>' +
-            '</div>' +
-            '<div class="data-sub">'+fTime(s.closed_at)+'</div>' +
-          '</td>' +
-          '<td class="col-incasso">' +
-            '<div class="incasso-val">'+fEuro(s.totalRevenue)+'</div>' +
-            '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>' +
-          '</td>' +
-          '<td class="col-num">' +
-            '<span class="metric-val">'+(s.totalOrders||0)+'</span>' +
-            '<span class="metric-lbl">ordini</span>' +
-          '</td>' +
-          '<td class="col-num hide-m">' +
-            '<span class="metric-val">'+(s.totalCoperti||0)+'</span>' +
-            '<span class="metric-lbl">coperti</span>' +
-          '</td>' +
-          '<td class="col-top hide-m">'+topH+'</td>' +
-          '<td class="col-actions">' +
-            '<div class="actions-group">' +
-              '<button class="btn-dl" onclick="downloadReport(\''+esc(s.id)+'\',\''+esc(s.date)+'\',this)">' +
-                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">' +
-                  '<path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/>' +
-                '</svg>' +
-                ' Scarica' +
-              '</button>' +
-              '<button class="btn-del" onclick="deleteSerata(\''+esc(s.id)+'\')" title="Elimina serata">' +
-                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">' +
-                  '<path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/>' +
-                '</svg>' +
-              '</button>' +
-            '</div>' +
-          '</td>' +
-        '</tr>';
-      }).join('');
+      // Hero card
+      var html = '<div class="hero-card" onclick="openRecapTotal()">' +
+        '<div class="hero-left">' +
+          '<div class="hero-label">Recap Totale Sagra</div>' +
+          '<div class="hero-revenue">' + fEuro(totalRev) + '</div>' +
+          '<div class="hero-meta">' + SESSIONS.length + ' turni \u00B7 ' + totalOrd.toLocaleString('it-IT') + ' ordini</div>' +
+        '</div>' +
+        '<div class="hero-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>' +
+      '</div>';
 
-      root.innerHTML =
-        '<table class="serate-table">' +
-          '<thead><tr>' +
-            '<th></th>' +
-            '<th>Serata</th>' +
-            '<th>Incasso</th>' +
-            '<th style="text-align:center">Ordini</th>' +
-            '<th style="text-align:center" class="hide-m">Coperti</th>' +
-            '<th class="hide-m">Top Piatto</th>' +
-            '<th></th>' +
-          '</tr></thead>' +
-          '<tbody>'+rows+'</tbody>' +
-        '</table>';
+      // Group cards
+      groups.forEach(function(g, gi) {
+        var isWeekend = g.type === 'weekend';
+        var gTotalRev = 0, gTotalOrd = 0;
+        g.sessions.forEach(function(s) { gTotalRev += (s.totalRevenue||0); gTotalOrd += (s.totalOrders||0); });
+
+        // Titolo del gruppo
+        var groupTitle;
+        if (isWeekend) {
+          var sd = parseDate(g.dates[0]), sn = parseDate(g.dates[1]);
+          groupTitle = 'Weekend ' + sd.getDate() + '\u2013' + sn.getDate() + ' ' + MONTHS[sd.getMonth()];
+        } else {
+          groupTitle = fDateFull(g.dates[0]);
+        }
+
+        html += '<div class="group-card' + (isWeekend ? ' weekend' : '') + '" style="animation-delay:' + ((gi+1)*60) + 'ms">';
+
+        // Header
+        html += '<div class="group-header">' +
+          '<div class="group-header-left">' +
+            '<div class="group-title">' + esc(groupTitle) + '</div>' +
+            (isWeekend ? '<span class="group-type-badge weekend">Weekend</span>' : '') +
+          '</div>';
+        if (isWeekend) {
+          var wIds = g.sessions.map(function(s){return s.id;});
+          html += '<a class="group-recap-btn" href="#" onclick="openRecapWeekend([' + wIds.map(function(id){return "\'"+esc(id)+"\'";}).join(',') + '],\'' + esc(groupTitle) + '\'); return false;">Recap</a>';
+        }
+        html += '</div>';
+
+        // Days
+        g.days.forEach(function(day, di) {
+          if (isWeekend) {
+            html += '<div class="day-header">' + fDateShort(day.date) + '</div>';
+          }
+
+          // Turno rows
+          day.sessions.forEach(function(s) {
+            var turnoClass = s.turno || 'unico';
+            var turnoText = s.turno ? s.turno : '\u2014';
+            var customLabel = s.label ? s.label : '';
+
+            html += '<div class="turno-row" id="row-' + esc(s.id) + '" onclick="openSessionRecap(\'' + esc(s.id) + '\')">' +
+              '<span class="turno-badge ' + esc(turnoClass) + '">' + esc(turnoText) + '</span>' +
+              (customLabel ? '<span class="turno-label" title="' + esc(customLabel) + '">' + esc(customLabel) + '</span>' : '') +
+              '<span class="turno-revenue">' + fEuro(s.totalRevenue) + '</span>' +
+              '<span class="turno-orders">' + (s.totalOrders||0) + ' ord</span>' +
+              '<span class="turno-actions" onclick="event.stopPropagation()">' +
+                '<button class="btn-sm dl" onclick="downloadReport(\'' + esc(s.id) + '\',\'' + esc(s.date) + '\',this)" title="Scarica CSV">' +
+                  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg>' +
+                '</button>' +
+                '<button class="btn-sm rename" onclick="openRename(\'' + esc(s.id) + '\',\'' + esc(s.date) + '\')" title="Rinomina">' +
+                  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>' +
+                '</button>' +
+                '<button class="btn-sm del" onclick="deleteSerata(\'' + esc(s.id) + '\')" title="Elimina">' +
+                  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>' +
+                '</button>' +
+              '</span>' +
+            '</div>';
+          });
+        });
+
+        // Footer con totali
+        html += '<div class="group-footer">' +
+          '<span class="group-total-label">Totale' + (isWeekend ? ' weekend' : '') + '</span>' +
+          '<div class="group-total-values">' +
+            '<span class="group-total-orders">' + gTotalOrd + ' ordini</span>' +
+            '<span class="group-total-revenue">' + fEuro(gTotalRev) + '</span>' +
+          '</div>' +
+        '</div>';
+
+        html += '</div>'; // /group-card
+      });
+
+      root.innerHTML = html;
+    }
+
+    // ─── navigate to recap ───────────────────────────────────
+    function openSessionRecap(id) {
+      // Naviga al recap della sessione specifica
+      window.location.href = '/admin/recap?session=' + encodeURIComponent(id);
     }
 
     // ─── carica ──────────────────────────────────────────────
@@ -380,6 +571,11 @@
         var res = await fetch('/api/admin/sessions', { headers: {'X-Admin-Token': TOKEN} });
         if (res.status === 401) { sessionStorage.removeItem('admin_token'); window.location.href='/'; return; }
         SESSIONS = await res.json();
+        // Ordina per data desc, poi closed_at desc
+        SESSIONS.sort(function(a,b) {
+          if (a.date !== b.date) return b.date.localeCompare(a.date);
+          return b.closed_at - a.closed_at;
+        });
         render();
       } catch(e) {
         document.getElementById('root').innerHTML =
@@ -387,30 +583,39 @@
       }
     }
 
-    // ─── rinomina inline ─────────────────────────────────────
-    function startRename(id, date) {
+    // ─── rinomina (modal) ────────────────────────────────────
+    function openRename(id, date) {
       var s = SESSIONS.find(function(x){return x.id===id;});
-      var cell = document.getElementById('name-'+id);
-      if (!cell) return;
-      var cur = s && s.label ? s.label : fDate(date);
-      cell.innerHTML =
-        '<input class="rename-input" id="ri-'+esc(id)+'" value="'+esc(cur)+'" maxlength="50">' +
-        '<button class="btn-icon save" onclick="saveRename(\''+esc(id)+'\')" title="Salva">'+
-          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 8l4 4 8-8"/></svg>'+
-        '</button>' +
-        '<button class="btn-icon cancel" onclick="cancelRename(\''+esc(id)+'\',\''+esc(date)+'\')" title="Annulla">'+
-          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3l10 10M13 3L3 13"/></svg>'+
-        '</button>';
-      var inp = document.getElementById('ri-'+id);
-      inp.focus(); inp.select();
-      inp.addEventListener('keydown', function(e) {
+      var cur = s && s.label ? s.label : fDateFull(date);
+      var overlay = document.getElementById('renameOverlay');
+      overlay.innerHTML =
+        '<div class="rename-overlay" onclick="closeRename()">' +
+          '<div class="rename-modal" onclick="event.stopPropagation()">' +
+            '<div class="rename-modal-title">Rinomina sessione</div>' +
+            '<input class="rename-input" id="renameInput" value="' + esc(cur) + '" maxlength="50" placeholder="Nome sessione">' +
+            '<div class="rename-btns">' +
+              '<button class="rename-btn cancel" onclick="closeRename()">Annulla</button>' +
+              '<button class="rename-btn save" onclick="saveRename(\'' + esc(id) + '\')">Salva</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      setTimeout(function() {
+        var inp = document.getElementById('renameInput');
+        if (inp) { inp.focus(); inp.select(); }
+      }, 50);
+      // Invio per salvare, Esc per annullare
+      document.getElementById('renameInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') saveRename(id);
-        if (e.key === 'Escape') cancelRename(id, date);
+        if (e.key === 'Escape') closeRename();
       });
     }
 
+    function closeRename() {
+      document.getElementById('renameOverlay').innerHTML = '';
+    }
+
     async function saveRename(id) {
-      var inp = document.getElementById('ri-'+id);
+      var inp = document.getElementById('renameInput');
       if (!inp) return;
       var newLabel = inp.value.trim();
       try {
@@ -421,37 +626,24 @@
         });
         var data = await res.json();
         if (!data.success) throw new Error(data.error || 'Errore');
-        // Aggiorna stato locale
         var s = SESSIONS.find(function(x){return x.id===id;});
         if (s) s.label = data.label;
+        closeRename();
         render();
       } catch(e) {
         alert('Errore rinomina: '+e.message);
-        var s2 = SESSIONS.find(function(x){return x.id===id;});
-        cancelRename(id, s2 ? s2.date : '');
       }
-    }
-
-    function cancelRename(id, date) {
-      var s = SESSIONS.find(function(x){return x.id===id;});
-      var cell = document.getElementById('name-'+id);
-      if (!cell) return;
-      var label = s && s.label ? s.label : fDate(date || (s && s.date) || '');
-      cell.innerHTML =
-        '<span class="data-name">'+esc(label)+'</span>' +
-        '<button class="btn-icon edit" onclick="startRename(\''+esc(id)+'\',\''+(s?esc(s.date):'')+'\''+')" title="Rinomina">'+
-          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>'+
-        '</button>';
     }
 
     // ─── elimina ─────────────────────────────────────────────
     async function deleteSerata(id) {
       var s = SESSIONS.find(function(x){return x.id===id;});
-      var name = s && s.label ? s.label : (s ? fDate(s.date) : id);
-      if (!confirm('Eliminare definitivamente "'+name+'"?\nQuesta azione non è reversibile.')) return;
+      var turnoLabel = s && s.turno ? ' (' + s.turno + ')' : '';
+      var name = (s && s.label ? s.label : (s ? fDateFull(s.date) : id)) + turnoLabel;
+      if (!confirm('Eliminare definitivamente "'+name+'"?\nQuesta azione non \u00E8 reversibile.')) return;
 
       var row = document.getElementById('row-'+id);
-      if (row) row.classList.add('deleting');
+      if (row) row.style.opacity = '0.2';
 
       try {
         var res = await fetch('/api/admin/sessions/'+encodeURIComponent(id), {
@@ -463,7 +655,7 @@
         SESSIONS = SESSIONS.filter(function(x){return x.id!==id;});
         render();
       } catch(e) {
-        if (row) row.classList.remove('deleting');
+        if (row) row.style.opacity = '1';
         alert('Errore eliminazione: '+e.message);
       }
     }
@@ -471,17 +663,15 @@
     // ─── download report ─────────────────────────────────────
     async function downloadReport(id, dateStr, btn) {
       btn.classList.add('loading');
-      btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> ...';
-
       try {
         var res = await fetch('/api/admin/sessions/'+id+'/recap', { headers:{'X-Admin-Token':TOKEN} });
         if (!res.ok) throw new Error('Errore '+res.status);
         var r = await res.json();
 
         var s = SESSIONS.find(function(x){return x.id===id;});
-        var titolo = s && s.label ? s.label : fDate(dateStr);
+        var titolo = s && s.label ? s.label : fDateFull(dateStr);
+        if (s && s.turno) titolo += ' (' + s.turno + ')';
 
-        // Genera CSV con separatore ; (standard italiano per Excel/Numbers)
         var SEP = ';';
         var csvVal = function(v) {
           var str = String(v == null ? '' : v);
@@ -492,13 +682,11 @@
         var fNum = function(v) { return (v||0).toFixed(2).replace('.', ','); };
         var rows = [];
 
-        // Intestazione
         rows.push('SAGRAPP - REPORT SERATA');
         rows.push('Serata' + SEP + csvVal(titolo));
-        rows.push('Data' + SEP + fDate(dateStr));
+        rows.push('Data' + SEP + fDateFull(dateStr));
         rows.push('');
 
-        // Riepilogo
         rows.push('RIEPILOGO');
         rows.push('Voce' + SEP + 'Valore');
         rows.push('Incasso totale' + SEP + fNum(r.totalRevenue));
@@ -515,7 +703,6 @@
         }
         rows.push('');
 
-        // Incasso per cassa
         rows.push('INCASSO PER CASSA');
         rows.push('Cassa' + SEP + 'Incasso');
         var nomi = {principale:'Cassa Generale', bar:'Cassa Bar', casetta:'Casetta'};
@@ -526,7 +713,6 @@
         }
         rows.push('');
 
-        // Metodo pagamento
         rows.push('METODO PAGAMENTO');
         rows.push('Metodo' + SEP + 'Lordo' + SEP + 'Commissioni' + SEP + 'Netto');
         var contanti = r.revenueByPayment && r.revenueByPayment.contanti ? r.revenueByPayment.contanti : 0;
@@ -537,7 +723,6 @@
         rows.push('Totale' + SEP + fNum(contanti + pos) + SEP + fNum(posComm) + SEP + fNum(contanti + pos - posComm));
         rows.push('');
 
-        // Omaggi dettaglio
         rows.push('OMAGGI DETTAGLIO');
         rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
         var omN = {sponsor:'Sponsor', don_pierino:'Don Pierino', amici:'Amici'};
@@ -547,7 +732,6 @@
         });
         rows.push('');
 
-        // Classifica vendite raggruppata per categoria
         if (r.salesRanking && r.salesRanking.length > 0) {
           rows.push('CLASSIFICA VENDITE');
           var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
@@ -580,7 +764,6 @@
 
         rows.push('Generato da SagrApp' + SEP + new Date().toLocaleString('it-IT'));
 
-        // BOM UTF-8 + sep= per apertura corretta in Excel con colonne auto-fit
         var csv = '\uFEFF' + 'sep=;\n' + rows.join('\n');
         var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
         var url = URL.createObjectURL(blob);
@@ -591,17 +774,13 @@
         a.click();
         setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
 
-        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg> OK';
-        setTimeout(function(){
-          btn.classList.remove('loading');
-          btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> Scarica';
-        }, 2000);
+        btn.classList.remove('loading');
       } catch(e) {
         btn.classList.remove('loading');
-        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 14h12"/></svg> Scarica';
         alert('Errore download: '+e.message);
       }
     }
+
     // ─── recap aggregati ──────────────────────────────────
     function openRecapTotal() {
       if (!SESSIONS.length) return;
@@ -612,64 +791,15 @@
       window.location.href = '/admin/recap?ids=' + ids.join(',') + '&label=' + encodeURIComponent(label);
     }
 
-    // Raggruppa sessioni per weekend (Sab+Dom) e crea pulsanti
-    function buildWeekendButtons() {
-      var bar = document.getElementById('aggregateBar');
-      // Rimuovi vecchi bottoni weekend (mantieni solo recap totale)
-      var oldBtns = bar.querySelectorAll('.btn-weekend');
-      oldBtns.forEach(function(b) { b.remove(); });
-
-      // Raggruppa per data e trova coppie Sab-Dom
-      var byDate = {};
-      SESSIONS.forEach(function(s) {
-        if (!byDate[s.date]) byDate[s.date] = [];
-        byDate[s.date].push(s);
-      });
-
-      var weekends = {};
-      Object.keys(byDate).forEach(function(dateStr) {
-        var p = dateStr.split('-');
-        var d = new Date(+p[0], +p[1]-1, +p[2]);
-        var day = d.getDay(); // 0=Dom, 6=Sab
-        var satDate;
-        if (day === 6) satDate = dateStr; // Sabato
-        else if (day === 0) { // Domenica -> sabato precedente
-          var sat = new Date(d); sat.setDate(sat.getDate() - 1);
-          satDate = sat.toISOString().slice(0, 10);
-        } else return; // Non e' weekend
-
-        if (!weekends[satDate]) weekends[satDate] = [];
-        byDate[dateStr].forEach(function(s) { weekends[satDate].push(s); });
-      });
-
-      // Crea pulsanti per ogni weekend con 2+ sessioni
-      var satDates = Object.keys(weekends).sort().reverse();
-      satDates.forEach(function(satDate) {
-        var sessions = weekends[satDate];
-        if (sessions.length < 2) return;
-        var ids = sessions.map(function(s) { return s.id; });
-        var p = satDate.split('-');
-        var sat = new Date(+p[0], +p[1]-1, +p[2]);
-        var sun = new Date(sat); sun.setDate(sun.getDate() + 1);
-        var label = 'Weekend ' + sat.getDate() + '-' + sun.getDate() + ' ' + MONTHS[sat.getMonth()];
-
-        var btn = document.createElement('a');
-        btn.className = 'btn-aggregate btn-weekend';
-        btn.href = '#';
-        btn.textContent = label;
-        btn.onclick = function(e) { e.preventDefault(); openRecapWeekend(ids, label); };
-        bar.appendChild(btn);
-      });
-    }
-
     // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
     window.downloadReport = downloadReport;
     window.deleteSerata = deleteSerata;
-    window.startRename = startRename;
+    window.openRename = openRename;
+    window.closeRename = closeRename;
     window.saveRename = saveRename;
-    window.cancelRename = cancelRename;
     window.openRecapTotal = openRecapTotal;
     window.openRecapWeekend = openRecapWeekend;
+    window.openSessionRecap = openSessionRecap;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>
