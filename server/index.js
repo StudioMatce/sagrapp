@@ -103,6 +103,10 @@ app.get('/setup', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'setup.html'));
 });
 
+app.get('/mobile/cassa', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'mobile-cassa.html'));
+});
+
 // --- Socket.IO: gestione connessioni ---
 
 // Tiene traccia dei dispositivi connessi per tipo
