@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SagrApp — Report Serata</title>
+  <title>SagrApp — Recap Turno</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -775,7 +775,7 @@
   <!-- HEADER -->
   <header class="page-header" id="reportHeader" style="display: none;">
     <div class="header-left">
-      <div class="header-title">Report Serata</div>
+      <div class="header-title">Recap Turno</div>
     </div>
     <div class="header-right">
       <div class="header-date" id="reportDate"></div>
@@ -1182,8 +1182,8 @@
 
       // Titolo e data nell'header
       if (aggregateMode === 'total') {
-        document.getElementById('reportDate').textContent = 'Recap Totale Sagra (' + (data._aggregateCount || 0) + ' turni)';
-        document.querySelector('.header-title').textContent = 'Recap Totale Sagra';
+        document.getElementById('reportDate').textContent = 'Bilancio Sagra (' + (data._aggregateCount || 0) + ' turni)';
+        document.querySelector('.header-title').textContent = 'Bilancio Sagra';
       } else if (aggregateIds) {
         document.getElementById('reportDate').textContent = aggregateLabel || ('Recap aggregato — ' + (data._aggregateCount || 0) + ' turni');
         document.querySelector('.header-title').textContent = aggregateLabel || 'Recap Aggregato';

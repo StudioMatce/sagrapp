@@ -35,10 +35,10 @@
     {
       label: 'Admin',
       items: [
-        { name: 'Dashboard Live', url: '/admin', icon: '\uD83D\uDCCA' },
-        { name: 'Report Serata', url: '/admin/recap', icon: '\uD83D\uDCC8' },
+        { name: 'Control Room', url: '/admin', icon: '\uD83D\uDCCA' },
+        { name: 'Recap Turno', url: '/admin/recap', icon: '\uD83D\uDCC8' },
         { name: 'Storico Serate', url: '/admin/serate', icon: '\uD83D\uDDC2\uFE0F' },
-        { name: 'Recap Totale', url: '/admin/recap?mode=total', icon: '\uD83C\uDFC6' },
+        { name: 'Bilancio Sagra', url: '/admin/recap?mode=total', icon: '\uD83C\uDFC6' },
         { name: 'Gestione Menu', url: '/admin/menu', icon: '\uD83C\uDF7D\uFE0F' },
         { name: 'Magazzino', url: '/admin/magazzino', icon: '\uD83D\uDCE6' },
         { name: 'Pannello Hardware', url: '/admin/hardware', icon: '\uD83D\uDD27' },
