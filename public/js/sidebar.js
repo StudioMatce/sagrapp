@@ -342,7 +342,11 @@
       // Rimuovi vecchi script iniettati da navigazioni precedenti
       document.querySelectorAll('script[data-pjax]').forEach(function(s) { s.remove(); });
 
-      // 5. Esegui gli script inline della nuova pagina
+      // 5. Aggiorna URL PRIMA di eseguire gli script — così window.location.search
+      //    è già aggiornato quando gli script leggono i parametri URL
+      if (!isPopState) history.pushState(null, '', url);
+
+      // 6. Esegui gli script inline della nuova pagina
       //    Ogni script è wrappato in IIFE per evitare conflitti di variabili
       //    Skip socket.io.js (già caricato) e sidebar.js (già in esecuzione)
       doc.body.querySelectorAll('script').forEach(function(s) {
@@ -357,11 +361,8 @@
         content.appendChild(newScript);
       });
 
-      // 6. Fade in
+      // 7. Fade in
       requestAnimationFrame(function() { content.style.opacity = '1'; });
-
-      // 7. Aggiorna URL e voce attiva
-      if (!isPopState) history.pushState(null, '', url);
       var navUrl = new URL(url);
       currentPath = navUrl.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
       currentSearch = navUrl.search || '';
