@@ -41,7 +41,6 @@
         { name: 'Gestione Menu', url: '/admin/menu', icon: '\uD83C\uDF7D\uFE0F' },
         { name: 'Magazzino', url: '/admin/magazzino', icon: '\uD83D\uDCE6' },
         { name: 'Pannello Hardware', url: '/admin/hardware', icon: '\uD83D\uDD27' },
-        { name: 'Setup Turno', url: '/setup', icon: '\u2699\uFE0F' },
         { name: 'Chiusura Turno', url: '/admin/chiusura', icon: '\uD83D\uDD12' },
       ],
     },

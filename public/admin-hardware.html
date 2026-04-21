@@ -375,6 +375,220 @@
     .btn-test-all:hover { background: rgba(78, 204, 163, 0.12); }
     .btn-test-all:disabled { opacity: 0.4; pointer-events: none; }
 
+    /* ===== SETUP TURNO (Pre-flight Check) ===== */
+    .setup-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .setup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .setup-title {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .setup-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .btn-setup {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--cyan);
+      background: rgba(34, 211, 238, 0.06);
+      color: var(--cyan);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-setup:hover { background: rgba(34, 211, 238, 0.12); }
+    .btn-setup:disabled { opacity: 0.4; pointer-events: none; }
+
+    .setup-progress {
+      margin-bottom: 16px;
+    }
+
+    .setup-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .setup-progress-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .setup-progress-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .setup-progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .setup-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--green);
+      border-radius: 3px;
+      transition: width 400ms ease, background 300ms ease;
+    }
+
+    .setup-progress-fill.has-errors { background: var(--yellow); }
+
+    .setup-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .setup-check {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.01);
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: border-color 300ms ease;
+    }
+
+    .setup-check.ok { border-color: rgba(78, 204, 163, 0.2); }
+    .setup-check.fail { border-color: rgba(233, 69, 96, 0.2); }
+    .setup-check.warn { border-color: rgba(255, 217, 61, 0.2); }
+
+    .setup-check-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: 800;
+      transition: all 300ms ease;
+    }
+
+    .setup-check-icon.waiting { background: rgba(108,122,137,0.15); color: var(--gray); }
+    .setup-check-icon.running { background: rgba(78,204,163,0.1); border: 2px solid var(--green); animation: spin 800ms linear infinite; }
+    .setup-check-icon.ok { background: rgba(78,204,163,0.15); color: var(--green); }
+    .setup-check-icon.fail { background: rgba(233,69,96,0.15); color: var(--red); }
+    .setup-check-icon.warn { background: rgba(255,217,61,0.15); color: var(--yellow); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .setup-check-label { font-weight: 600; font-size: 14px; flex: 1; }
+
+    .setup-check-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .setup-check-status.waiting { color: var(--gray); }
+    .setup-check-status.running { color: var(--green); }
+    .setup-check-status.ok { color: var(--green); }
+    .setup-check-status.fail { color: var(--red); }
+    .setup-check-status.warn { color: var(--yellow); }
+
+    .setup-result {
+      text-align: center;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .setup-result.all-ok { background: rgba(78,204,163,0.08); border: 1px solid rgba(78,204,163,0.2); }
+    .setup-result.partial-ok { background: rgba(255,217,61,0.08); border: 1px solid rgba(255,217,61,0.2); }
+    .setup-result.has-errors { background: rgba(233,69,96,0.08); border: 1px solid rgba(233,69,96,0.2); }
+
+    .setup-result-icon { font-size: 28px; margin-bottom: 4px; }
+
+    .setup-result-text {
+      font-weight: 700;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .setup-result.all-ok .setup-result-text { color: var(--green); }
+    .setup-result.partial-ok .setup-result-text { color: var(--yellow); }
+    .setup-result.has-errors .setup-result-text { color: var(--red); }
+
+    .setup-check-details {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+
+    .setup-check-details.visible { display: block; }
+
+    .setup-printer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+
+    .setup-printer-hint {
+      font-size: 11px;
+      color: var(--red);
+      opacity: 0.8;
+      padding: 2px 0 2px 16px;
+    }
+
+    .setup-device-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+
+    .setup-device-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .setup-device-led.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .setup-device-led.off { background: var(--yellow); }
+
     @media (max-width: 640px) {
       .page-wrap { padding: 16px 12px 48px; }
       .printer-grid { grid-template-columns: 1fr; }
@@ -393,6 +607,63 @@
   </header>
 
   <div class="page-wrap">
+
+    <!-- SETUP TURNO (Pre-flight Check) -->
+    <section class="section">
+      <div class="section-label">Setup turno</div>
+      <div class="setup-card">
+        <div class="setup-header">
+          <div class="setup-title">Pre-flight Check</div>
+        </div>
+        <div class="setup-sub">Verifica automatica di server, proxy, stampanti e dispositivi prima di iniziare il turno</div>
+
+        <div id="setupProgressWrap" style="display:none;">
+          <div class="setup-progress">
+            <div class="setup-progress-header">
+              <span class="setup-progress-label">Stato verifica</span>
+              <span class="setup-progress-pct" id="setupPct">0%</span>
+            </div>
+            <div class="setup-progress-track">
+              <div class="setup-progress-fill" id="setupFill"></div>
+            </div>
+          </div>
+
+          <div class="setup-checks">
+            <div class="setup-check" id="sc-server">
+              <div class="setup-check-icon waiting" id="sci-server">&bull;</div>
+              <span class="setup-check-label">Server connesso</span>
+              <span class="setup-check-status waiting" id="scs-server">In attesa</span>
+            </div>
+            <div class="setup-check" id="sc-socket">
+              <div class="setup-check-icon waiting" id="sci-socket">&bull;</div>
+              <span class="setup-check-label">Socket.IO connesso</span>
+              <span class="setup-check-status waiting" id="scs-socket">In attesa</span>
+            </div>
+            <div class="setup-check" id="sc-proxy">
+              <div class="setup-check-icon waiting" id="sci-proxy">&bull;</div>
+              <span class="setup-check-label">Print proxy online</span>
+              <span class="setup-check-status waiting" id="scs-proxy">In attesa</span>
+            </div>
+            <div class="setup-check" id="sc-printers">
+              <div class="setup-check-icon waiting" id="sci-printers">&bull;</div>
+              <span class="setup-check-label">Stampanti raggiungibili</span>
+              <span class="setup-check-status waiting" id="scs-printers">In attesa</span>
+              <div class="setup-check-details" id="setupPrinterDetails"></div>
+            </div>
+            <div class="setup-check" id="sc-devices">
+              <div class="setup-check-icon waiting" id="sci-devices">&bull;</div>
+              <span class="setup-check-label">Dispositivi connessi</span>
+              <span class="setup-check-status waiting" id="scs-devices">In attesa</span>
+              <div class="setup-check-details" id="setupDeviceDetails"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="setupResultBanner" style="display:none;"></div>
+
+        <button class="btn-setup" id="btnSetup">Avvia Pre-flight Check</button>
+      </div>
+    </section>
 
     <!-- PROXY -->
     <section class="section">
@@ -696,6 +967,273 @@
 
     // Carica stampanti all'avvio
     loadPrinters();
+
+    // ===================================================
+    // SETUP TURNO — Pre-flight Check integrato nel pannello hardware
+    // Usa il socket già attivo, non ne crea uno nuovo.
+    // ===================================================
+    var SETUP_TOTAL = 5;
+    var setupChecks = { server: 'waiting', socket: 'waiting', proxy: 'waiting', printers: 'waiting', devices: 'waiting' };
+    var SETUP_CRITICAL = ['server', 'socket', 'proxy', 'printers'];
+
+    function setupUpdateProgress() {
+      var done = Object.values(setupChecks).filter(function(s) { return s === 'ok' || s === 'fail' || s === 'warn'; }).length;
+      var pct = Math.round((done / SETUP_TOTAL) * 100);
+      document.getElementById('setupPct').textContent = pct + '%';
+      var fill = document.getElementById('setupFill');
+      fill.style.width = pct + '%';
+      fill.classList.toggle('has-errors', Object.values(setupChecks).some(function(s) { return s === 'fail'; }));
+    }
+
+    function setSetupState(id, state, label) {
+      setupChecks[id] = state;
+      var icon = document.getElementById('sci-' + id);
+      var status = document.getElementById('scs-' + id);
+      var item = document.getElementById('sc-' + id);
+      if (!icon || !status || !item) return;
+
+      icon.className = 'setup-check-icon ' + state;
+      status.className = 'setup-check-status ' + state;
+
+      if (state === 'waiting') { icon.innerHTML = '&bull;'; status.textContent = 'In attesa'; }
+      else if (state === 'running') { icon.innerHTML = ''; status.textContent = 'Verifica...'; }
+      else if (state === 'ok') { icon.innerHTML = '&#10003;'; status.textContent = label || 'OK'; }
+      else if (state === 'fail') { icon.innerHTML = '&#10007;'; status.textContent = label || 'Errore'; }
+      else if (state === 'warn') { icon.innerHTML = '&#9888;'; status.textContent = label || 'Parziale'; }
+
+      item.className = 'setup-check' + (state === 'ok' ? ' ok' : state === 'fail' ? ' fail' : state === 'warn' ? ' warn' : '');
+      setupUpdateProgress();
+    }
+
+    function showSetupResult() {
+      var allDone = Object.values(setupChecks).every(function(s) { return s !== 'waiting' && s !== 'running'; });
+      if (!allDone) return;
+
+      var criticalOk = SETUP_CRITICAL.every(function(id) { return setupChecks[id] === 'ok'; });
+      var allOk = Object.values(setupChecks).every(function(s) { return s === 'ok' || s === 'warn'; });
+      var hasError = Object.values(setupChecks).some(function(s) { return s === 'fail'; });
+
+      var banner = document.getElementById('setupResultBanner');
+      banner.style.display = 'block';
+
+      if (allOk && !hasError) {
+        banner.className = 'setup-result all-ok';
+        banner.innerHTML = '<div class="setup-result-icon">\u2713</div><div class="setup-result-text">Tutto OK \u2014 Pronto</div>';
+      } else if (criticalOk) {
+        banner.className = 'setup-result partial-ok';
+        banner.innerHTML = '<div class="setup-result-icon">\u26A0</div><div class="setup-result-text">Dispositivi non critici mancanti</div>';
+      } else {
+        banner.className = 'setup-result has-errors';
+        banner.innerHTML = '<div class="setup-result-icon">!</div><div class="setup-result-text">Problemi critici rilevati</div>';
+      }
+
+      // Riattiva pulsante
+      var btn = document.getElementById('btnSetup');
+      btn.disabled = false;
+      btn.textContent = 'Riavvia Pre-flight Check';
+    }
+
+    // Check 1: Server HTTP
+    async function setupCheckServer() {
+      setSetupState('server', 'running');
+      try {
+        var res = await fetch('/api/menu');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        setSetupState('server', 'ok', data.length + ' piatti');
+        return true;
+      } catch (err) {
+        setSetupState('server', 'fail', err.message);
+        return false;
+      }
+    }
+
+    // Check 2: Socket.IO — riusa il socket esistente della pagina
+    function setupCheckSocket() {
+      setSetupState('socket', 'running');
+      if (socket && socket.connected) {
+        setSetupState('socket', 'ok');
+        return Promise.resolve(true);
+      }
+      setSetupState('socket', 'fail', 'Non connesso');
+      return Promise.resolve(false);
+    }
+
+    // Check 3: Print proxy — legge lo stato dal device_status già ricevuto
+    function setupCheckProxy() {
+      return new Promise(function(resolve) {
+        setSetupState('proxy', 'running');
+        if (!socket || !socket.connected) {
+          setSetupState('proxy', 'fail', 'Socket non connesso');
+          resolve(false);
+          return;
+        }
+
+        var timeout = setTimeout(function() {
+          setSetupState('proxy', 'fail', 'Nessun proxy rilevato');
+          resolve(false);
+        }, 5000);
+
+        socket.once('device_status', function(data) {
+          clearTimeout(timeout);
+          if (data.devices.proxy >= 1) {
+            setSetupState('proxy', 'ok', data.devices.proxy + ' proxy connesso');
+            resolve(true);
+          } else {
+            setSetupState('proxy', 'fail', 'Proxy offline');
+            resolve(false);
+          }
+        });
+
+        // Richiedi aggiornamento stato
+        socket.emit('register', { role: 'admin' });
+      });
+    }
+
+    // Check 4: Stampanti
+    function setupCheckPrinters() {
+      return new Promise(function(resolve) {
+        setSetupState('printers', 'running');
+        if (!socket || !socket.connected) {
+          setSetupState('printers', 'fail', 'Socket non connesso');
+          resolve(false);
+          return;
+        }
+
+        var timeout = setTimeout(function() {
+          setSetupState('printers', 'fail', 'Timeout ping');
+          resolve(false);
+        }, 10000);
+
+        socket.once('printers_status_update', function(statuses) {
+          clearTimeout(timeout);
+
+          var details = document.getElementById('setupPrinterDetails');
+          details.classList.add('visible');
+          details.innerHTML = statuses.map(function(p) {
+            var html = '<div class="setup-printer-row">' +
+              '<div class="printer-led ' + (p.online ? 'on' : 'off') + '"></div>' +
+              '<span style="font-weight:500; color:var(--text-mid); flex:1;">' + (p.name || p.id) + '</span>' +
+              '<span style="font-family:\'JetBrains Mono\',monospace; font-size:11px; color:var(--text-dim);">' + (p.ip || '') + '</span>' +
+              (p.online ? '<span style="font-family:\'JetBrains Mono\',monospace; font-size:10px; color:var(--green); margin-left:4px;">OK</span>' : '') +
+            '</div>';
+            if (!p.online) {
+              html += '<div class="setup-printer-hint">Verifica che sia accesa e collegata al Powerline con cavo LAN</div>';
+            }
+            return html;
+          }).join('');
+
+          var allOnline = statuses.every(function(s) { return s.online; });
+          var onlineCount = statuses.filter(function(s) { return s.online; }).length;
+
+          if (allOnline) {
+            setSetupState('printers', 'ok', onlineCount + '/' + statuses.length);
+          } else {
+            setSetupState('printers', 'fail', onlineCount + '/' + statuses.length + ' online');
+          }
+          resolve(allOnline);
+        });
+
+        socket.emit('request_printer_check');
+      });
+    }
+
+    // Check 5: Dispositivi connessi (non critici)
+    function setupCheckDevices() {
+      return new Promise(function(resolve) {
+        setSetupState('devices', 'running');
+        if (!socket || !socket.connected) {
+          setSetupState('devices', 'warn', 'Socket non connesso');
+          resolve(false);
+          return;
+        }
+
+        var timeout = setTimeout(function() {
+          evaluateSetupDevices({});
+          resolve(true);
+        }, 3000);
+
+        socket.once('device_status', function(data) {
+          clearTimeout(timeout);
+          evaluateSetupDevices(data.devices || {});
+          resolve(true);
+        });
+
+        socket.emit('register', { role: 'admin' });
+      });
+
+      function evaluateSetupDevices(ds) {
+        var details = document.getElementById('setupDeviceDetails');
+        details.classList.add('visible');
+
+        var devs = [
+          { key: 'monitor', name: 'Monitor cuochi' },
+          { key: 'scaldavivande', name: 'Tablet scaldavivande' },
+          { key: 'controllo', name: 'Tablet zona controllo' },
+        ];
+
+        details.innerHTML = devs.map(function(d) {
+          var count = ds[d.key] || 0;
+          var online = count > 0;
+          return '<div class="setup-device-row">' +
+            '<div class="setup-device-led ' + (online ? 'on' : 'off') + '"></div>' +
+            '<span style="font-weight:500; color:var(--text-mid); flex:1;">' + d.name + '</span>' +
+            '<span style="font-family:\'JetBrains Mono\',monospace; font-size:11px; color:var(--text-dim);">' + (online ? count + ' connesso' : 'Offline') + '</span>' +
+          '</div>';
+        }).join('');
+
+        var allOnline = devs.every(function(d) { return (ds[d.key] || 0) > 0; });
+        var onlineCount = devs.filter(function(d) { return (ds[d.key] || 0) > 0; }).length;
+
+        if (allOnline) {
+          setSetupState('devices', 'ok', onlineCount + '/' + devs.length);
+        } else if (onlineCount > 0) {
+          setSetupState('devices', 'warn', onlineCount + '/' + devs.length + ' connessi');
+        } else {
+          setSetupState('devices', 'warn', 'Nessun dispositivo');
+        }
+      }
+    }
+
+    // Avvia tutti i check in sequenza
+    async function runSetupChecks() {
+      var btn = document.getElementById('btnSetup');
+      btn.disabled = true;
+      btn.textContent = 'Verifica in corso...';
+
+      // Mostra il pannello progress
+      document.getElementById('setupProgressWrap').style.display = 'block';
+      document.getElementById('setupResultBanner').style.display = 'none';
+      document.getElementById('setupPrinterDetails').classList.remove('visible');
+      document.getElementById('setupDeviceDetails').classList.remove('visible');
+
+      // Reset
+      ['server', 'socket', 'proxy', 'printers', 'devices'].forEach(function(id) { setSetupState(id, 'waiting'); });
+      setupUpdateProgress();
+
+      // Sequenza: critici prima
+      var serverOk = await setupCheckServer();
+      if (!serverOk) { setSetupState('devices', 'fail', 'Server offline'); showSetupResult(); return; }
+
+      var socketOk = await setupCheckSocket();
+      if (!socketOk) { setSetupState('devices', 'fail', 'Socket offline'); showSetupResult(); return; }
+
+      var proxyOk = await setupCheckProxy();
+
+      // Stampanti e dispositivi in parallelo
+      await Promise.all([setupCheckPrinters(), setupCheckDevices()]);
+
+      showSetupResult();
+    }
+
+    // Click handler per il pulsante setup
+    document.getElementById('btnSetup').addEventListener('click', runSetupChecks);
+
+    // Esporta funzioni su window per compatibilità PJAX
+    window.runSetupChecks = runSetupChecks;
+    window.runFullTest = runFullTest;
+    window.testPrint = testPrint;
+    window.refreshPrinters = refreshPrinters;
   </script>
 <script src="/js/sidebar.js"></script>
 </body>

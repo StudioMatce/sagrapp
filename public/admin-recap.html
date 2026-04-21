@@ -915,7 +915,19 @@
     // ===================================================
     // AUTH: verifica token admin salvato in sessionStorage
     // ===================================================
-    const TOKEN = sessionStorage.getItem('admin_token');
+    var TOKEN = sessionStorage.getItem('admin_token');
+
+    // Listener impostati SUBITO (prima dell'async auth) per compatibilità PJAX —
+    // la sidebar wrappa gli script in IIFE, i listener devono agganciarsi prima che l'utente clicchi
+    setupSessionSelector();
+
+    // Export pulsante CSV: usa recapData (variabile modulo), non dipende da renderReport
+    var exportBtn = document.getElementById('btnExport');
+    if (exportBtn) {
+      exportBtn.onclick = function () {
+        if (recapData) exportCSV(recapData);
+      };
+    }
 
     (async function checkAuth() {
       if (!TOKEN) {
@@ -923,24 +935,24 @@
         return;
       }
       try {
-        const res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
-        const data = await res.json();
+        var res = await fetch('/api/admin/verify?token=' + encodeURIComponent(TOKEN));
+        var data = await res.json();
         if (!data.valid) {
           sessionStorage.removeItem('admin_token');
           window.location.href = '/';
           return;
         }
-        // Token valido, carica i dati
-        setupSessionSelector();
-        loadSessions();
-        loadRecap();
-      } catch {
-        // Se il server non risponde, prova comunque
-        setupSessionSelector();
-        loadSessions();
-        loadRecap();
+      } catch (e) {
+        // Se il server non risponde, prova comunque a caricare i dati
       }
+      loadSessions();
+      loadRecap();
     })();
+
+    // Esporta funzioni su window per compatibilità PJAX (sidebar wrappa in IIFE)
+    window.loadRecap = loadRecap;
+    window.loadSessions = loadSessions;
+    window.exportCSV = exportCSV;
 
     // ===================================================
     // HELPERS: formattazione valuta e tempo
@@ -1195,10 +1207,6 @@
       // --- Anomalie ---
       renderAnomalies(data.incompleteOrders, data.incompleteDetails);
 
-      // --- Export (usa onclick per evitare listener multipli al cambio serata) ---
-      document.getElementById('btnExport').onclick = function () {
-        exportCSV(data);
-      };
     }
 
     // ===================================================
@@ -1375,93 +1383,106 @@
     }
 
     // ===================================================
-    // EXPORT CSV
+    // EXPORT CSV — formato unificato (sep=; per Excel/Numbers italiano)
     // ===================================================
     function exportCSV(data) {
-      var lines = [];
       var today = new Date().toISOString().slice(0, 10);
+      var SEP = ';';
+      var csvVal = function(v) {
+        var str = String(v == null ? '' : v);
+        if (str.indexOf(SEP) >= 0 || str.indexOf('"') >= 0 || str.indexOf('\n') >= 0)
+          return '"' + str.replace(/"/g, '""') + '"';
+        return str;
+      };
+      var fNum = function(v) { return (v||0).toFixed(2).replace('.', ','); };
+      var rows = [];
 
-      // Sezione 1: Riepilogo generale
-      lines.push('=== RIEPILOGO GENERALE ===');
-      lines.push('Totale Ordini,' + data.totalOrders);
-      lines.push('Incasso Totale,"' + formatCurrency(data.totalRevenue) + '"');
-      lines.push('Tempo Medio Evasione (s),' + data.avgCompletionTime);
-      lines.push('Ordini Incompleti,' + data.incompleteOrders);
-      lines.push('');
+      // Intestazione
+      rows.push('SAGRAPP - REPORT SERATA');
+      rows.push('Data' + SEP + today);
+      rows.push('');
 
-      // Sezione 2: Incassi per cassa
-      lines.push('=== INCASSI PER CASSA ===');
-      lines.push('Cassa,Importo');
-      Object.entries(data.revenueByCassa || {}).forEach(function (entry) {
-        lines.push(entry[0] + ',"' + formatCurrency(entry[1]) + '"');
-      });
-      lines.push('');
-
-      // Sezione 3: Incassi per pagamento
-      lines.push('=== INCASSI PER PAGAMENTO ===');
-      lines.push('Metodo,Importo');
-      Object.entries(data.revenueByPayment || {}).forEach(function (entry) {
-        lines.push(entry[0] + ',"' + formatCurrency(entry[1]) + '"');
-      });
-      if (data.posCommission > 0) {
-        lines.push('Commissioni POS (' + ((data.posCommissionRate || 0.002) * 100).toFixed(1) + '%),"' + formatCurrency(data.posCommission) + '"');
+      // Riepilogo
+      rows.push('RIEPILOGO');
+      rows.push('Voce' + SEP + 'Valore');
+      rows.push('Incasso totale' + SEP + fNum(data.totalRevenue));
+      rows.push('Ordini totali' + SEP + (data.totalOrders || 0));
+      rows.push('Coperti' + SEP + (data.totalCoperti || 0));
+      rows.push('Ordini asporto' + SEP + (data.totalAsporto || 0));
+      rows.push('Sconti applicati' + SEP + fNum(data.discountTotal || 0));
+      var omTot = data.courtesy && data.courtesy.total ? data.courtesy.total : {count:0, realValue:0};
+      rows.push('Omaggi (n. ordini)' + SEP + (omTot.count || 0));
+      rows.push('Omaggi (valore)' + SEP + fNum(omTot.realValue || 0));
+      if (data.totalCost > 0) {
+        rows.push('Costo materie' + SEP + fNum(data.totalCost));
+        rows.push('Netto' + SEP + fNum(data.grossMargin));
       }
-      lines.push('');
+      rows.push('');
 
-      // Sezione 4: Classifica vendite
-      lines.push('=== CLASSIFICA VENDITE ===');
-      lines.push('Posizione,Piatto,Quantita,Incasso');
-      (data.salesRanking || []).forEach(function (item, i) {
-        lines.push((i + 1) + ',' + item.name + ',' + item.qty + ',"' + formatCurrency(item.revenue) + '"');
-      });
-      lines.push('');
+      // Incasso per cassa
+      rows.push('INCASSO PER CASSA');
+      rows.push('Cassa' + SEP + 'Incasso');
+      var nomi = { principale: 'Cassa Generale', bar: 'Cassa Bar', casetta: 'Casetta' };
+      if (data.revenueByCassa) {
+        Object.entries(data.revenueByCassa).forEach(function(e) {
+          rows.push(csvVal(nomi[e[0]] || e[0]) + SEP + fNum(e[1]));
+        });
+      }
+      rows.push('');
 
-      // Sezione 5: Distribuzione oraria
-      lines.push('=== DISTRIBUZIONE ORARIA ===');
-      lines.push('Ora,Ordini');
-      Object.entries(data.ordersByHour || {}).sort(function (a, b) {
-        return Number(a[0]) - Number(b[0]);
-      }).forEach(function (entry) {
-        lines.push(entry[0] + ':00,' + entry[1]);
-      });
-      lines.push('');
+      // Metodo pagamento (con lordo/commissioni/netto come admin-serate)
+      rows.push('METODO PAGAMENTO');
+      rows.push('Metodo' + SEP + 'Lordo' + SEP + 'Commissioni' + SEP + 'Netto');
+      var contanti = data.revenueByPayment && data.revenueByPayment.contanti ? data.revenueByPayment.contanti : 0;
+      var pos = data.revenueByPayment && data.revenueByPayment.pos ? data.revenueByPayment.pos : 0;
+      var posComm = data.posCommission || 0;
+      rows.push('Contanti' + SEP + fNum(contanti) + SEP + fNum(0) + SEP + fNum(contanti));
+      rows.push('POS (carta)' + SEP + fNum(pos) + SEP + fNum(posComm) + SEP + fNum(pos - posComm));
+      rows.push('Totale' + SEP + fNum(contanti + pos) + SEP + fNum(posComm) + SEP + fNum(contanti + pos - posComm));
+      rows.push('');
 
-      // Sezione 6: Report magazzino
-      lines.push('=== REPORT MAGAZZINO ===');
-      lines.push('Piatto,Scorta Iniziale,Venduto,Rimanente,Stato');
-      (data.inventoryReport || []).forEach(function (item) {
-        lines.push(item.name + ',' + item.initial_stock + ',' + item.sold + ',' + item.remaining + ',' + statusLabel(item.status));
+      // Omaggi dettaglio
+      rows.push('OMAGGI DETTAGLIO');
+      rows.push('Tipo' + SEP + 'Ordini' + SEP + 'Valore');
+      var omNomi = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
+      ['sponsor','don_pierino','amici'].forEach(function(t) {
+        var om = data.courtesy ? data.courtesy[t] : null;
+        rows.push(csvVal(omNomi[t] || t) + SEP + (om ? om.count : 0) + SEP + fNum(om ? om.realValue : 0));
       });
+      rows.push('');
 
-      // Sezione 7: Omaggi
-      lines.push('');
-      lines.push('=== OMAGGI ===');
-      lines.push('Tipo,Conteggio,Valore Reale');
-      var typeLabels = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
-      ['sponsor', 'don_pierino', 'amici'].forEach(function(type) {
-        var c = (data.courtesy && data.courtesy[type]) || { count: 0, realValue: 0 };
-        lines.push(typeLabels[type] + ',' + c.count + ',"' + formatCurrency(c.realValue) + '"');
-      });
-      if (data.courtesy && data.courtesy.total) {
-        lines.push('TOTALE,' + data.courtesy.total.count + ',"' + formatCurrency(data.courtesy.total.realValue) + '"');
+      // Classifica vendite (con costo/margine se disponibili + riga totale)
+      if (data.salesRanking && data.salesRanking.length > 0) {
+        rows.push('CLASSIFICA VENDITE');
+        var hasCost = data.salesRanking.some(function(i) { return i.totalCost > 0; });
+        rows.push('#' + SEP + 'Piatto' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+        var totQty = 0, totRev = 0, totCost = 0;
+        data.salesRanking.forEach(function(item, i) {
+          totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost || 0);
+          var row = (i+1) + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+          if (hasCost) {
+            row += SEP + fNum(item.totalCost || 0) + SEP + fNum(item.revenue - (item.totalCost || 0));
+          }
+          rows.push(row);
+        });
+        var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+        if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
+        rows.push(totRow);
+        rows.push('');
       }
 
-      // Sezione 8: Sconti
-      lines.push('');
-      lines.push('=== SCONTI ===');
-      lines.push('Totale Sconti,"' + formatCurrency(data.discountTotal || 0) + '"');
+      rows.push('Generato da SagrApp' + SEP + new Date().toLocaleString('it-IT'));
 
-      // Genera e scarica il file
-      var csvContent = lines.join('\n');
-      var blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM UTF-8 per Excel
+      // BOM UTF-8 + sep= per apertura corretta in Excel con colonne auto-fit
+      var csv = '\uFEFF' + 'sep=;\n' + rows.join('\n');
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = 'sagrapp_report_' + today + '.csv';
+      a.download = 'sagrapp-report-' + today + '.csv';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
     }
   </script>
 <script src="/js/sidebar.js"></script>
