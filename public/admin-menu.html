@@ -1667,7 +1667,10 @@
             return;
           }
           var newItem = await res2.json();
-          menu.push(newItem);
+          // Evita duplicato: il socket 'menu_updated' potrebbe averlo già aggiunto
+          if (!menu.find(function(m) { return m.id === newItem.id; })) {
+            menu.push(newItem);
+          }
         }
 
         closeModal();
