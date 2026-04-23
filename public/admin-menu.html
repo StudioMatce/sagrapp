@@ -342,27 +342,17 @@
       min-width: 150px;
     }
 
-    .stock-bar-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      flex: 1;
-      min-width: 70px;
-    }
-
     .stock-display {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 700;
       color: var(--text-mid);
       cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 3px;
+      padding: 3px 6px;
+      border-radius: 4px;
       border: 1px solid transparent;
       transition: all 150ms ease;
       white-space: nowrap;
-      text-align: center;
-      line-height: 1;
     }
 
     .stock-display:hover {
@@ -370,25 +360,9 @@
       background: rgba(255, 255, 255, 0.03);
     }
 
-    /* Mini progress bar sotto il numero */
-    .stock-bar {
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(226, 232, 240, 0.06);
-      overflow: hidden;
-    }
-
-    .stock-bar-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: width 300ms ease, background 300ms ease;
-      min-width: 2px;
-    }
-
-    .stock-bar-fill.green { background: var(--green); }
-    .stock-bar-fill.yellow { background: var(--yellow); }
-    .stock-bar-fill.red { background: var(--red); }
+    .stock-display.green { color: var(--green); }
+    .stock-display.yellow { color: var(--yellow); }
+    .stock-display.red { color: var(--red); }
 
     .stock-input {
       width: 52px;
@@ -1139,14 +1113,10 @@
       html += '<span class="price-display" data-id="' + item.id + '">&euro; ' + priceStr + '</span>';
       html += '</div>';
 
-      // Stock inline — con barra progresso
-      var stockPct = initStock > 0 ? Math.min(100, Math.round((stock / initStock) * 100)) : 0;
+      // Stock inline
       html += '<div class="dish-stock">';
       html += '<button class="stock-btn minus" data-id="' + item.id + '" data-delta="-1">&minus;</button>';
-      html += '<div class="stock-bar-wrap">';
-      html += '<span class="stock-display" data-id="' + item.id + '">' + stock + '/' + initStock + '</span>';
-      html += '<div class="stock-bar"><div class="stock-bar-fill ' + dotColor + '" style="width:' + stockPct + '%"></div></div>';
-      html += '</div>';
+      html += '<span class="stock-display ' + dotColor + '" data-id="' + item.id + '">' + stock + '/' + initStock + '</span>';
       html += '<button class="stock-btn plus" data-id="' + item.id + '" data-delta="1">+</button>';
       html += '</div>';
 
@@ -1455,19 +1425,12 @@
       var stock = item.stock !== undefined ? item.stock : 999;
       var initStock = item.initial_stock || 999;
       var dotColor = stockDotColor(item);
-      var pct = initStock > 0 ? Math.min(100, Math.round((stock / initStock) * 100)) : 0;
 
-      // Aggiorna numero
+      // Aggiorna numero e colore
       var display = row.querySelector('.stock-display');
       if (display) {
         display.textContent = stock + '/' + initStock;
-      }
-
-      // Aggiorna barra progresso
-      var barFill = row.querySelector('.stock-bar-fill');
-      if (barFill) {
-        barFill.style.width = pct + '%';
-        barFill.className = 'stock-bar-fill ' + dotColor;
+        display.className = 'stock-display ' + dotColor;
       }
 
       // Flash di conferma
