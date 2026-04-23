@@ -1364,22 +1364,48 @@ router.get('/warehouse', requireAdmin, (req, res) => {
   res.json(Object.values(warehouse));
 });
 
-// Export CSV
+// Export CSV — formato Excel-friendly (sep=; , BOM UTF-8)
 router.get('/warehouse/export', requireAdmin, (req, res) => {
   const items = Object.values(warehouse);
-  const header = 'nome,categoria,quantita,totale,soglia_allarme,ultimo_aggiornamento';
-  const rows = items.map(i => {
-    const updatedAt = i.updated_at ? new Date(i.updated_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '';
-    return [
-      '"' + (i.name || '').replace(/"/g, '""') + '"',
-      '"' + (i.category || '').replace(/"/g, '""') + '"',
-      i.quantity || 0,
-      i.total || 0,
-      i.alert_threshold !== null && i.alert_threshold !== undefined ? i.alert_threshold : '',
-      '"' + updatedAt + '"',
-    ].join(',');
+  // Raggruppa per categoria per leggibilità
+  const byCategory = {};
+  items.forEach(i => {
+    const cat = i.category || 'Altro';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(i);
   });
-  const csv = [header, ...rows].join('\n');
+
+  const lines = ['sep=;', 'NOME;CATEGORIA;QUANTITA;TOTALE;SOGLIA ALLARME;ULTIMO AGGIORNAMENTO'];
+
+  // Ordina categorie alfabeticamente, "Altro" in fondo
+  const cats = Object.keys(byCategory).sort((a, b) => {
+    if (a === 'Altro') return 1;
+    if (b === 'Altro') return -1;
+    return a.localeCompare(b, 'it');
+  });
+
+  cats.forEach(cat => {
+    // Header di sezione
+    lines.push('');
+    lines.push('--- ' + cat.toUpperCase() + ' (' + byCategory[cat].length + ' articoli) ---');
+
+    // Articoli ordinati per nome
+    byCategory[cat].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'it'));
+    byCategory[cat].forEach(i => {
+      const updatedAt = i.updated_at ? new Date(i.updated_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '';
+      lines.push([
+        (i.name || '').replace(/;/g, ','),
+        (i.category || '').replace(/;/g, ','),
+        i.quantity || 0,
+        i.total || 0,
+        i.alert_threshold !== null && i.alert_threshold !== undefined ? i.alert_threshold : '',
+        updatedAt,
+      ].join(';'));
+    });
+  });
+
+  const BOM = '\uFEFF';
+  const csv = BOM + lines.join('\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="magazzino_' + new Date().toISOString().slice(0, 10) + '.csv"');
   res.send(csv);

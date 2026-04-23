@@ -1183,14 +1183,21 @@
       var file = e.target.files[0];
       if (!file) return;
       var text = await file.text();
-      var lines = text.split('\n').filter(function(l) { return l.trim(); });
+      // Rimuovi BOM se presente
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      var lines = text.split('\n').filter(function(l) {
+        var t = l.trim();
+        // Salta righe vuote, sep=; e righe di sezione (---)
+        return t && t !== 'sep=;' && !t.startsWith('---');
+      });
       if (lines.length < 2) { alert('CSV vuoto o senza righe dati'); return; }
 
-      // Parsa header
-      var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase().replace(/['"]/g, ''); });
+      // Auto-detect separatore: se l'header contiene ; usa quello, altrimenti ,
+      var sep = lines[0].indexOf(';') >= 0 ? ';' : ',';
+      var headers = lines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/['"]/g, ''); });
       var rows = [];
       for (var i = 1; i < lines.length; i++) {
-        var vals = lines[i].match(/(".*?"|[^,]+)/g) || [];
+        var vals = lines[i].split(sep);
         var row = {};
         headers.forEach(function(h, idx) {
           row[h] = (vals[idx] || '').replace(/^"|"$/g, '').trim();
