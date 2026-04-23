@@ -333,24 +333,22 @@
       outline: none;
     }
 
-    /* Stock inline controls */
+    /* Stock inline controls — con barra progresso */
     .dish-stock {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       flex-shrink: 0;
+      min-width: 150px;
     }
 
-    .stock-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
+    .stock-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 70px;
     }
-
-    .stock-dot.green { background: var(--green); }
-    .stock-dot.yellow { background: var(--yellow); }
-    .stock-dot.red { background: var(--red); }
 
     .stock-display {
       font-family: 'JetBrains Mono', monospace;
@@ -358,17 +356,39 @@
       font-weight: 700;
       color: var(--text-mid);
       cursor: pointer;
-      padding: 3px 6px;
-      border-radius: 4px;
+      padding: 2px 4px;
+      border-radius: 3px;
       border: 1px solid transparent;
       transition: all 150ms ease;
       white-space: nowrap;
+      text-align: center;
+      line-height: 1;
     }
 
     .stock-display:hover {
       border-color: rgba(226, 232, 240, 0.15);
       background: rgba(255, 255, 255, 0.03);
     }
+
+    /* Mini progress bar sotto il numero */
+    .stock-bar {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(226, 232, 240, 0.06);
+      overflow: hidden;
+    }
+
+    .stock-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 300ms ease, background 300ms ease;
+      min-width: 2px;
+    }
+
+    .stock-bar-fill.green { background: var(--green); }
+    .stock-bar-fill.yellow { background: var(--yellow); }
+    .stock-bar-fill.red { background: var(--red); }
 
     .stock-input {
       width: 52px;
@@ -385,13 +405,13 @@
     }
 
     .stock-btn {
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
       border: 1px solid var(--border);
       background: transparent;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
@@ -399,6 +419,7 @@
       justify-content: center;
       transition: all 120ms ease;
       touch-action: manipulation;
+      flex-shrink: 0;
     }
 
     .stock-btn:active { transform: scale(0.9); }
@@ -442,58 +463,63 @@
 
     .btn-reset-stock:active { transform: scale(0.97); }
 
-    /* Casse checkboxes */
+    /* Casse — pill/badge cliccabili */
     .casse-group {
       display: flex;
-      gap: 6px;
+      gap: 4px;
       flex-shrink: 0;
     }
 
-    .casse-label {
-      display: flex;
-      align-items: center;
-      gap: 3px;
+    .casse-pill {
+      position: relative;
       cursor: pointer;
       user-select: none;
     }
 
-    .casse-label input[type="checkbox"] {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      background: transparent;
-      cursor: pointer;
-      position: relative;
-      flex-shrink: 0;
-      transition: all 150ms ease;
-    }
-
-    .casse-label input[type="checkbox"]:checked {
-      background: rgba(78, 204, 163, 0.2);
-      border-color: var(--green);
-    }
-
-    .casse-label input[type="checkbox"]:checked::after {
-      content: '';
+    .casse-pill input[type="checkbox"] {
       position: absolute;
-      top: 2px;
-      left: 5px;
-      width: 4px;
-      height: 8px;
-      border: solid var(--green);
-      border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
+      opacity: 0;
+      width: 0;
+      height: 0;
     }
 
-    .casse-text {
+    .casse-pill-label {
+      display: block;
       font-family: 'JetBrains Mono', monospace;
       font-size: 10px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
       color: var(--text-dim);
-      letter-spacing: 0.02em;
+      transition: all 150ms ease;
+      cursor: pointer;
+    }
+
+    .casse-pill-label:hover {
+      border-color: rgba(226, 232, 240, 0.2);
+      color: var(--text-mid);
+    }
+
+    /* Colori diversi per ogni cassa quando attiva */
+    .casse-pill input:checked + .casse-pill-label {
+      color: var(--green);
+      border-color: rgba(78, 204, 163, 0.35);
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    .casse-pill.cassa-bar input:checked + .casse-pill-label {
+      color: var(--cyan);
+      border-color: rgba(34, 211, 238, 0.35);
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .casse-pill.cassa-casetta input:checked + .casse-pill-label {
+      color: var(--yellow);
+      border-color: rgba(255, 217, 61, 0.3);
+      background: rgba(255, 217, 61, 0.06);
     }
 
     /* Action buttons */
@@ -795,6 +821,7 @@
       .casse-group { display: none; }
       .dish-row { gap: 8px; padding: 12px; }
       .stock-btn { display: none; }
+      .dish-stock { min-width: 70px; }
     }
 
     @media (max-width: 640px) {
@@ -1112,20 +1139,28 @@
       html += '<span class="price-display" data-id="' + item.id + '">&euro; ' + priceStr + '</span>';
       html += '</div>';
 
-      // Stock inline
+      // Stock inline — con barra progresso
+      var stockPct = initStock > 0 ? Math.min(100, Math.round((stock / initStock) * 100)) : 0;
       html += '<div class="dish-stock">';
       html += '<button class="stock-btn minus" data-id="' + item.id + '" data-delta="-1">&minus;</button>';
-      html += '<span class="stock-dot ' + dotColor + '"></span>';
+      html += '<div class="stock-bar-wrap">';
       html += '<span class="stock-display" data-id="' + item.id + '">' + stock + '/' + initStock + '</span>';
+      html += '<div class="stock-bar"><div class="stock-bar-fill ' + dotColor + '" style="width:' + stockPct + '%"></div></div>';
+      html += '</div>';
       html += '<button class="stock-btn plus" data-id="' + item.id + '" data-delta="1">+</button>';
       html += '</div>';
 
-      // Casse
+      // Casse — pill colorate
       html += '<div class="casse-group">';
       CASSE_MAP.forEach(function(c) {
         var checked = casses.indexOf(c.key) >= 0 ? ' checked' : '';
-        html += '<label class="casse-label"><input type="checkbox" class="casse-chk" data-id="' + item.id + '" data-casse="' + c.key + '"' + checked + '>';
-        html += '<span class="casse-text">' + c.label + '</span></label>';
+        // Classe specifica per colore diverso per cassa
+        var pillClass = 'casse-pill';
+        if (c.key === 'cassa_bar') pillClass += ' cassa-bar';
+        if (c.key === 'cassa_casetta') pillClass += ' cassa-casetta';
+        html += '<label class="' + pillClass + '">';
+        html += '<input type="checkbox" class="casse-chk" data-id="' + item.id + '" data-casse="' + c.key + '"' + checked + '>';
+        html += '<span class="casse-pill-label">' + c.label + '</span></label>';
       });
       html += '</div>';
 
@@ -1417,14 +1452,22 @@
       var row = document.querySelector('.dish-row[data-id="' + id + '"]');
       if (!row) return;
 
-      var dot = row.querySelector('.stock-dot');
-      if (dot) {
-        dot.className = 'stock-dot ' + stockDotColor(item);
-      }
+      var stock = item.stock !== undefined ? item.stock : 999;
+      var initStock = item.initial_stock || 999;
+      var dotColor = stockDotColor(item);
+      var pct = initStock > 0 ? Math.min(100, Math.round((stock / initStock) * 100)) : 0;
 
+      // Aggiorna numero
       var display = row.querySelector('.stock-display');
       if (display) {
-        display.textContent = (item.stock !== undefined ? item.stock : 999) + '/' + (item.initial_stock || 999);
+        display.textContent = stock + '/' + initStock;
+      }
+
+      // Aggiorna barra progresso
+      var barFill = row.querySelector('.stock-bar-fill');
+      if (barFill) {
+        barFill.style.width = pct + '%';
+        barFill.className = 'stock-bar-fill ' + dotColor;
       }
 
       // Flash di conferma
