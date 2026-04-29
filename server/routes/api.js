@@ -1375,7 +1375,7 @@ router.get('/warehouse/export', requireAdmin, (req, res) => {
     byCategory[cat].push(i);
   });
 
-  const lines = ['sep=;', 'NOME;CATEGORIA;QUANTITA;TOTALE;SOGLIA ALLARME;ULTIMO AGGIORNAMENTO'];
+  const lines = ['sep=;', 'NOME;CATEGORIA;FORNITORE;QUANTITA;TOTALE;SOGLIA ALLARME;ULTIMO AGGIORNAMENTO'];
 
   // Ordina categorie alfabeticamente, "Altro" in fondo
   const cats = Object.keys(byCategory).sort((a, b) => {
@@ -1396,6 +1396,7 @@ router.get('/warehouse/export', requireAdmin, (req, res) => {
       lines.push([
         (i.name || '').replace(/;/g, ','),
         (i.category || '').replace(/;/g, ','),
+        (i.supplier || '').replace(/;/g, ','),
         i.quantity || 0,
         i.total || 0,
         i.alert_threshold !== null && i.alert_threshold !== undefined ? i.alert_threshold : '',
@@ -1424,6 +1425,7 @@ router.post('/warehouse/import', requireAdmin, (req, res) => {
     const item = warehouse[id] || { id, created_at: Date.now() };
     item.name = row.nome.trim();
     item.category = row.categoria ? row.categoria.trim() : item.category || null;
+    item.supplier = row.fornitore ? row.fornitore.trim() : item.supplier || null;
     item.quantity = row.quantita !== undefined && row.quantita !== '' ? parseInt(row.quantita) : (item.quantity || 0);
     item.total = row.totale !== undefined && row.totale !== '' ? parseInt(row.totale) : (item.total || 0);
     item.alert_threshold = row.soglia_allarme !== undefined && row.soglia_allarme !== '' ? parseInt(row.soglia_allarme) : (item.alert_threshold || null);
@@ -1454,6 +1456,7 @@ router.post('/warehouse', requireAdmin, (req, res) => {
     total: parseInt(total) || parseInt(quantity) || 0,
     alert_threshold: alert_threshold !== undefined && alert_threshold !== null && alert_threshold !== '' ? parseInt(alert_threshold) : null,
     category: req.body.category ? String(req.body.category).trim() : null,
+    supplier: req.body.supplier ? String(req.body.supplier).trim() : null,
     created_at: Date.now(),
     updated_at: Date.now(),
   };
@@ -1469,12 +1472,13 @@ router.put('/warehouse/:id', requireAdmin, (req, res) => {
   const item = warehouse[req.params.id];
   if (!item) return res.status(404).json({ error: 'Articolo non trovato' });
 
-  const { name, quantity, total, alert_threshold, category } = req.body;
+  const { name, quantity, total, alert_threshold, category, supplier } = req.body;
   if (name !== undefined) item.name = String(name).trim();
   if (quantity !== undefined) item.quantity = Math.max(0, parseInt(quantity));
   if (total !== undefined) item.total = Math.max(0, parseInt(total));
   if (alert_threshold !== undefined) item.alert_threshold = alert_threshold !== null && alert_threshold !== '' ? parseInt(alert_threshold) : null;
   if (category !== undefined) item.category = category ? String(category).trim() : null;
+  if (supplier !== undefined) item.supplier = supplier ? String(supplier).trim() : null;
   item.updated_at = Date.now();
 
   db.saveWarehouseItem(item).catch(err => console.error('[DB] saveWarehouseItem:', err));

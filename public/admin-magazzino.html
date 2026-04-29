@@ -651,6 +651,8 @@
 
   <!-- Tab categorie -->
   <div class="cat-tabs" id="catTabs"></div>
+  <!-- Tab fornitori -->
+  <div class="cat-tabs" id="supplierTabs" style="padding-top:8px"></div>
 
   <div class="page-wrap">
     <div id="itemList">
@@ -678,6 +680,11 @@
           <input class="field-input" id="fCategory" type="text" list="categoryList" placeholder="es. Posate, Bevande, Pulizia...">
           <datalist id="categoryList"></datalist>
           <span class="field-hint">Scegli una esistente o scrivi per crearne una nuova</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Fornitore</label>
+          <input class="field-input" id="fSupplier" type="text" list="supplierList" placeholder="es. Roma, Tosano, Basso...">
+          <datalist id="supplierList"></datalist>
         </div>
         <div class="field-row">
           <div class="field">
@@ -737,6 +744,7 @@
     var items = [];       // Array di articoli warehouse
     var editingId = null; // null = nuovo, altrimenti id in modifica
     var activeCategory = 'tutti'; // Filtro categoria attiva
+    var activeSupplier = 'tutti'; // Filtro fornitore attivo
 
     // =============================================
     //  RENDERING
@@ -760,6 +768,7 @@
       var dot = qtyDotColor(item);
       var metaParts = [];
       if (item.category) metaParts.push(escapeHtml(item.category));
+      if (item.supplier) metaParts.push('<span style="color:var(--cyan)">' + escapeHtml(item.supplier) + '</span>');
       if (item.alert_threshold !== null && item.alert_threshold !== undefined) metaParts.push('soglia: ' + item.alert_threshold);
       if (item.updated_at) metaParts.push(formatTimestamp(item.updated_at));
 
@@ -817,6 +826,21 @@
       }).map(function(name) { return { name: name, count: cats[name] }; });
     }
 
+    // Estrae i fornitori unici
+    function getSuppliers() {
+      var sups = {};
+      items.forEach(function(i) {
+        var s = i.supplier || 'Altro';
+        if (!sups[s]) sups[s] = 0;
+        sups[s]++;
+      });
+      return Object.keys(sups).sort(function(a, b) {
+        if (a === 'Altro') return 1;
+        if (b === 'Altro') return -1;
+        return a.localeCompare(b, 'it');
+      }).map(function(name) { return { name: name, count: sups[name] }; });
+    }
+
     function renderTabs() {
       var categories = getCategories();
       var tabsEl = document.getElementById('catTabs');
@@ -824,23 +848,50 @@
       // Se c'è solo una categoria (o zero), nascondi i tab
       if (categories.length <= 1) {
         tabsEl.innerHTML = '';
+      } else {
+        var html = '<button class="cat-tab' + (activeCategory === 'tutti' ? ' active' : '') + '" data-cat="tutti">' +
+          'Tutti<span class="cat-tab-count">' + items.length + '</span></button>';
+
+        categories.forEach(function(cat) {
+          html += '<button class="cat-tab' + (activeCategory === cat.name ? ' active' : '') + '" data-cat="' + escapeHtml(cat.name) + '">' +
+            escapeHtml(cat.name) + '<span class="cat-tab-count">' + cat.count + '</span></button>';
+        });
+
+        tabsEl.innerHTML = html;
+
+        tabsEl.querySelectorAll('.cat-tab').forEach(function(el) {
+          el.addEventListener('click', function() {
+            activeCategory = el.dataset.cat;
+            renderTabs();
+            renderList();
+          });
+        });
+      }
+
+      // Tab fornitori
+      var suppliers = getSuppliers();
+      var supTabsEl = document.getElementById('supplierTabs');
+
+      if (suppliers.length <= 1) {
+        supTabsEl.innerHTML = '';
         return;
       }
 
-      var html = '<button class="cat-tab' + (activeCategory === 'tutti' ? ' active' : '') + '" data-cat="tutti">' +
+      var supHtml = '<span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);padding:8px 4px">Fornitore:</span>';
+      supHtml += '<button class="cat-tab' + (activeSupplier === 'tutti' ? ' active' : '') + '" data-sup="tutti">' +
         'Tutti<span class="cat-tab-count">' + items.length + '</span></button>';
 
-      categories.forEach(function(cat) {
-        html += '<button class="cat-tab' + (activeCategory === cat.name ? ' active' : '') + '" data-cat="' + escapeHtml(cat.name) + '">' +
-          escapeHtml(cat.name) + '<span class="cat-tab-count">' + cat.count + '</span></button>';
+      suppliers.forEach(function(s) {
+        supHtml += '<button class="cat-tab' + (activeSupplier === s.name ? ' active' : '') + '" data-sup="' + escapeHtml(s.name) + '"' +
+          ' style="' + (activeSupplier === s.name ? 'background:rgba(34,211,238,0.1);border-color:rgba(34,211,238,0.3);color:var(--cyan)' : '') + '">' +
+          escapeHtml(s.name) + '<span class="cat-tab-count">' + s.count + '</span></button>';
       });
 
-      tabsEl.innerHTML = html;
+      supTabsEl.innerHTML = supHtml;
 
-      // Bind tab clicks
-      tabsEl.querySelectorAll('.cat-tab').forEach(function(el) {
+      supTabsEl.querySelectorAll('.cat-tab').forEach(function(el) {
         el.addEventListener('click', function() {
-          activeCategory = el.dataset.cat;
+          activeSupplier = el.dataset.sup;
           renderTabs();
           renderList();
         });
@@ -848,9 +899,11 @@
     }
 
     function renderList() {
-      // Filtra per categoria attiva
-      var filtered = activeCategory === 'tutti' ? items : items.filter(function(i) {
-        return (i.category || 'Altro') === activeCategory;
+      // Filtra per categoria e fornitore attivi
+      var filtered = items.filter(function(i) {
+        var catMatch = activeCategory === 'tutti' || (i.category || 'Altro') === activeCategory;
+        var supMatch = activeSupplier === 'tutti' || (i.supplier || 'Altro') === activeSupplier;
+        return catMatch && supMatch;
       });
 
       document.getElementById('itemCountBadge').textContent = filtered.length + ' / ' + items.length + ' articoli';
@@ -1072,10 +1125,16 @@
 
     function updateCategoryDatalist() {
       var cats = {};
-      items.forEach(function(i) { if (i.category) cats[i.category] = true; });
-      var dl = document.getElementById('categoryList');
-      dl.innerHTML = Object.keys(cats).sort().map(function(c) {
+      var sups = {};
+      items.forEach(function(i) {
+        if (i.category) cats[i.category] = true;
+        if (i.supplier) sups[i.supplier] = true;
+      });
+      document.getElementById('categoryList').innerHTML = Object.keys(cats).sort().map(function(c) {
         return '<option value="' + escapeHtml(c) + '">';
+      }).join('');
+      document.getElementById('supplierList').innerHTML = Object.keys(sups).sort().map(function(s) {
+        return '<option value="' + escapeHtml(s) + '">';
       }).join('');
     }
 
@@ -1084,6 +1143,7 @@
       document.getElementById('modalTitle').textContent = 'Nuovo articolo';
       document.getElementById('fName').value = '';
       document.getElementById('fCategory').value = '';
+      document.getElementById('fSupplier').value = '';
       document.getElementById('fQty').value = '0';
       document.getElementById('fTotal').value = '0';
       document.getElementById('fThreshold').value = '';
@@ -1100,6 +1160,7 @@
       document.getElementById('modalTitle').textContent = 'Modifica articolo';
       document.getElementById('fName').value = item.name;
       document.getElementById('fCategory').value = item.category || '';
+      document.getElementById('fSupplier').value = item.supplier || '';
       document.getElementById('fQty').value = item.quantity;
       document.getElementById('fTotal').value = item.total || 0;
       document.getElementById('fThreshold').value = item.alert_threshold !== null && item.alert_threshold !== undefined ? item.alert_threshold : '';
@@ -1127,7 +1188,8 @@
       document.getElementById('fName').style.borderColor = '';
 
       var category = document.getElementById('fCategory').value.trim() || null;
-      var payload = { name: name, quantity: qty, total: total, alert_threshold: threshold, category: category };
+      var supplier = document.getElementById('fSupplier').value.trim() || null;
+      var payload = { name: name, quantity: qty, total: total, alert_threshold: threshold, category: category, supplier: supplier };
 
       var btn = document.getElementById('btnSave');
       btn.disabled = true;

@@ -136,6 +136,7 @@ async function createTables() {
   const migrations = [
     `ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS cost_price DOUBLE PRECISION`,
     `ALTER TABLE archived_sessions ADD COLUMN IF NOT EXISTS turno TEXT`,
+    `ALTER TABLE warehouse ADD COLUMN IF NOT EXISTS supplier TEXT`,
   ];
   for (const m of migrations) {
     await pool.query(m).catch(() => {}); // ignora se già esiste
@@ -448,6 +449,7 @@ async function getWarehouse() {
       total: row.total,
       alert_threshold: row.alert_threshold,
       category: row.category,
+      supplier: row.supplier || null,
       created_at: parseInt(row.created_at),
       updated_at: row.updated_at ? parseInt(row.updated_at) : null,
     };
@@ -457,15 +459,15 @@ async function getWarehouse() {
 
 async function saveWarehouseItem(item) {
   await pool.query(
-    `INSERT INTO warehouse (id, name, quantity, total, alert_threshold, category, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO warehouse (id, name, quantity, total, alert_threshold, category, supplier, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (id) DO UPDATE SET
        name = EXCLUDED.name, quantity = EXCLUDED.quantity, total = EXCLUDED.total,
        alert_threshold = EXCLUDED.alert_threshold, category = EXCLUDED.category,
-       updated_at = EXCLUDED.updated_at`,
+       supplier = EXCLUDED.supplier, updated_at = EXCLUDED.updated_at`,
     [
       item.id, item.name, item.quantity || 0, item.total || 0,
-      item.alert_threshold || null, item.category || null,
+      item.alert_threshold || null, item.category || null, item.supplier || null,
       item.created_at, item.updated_at || null,
     ]
   );
