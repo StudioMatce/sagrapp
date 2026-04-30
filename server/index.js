@@ -17,9 +17,22 @@ loadLogos();
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO con CORS aperto (per il test, in produzione restringere)
+// CORS — accetta solo origini note (Railway deploy + localhost dev + LAN sagra)
+const ALLOWED_ORIGINS = [
+  'https://web-production-4fa18.up.railway.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
+// Accetta anche richieste dalla LAN locale (192.168.x.x)
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // richieste same-origin (no header Origin)
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) return true;
+  return false;
+}
+
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
+  cors: { origin: function(origin, cb) { cb(null, isAllowedOrigin(origin)); }, methods: ['GET', 'POST'] },
   // Rilevamento offline rapido: ping ogni 3s, timeout dopo 5s
   pingInterval: 3000,
   pingTimeout: 5000,
@@ -29,8 +42,22 @@ const io = new Server(server, {
 setIO(io);
 
 // --- Middleware ---
-app.use(cors());
+app.use(cors({ origin: function(origin, cb) { cb(null, isAllowedOrigin(origin)); } }));
 app.use(express.json());
+
+// Rate limiting semplice in-memory — max 60 richieste/minuto per IP su endpoint ordini
+const rateLimitMap = new Map();
+setInterval(() => rateLimitMap.clear(), 60000); // reset ogni minuto
+app.use('/api/orders', (req, res, next) => {
+  if (req.method !== 'POST') return next();
+  const ip = req.ip || req.connection.remoteAddress;
+  const count = (rateLimitMap.get(ip) || 0) + 1;
+  rateLimitMap.set(ip, count);
+  if (count > 60) {
+    return res.status(429).json({ error: 'Troppe richieste, riprova tra poco' });
+  }
+  next();
+});
 
 // File statici dalla cartella public/
 app.use(express.static(path.join(__dirname, '..', 'public')));

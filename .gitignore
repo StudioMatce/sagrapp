@@ -4,3 +4,12 @@ node_modules/
 .DS_Store
 C:\temp\
 server/data/
+
+# File di test e utility
+test-*.js
+seed-*.js
+
+# Copie di lavoro immagini nel root (originali in public/)
+/Ricevuta_01.png
+/mdg_logo_thermal.png
+/vendramini_logo_thermal.png

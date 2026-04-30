@@ -13,7 +13,7 @@ dbUrl.searchParams.delete('sslmode');
 const pool = new Pool({
   connectionString: dbUrl.toString(),
   ssl: { rejectUnauthorized: false }, // Neon usa SSL con certificato CA valido
-  max: 10,
+  max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });

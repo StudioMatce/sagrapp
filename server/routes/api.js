@@ -10,6 +10,9 @@ const router = express.Router();
 // I dati restano in memoria per velocità. Ogni modifica viene scritta anche su DB.
 // Al riavvio, i dati vengono caricati dal DB tramite init() (chiamata da server/index.js).
 
+// Mutex per serializzare la creazione ordini (evita race condition su orderCounter con 3 casse)
+let orderLock = Promise.resolve();
+
 // Dichiarazione variabili — tutte popolate da init() prima che il server inizi ad accettare richieste
 let counters = {};
 let inventory = {};
@@ -558,6 +561,15 @@ router.post('/orders/:id/fulfill', (req, res) => {
 // CREA ORDINE — con composizione pezzi, stampa multipla, e piatti speciali
 // =============================================
 router.post('/orders', (req, res) => {
+  // Serializza la creazione ordini con un mutex per evitare race condition
+  // su orderCounter quando 3 casse inviano ordini simultaneamente
+  orderLock = orderLock.then(() => createOrder(req, res)).catch(err => {
+    console.error('[Ordini] Errore critico:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Errore interno' });
+  });
+});
+
+async function createOrder(req, res) {
   const { table, items: orderItems, payment, customer_name, discount, discount_type, discount_value, courtesy_type, source, coperti, asporto } = req.body;
 
   // Bar e casetta non hanno tavolo (inviano table: 0), la cassa generale lo richiede
@@ -567,7 +579,7 @@ router.post('/orders', (req, res) => {
   }
 
   orderCounter++;
-  db.setOrderCounter(orderCounter).catch(err => console.error('[DB] setOrderCounter:', err));
+  await db.setOrderCounter(orderCounter);
 
   // Costruisce l'ordine con info dal menu
   const items = [];
@@ -664,7 +676,13 @@ router.post('/orders', (req, res) => {
   }
 
   orders.push(order);
-  db.insertOrder(order).catch(err => console.error('[DB] insertOrder:', err));
+  // Await scrittura ordine — è il dato più critico, non deve andare perso
+  try {
+    await db.insertOrder(order);
+  } catch (err) {
+    console.error('[DB] insertOrder CRITICO:', err);
+    // L'ordine è già in memoria — continua comunque (la stampa deve partire)
+  }
 
   // Broadcast contatori aggiornati (vendute cambiate → da_cucinare cambia sul monitor)
   if (io) {
@@ -810,7 +828,7 @@ router.post('/orders', (req, res) => {
     discount: order.discount,
     prints,
   });
-});
+}
 
 // =============================================
 // LOGIN UNIFICATO — PIN per ruolo

@@ -1059,8 +1059,18 @@
 
         if (data.success) {
           var msg = data.order_number + '  ' + formatPrice(data.total);
-          feedback.textContent = msg;
-          feedback.classList.add('visible', 'success');
+
+          // Warning se le stampe non sono partite (proxy offline — job in coda)
+          var noPrint = data.prints && !data.prints.receipt;
+          if (noPrint) {
+            msg += '  ⚠ STAMPA IN CODA';
+            feedback.textContent = msg;
+            feedback.classList.add('visible', 'error');
+            beepAlert();
+          } else {
+            feedback.textContent = msg;
+            feedback.classList.add('visible', 'success');
+          }
 
           var lastEl = document.getElementById('lastOrder');
           lastEl.textContent = 'Ultimo: ' + data.order_number;
@@ -1071,7 +1081,7 @@
           setTimeout(function() {
             feedback.classList.remove('visible');
             progress.classList.remove('done');
-          }, 3000);
+          }, noPrint ? 6000 : 3000);
         } else {
           feedback.textContent = data.error || 'Errore sconosciuto';
           feedback.classList.add('visible', 'error');

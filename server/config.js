@@ -21,8 +21,8 @@ module.exports = {
   },
   // Il monitor cuochi (/monitor) non richiede PIN — accesso diretto via URL
 
-  // Segreto per token sessioni
-  TOKEN_SECRET: process.env.TOKEN_SECRET || 'sagrapp-test-2026',
+  // Segreto per token sessioni — usa env var su Railway, fallback a crypto random in dev
+  TOKEN_SECRET: process.env.TOKEN_SECRET || require('crypto').randomBytes(32).toString('hex'),
 
   // Stampanti — tutte in rete LAN via Powerline (ESC/POS TCP porta 9100)
   PRINTERS: [
