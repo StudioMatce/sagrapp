@@ -115,6 +115,35 @@
       color: var(--gray);
     }
 
+    .supplier-select {
+      padding: 7px 28px 7px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      background: rgba(34, 211, 238, 0.08);
+      color: var(--cyan);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2322d3ee'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: all 150ms ease;
+    }
+
+    .supplier-select:hover {
+      border-color: var(--cyan);
+      background-color: rgba(34, 211, 238, 0.12);
+    }
+
+    .supplier-select option {
+      background: var(--card);
+      color: var(--text);
+    }
+
     .btn-add {
       display: inline-flex;
       align-items: center;
@@ -499,22 +528,18 @@
     /* ===== CATEGORY TABS ===== */
     .cat-tabs {
       display: flex;
+      flex-wrap: wrap;
       gap: 6px;
       padding: 16px 16px 0;
       max-width: 800px;
       margin: 0 auto;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
     }
-
-    .cat-tabs::-webkit-scrollbar { display: none; }
 
     .cat-tab {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 16px;
+      padding: 8px 14px;
       border-radius: 6px;
       border: 1px solid var(--border);
       background: transparent;
@@ -525,7 +550,6 @@
       cursor: pointer;
       transition: all 150ms ease;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     .cat-tab:hover { border-color: rgba(226, 232, 240, 0.15); color: var(--text); }
@@ -636,6 +660,9 @@
     </div>
     <div class="header-right">
       <span class="item-count-badge" id="itemCountBadge">--</span>
+      <select class="supplier-select" id="supplierSelect">
+        <option value="tutti">Tutti i fornitori</option>
+      </select>
       <div class="conn-indicator">
         <div class="conn-dot" id="connDot"></div>
         <span class="conn-label" id="connLabel">Offline</span>
@@ -651,8 +678,6 @@
 
   <!-- Tab categorie -->
   <div class="cat-tabs" id="catTabs"></div>
-  <!-- Tab fornitori -->
-  <div class="cat-tabs" id="supplierTabs" style="padding-top:8px"></div>
 
   <div class="page-wrap">
     <div id="itemList">
@@ -868,34 +893,17 @@
         });
       }
 
-      // Tab fornitori
+      // Dropdown fornitori nell'header
       var suppliers = getSuppliers();
-      var supTabsEl = document.getElementById('supplierTabs');
-
-      if (suppliers.length <= 1) {
-        supTabsEl.innerHTML = '';
-        return;
-      }
-
-      var supHtml = '<span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);padding:8px 4px">Fornitore:</span>';
-      supHtml += '<button class="cat-tab' + (activeSupplier === 'tutti' ? ' active' : '') + '" data-sup="tutti">' +
-        'Tutti<span class="cat-tab-count">' + items.length + '</span></button>';
-
+      var selectEl = document.getElementById('supplierSelect');
+      var html = '<option value="tutti">Tutti i fornitori</option>';
       suppliers.forEach(function(s) {
-        supHtml += '<button class="cat-tab' + (activeSupplier === s.name ? ' active' : '') + '" data-sup="' + escapeHtml(s.name) + '"' +
-          ' style="' + (activeSupplier === s.name ? 'background:rgba(34,211,238,0.1);border-color:rgba(34,211,238,0.3);color:var(--cyan)' : '') + '">' +
-          escapeHtml(s.name) + '<span class="cat-tab-count">' + s.count + '</span></button>';
+        html += '<option value="' + escapeHtml(s.name) + '"' + (activeSupplier === s.name ? ' selected' : '') + '>' +
+          escapeHtml(s.name) + ' (' + s.count + ')</option>';
       });
-
-      supTabsEl.innerHTML = supHtml;
-
-      supTabsEl.querySelectorAll('.cat-tab').forEach(function(el) {
-        el.addEventListener('click', function() {
-          activeSupplier = el.dataset.sup;
-          renderTabs();
-          renderList();
-        });
-      });
+      selectEl.innerHTML = html;
+      // Nascondi il select se c'è un solo fornitore
+      selectEl.style.display = suppliers.length <= 1 ? 'none' : '';
     }
 
     function renderList() {
@@ -1118,6 +1126,10 @@
     var modalOverlay = document.getElementById('modalOverlay');
 
     document.getElementById('btnAdd').addEventListener('click', function() { openNewModal(); });
+    document.getElementById('supplierSelect').addEventListener('change', function() {
+      activeSupplier = this.value;
+      renderList();
+    });
     document.getElementById('modalClose').addEventListener('click', closeModal);
     document.getElementById('btnCancel').addEventListener('click', closeModal);
     document.getElementById('btnSave').addEventListener('click', handleSave);
