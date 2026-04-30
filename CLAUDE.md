@@ -10,13 +10,14 @@ Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cl
 - **Stampa:** ESC/POS raw via TCP porta 9100 su stampanti LAN
 - **Accesso:** Login unificato con PIN (config.js → PINS). Sidebar solo per admin
 - **Navigazione:** Sidebar (js/sidebar.js) visibile su tutte le pagine quando loggato come admin (incluse monitor, scaldavivande, controllo). Pulsante "Esci" su pagine non-admin. Soft navigation PJAX per pagine admin — funzioni onclick devono essere esportate su `window` per compatibilità
-- **Deploy:** Railway (con variabile d'ambiente DATABASE_URL impostata nel progetto)
+- **Sicurezza:** CORS ristretto (Railway + localhost + LAN 192.168.x.x), rate limiting ordini (60/min per IP), token sessione con crypto random
+- **Deploy:** Railway (con variabili d'ambiente DATABASE_URL e TOKEN_SECRET)
 
 ## Struttura file
 ```
 server/
   index.js          # Express + Socket.IO server
-  config.js         # Menu (42 piatti), stampanti, configurazione
+  config.js         # Menu (53 piatti), stampanti, configurazione
   routes/api.js     # API REST + logica ordini/stampa/inventario/omaggi/sconti
   services/printer.js  # Generazione comandi ESC/POS (ricevuta, comande, speciali)
   db.js               # Layer database PostgreSQL (Neon) — tutte le funzioni sono async
@@ -61,9 +62,10 @@ Se il proxy è offline al momento dell'ordine, i job vengono **accodati in memor
 
 ### Alert stampante offline (cassa)
 La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta offline, appare un **banner giallo** + **beep audio** per avvisare il cassiere.
+Inoltre, se al momento della creazione ordine il proxy è offline, tutte le casse mostrano **"STAMPA IN CODA"** in rosso + beep (il job è accodato e partirà alla riconnessione del proxy).
 
 ## Menu e composizione piatti
-- Il menu reale è in `config.js` → `MENU` (42 piatti), modificabile a runtime via admin
+- Il menu reale è in `config.js` → `MENU` (53 piatti), modificabile a runtime via admin
 - Categorie: primo, secondo, speciale, contorno, condimento, bevanda
 - Postazioni: cucina, piastra, griglia, polenta, bar, speciali
 - Ogni piatto ha `casses` (array): in quali casse è disponibile (`cassa_generale`, `cassa_bar`, `cassa_casetta`)
@@ -94,18 +96,22 @@ La cassa riceve via Socket.IO lo stato delle stampanti. Se una stampante risulta
 ## Magazzino Materiali (admin-magazzino.html)
 - Inventario per **materiali e consumabili** (bicchieri, posate, rotoli carta, detersivi, ecc.)
 - **Nessun legame** con il menu o le casse — articoli indipendenti
-- **Tab categorie** in alto: "Tutti" + un tab per ogni categoria presente (auto-generati dagli articoli)
+- **Tab categorie** in alto (con flex-wrap, visibili tutti senza scroll): "Tutti" + un tab per ogni categoria
   - Tab visibili solo se ci sono 2+ categorie
   - In vista "Tutti": articoli raggruppati per categoria con header di sezione (nome verde + linea + conteggio)
   - Articoli senza categoria finiscono in "Altro"
+- **Dropdown fornitore** sotto i tab categorie: filtra per fornitore (Roma, Tosano, Basso, ecc.)
+  - Ogni articolo ha un campo `supplier` (fornitore) mostrato in ciano nei metadati
+  - Filtro combinabile con la categoria
 - Lista articoli con quantità attuale/totale e indicatore colorato
 - Pulsanti rapidi −5/−1/+1/+5/+10 per aggiornamento veloce
 - Click sulla quantità per impostare valore esatto
 - Pulsante "+ Nuovo" per aggiungere un articolo
-- Modale per nuovo/modifica: nome, quantità attuale, quantità totale, soglia allarme (opzionale)
+- Modale per nuovo/modifica: nome, categoria, **fornitore** (datalist con esistenti), quantità attuale, quantità totale, soglia allarme (opzionale)
 - Eliminazione articolo con conferma
 - Aggiornamento real-time via Socket.IO (`warehouse_updated`)
 - API: `GET /api/warehouse`, `POST /api/warehouse`, `PUT /api/warehouse/:id`, `POST /api/warehouse/:id/adjust`, `DELETE /api/warehouse/:id`
+- DB: tabella `warehouse` con colonne id, name, quantity, total, alert_threshold, category, **supplier**, created_at, updated_at
 
 ## Interfaccia cassa (cassa.html)
 - **Layout 70/30**: area piatti a sinistra (70%) con tab CIBO/BEVANDE/ORDINI, colonna ordine a destra (30%)
@@ -239,7 +245,9 @@ Tutte e tre le casse usano il **layout a due pannelli 70/30**:
 - I commenti nel codice sono in italiano per le parti complesse
 - Ogni ordine include `source` (principale/bar/casetta) e `coperti` (numero posate)
 - **PJAX**: la sidebar wrappa gli script delle pagine admin in IIFE. Le funzioni usate in attributi HTML `onclick` **devono** essere esportate su `window` (es. `window.myFunc = myFunc;`) — altrimenti non funzionano dopo navigazione via sidebar
-- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.4.md` (aggiornato al 13/04/2026)
+- **Concorrenza ordini**: la creazione ordini è serializzata con un mutex (promise chain) per evitare race condition sul contatore con 3 casse simultanee
+- **DB**: pool PostgreSQL a 20 connessioni, scrittura ordini con `await` (dato critico), resto fire-and-forget
+- Il documento tecnico completo è in `SagrApp_Claude_Code_v4.5.md` (aggiornato al 30/04/2026)
 
 ## Comandi
 ```bash
