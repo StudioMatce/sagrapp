@@ -1362,10 +1362,7 @@
 
         ITEMS = allItems.filter(function(item) {
           if (!item.casses) return false;
-          // La cassa generale mostra: piatti con flag cassa_generale + bevande del bar
-          if (item.casses.includes('cassa_generale')) return true;
-          if (item.category === 'bevanda' && item.casses.includes('cassa_bar')) return true;
-          return false;
+          return item.casses.includes('cassa_generale');
         });
 
         itemMap = {};
