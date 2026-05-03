@@ -458,6 +458,24 @@
       margin-top: 0;
     }
 
+    .sort-toggle {
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .sort-toggle.active {
+      background: rgba(78, 204, 163, 0.1);
+      border-color: rgba(78, 204, 163, 0.3);
+      color: var(--green);
+    }
+
     .ranking-item.zero-sales {
       opacity: 0.4;
     }
@@ -848,7 +866,13 @@
     <!-- 3+4. CLASSIFICA + DISTRIBUZIONE ORARIA (affiancate su desktop) -->
     <div class="grid-2">
       <section class="section">
-        <div class="section-label">Classifica vendite</div>
+        <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+          Classifica vendite
+          <div style="display:flex;gap:4px">
+            <button class="sort-toggle active" id="sortByCat" onclick="setSortMode('category')">Per categoria</button>
+            <button class="sort-toggle" id="sortByAlpha" onclick="setSortMode('alpha')">Alfabetico</button>
+          </div>
+        </div>
         <div class="card" style="max-height: 480px; overflow-y: auto;">
           <div class="ranking-list" id="rankingList"></div>
         </div>
@@ -1016,6 +1040,14 @@
     // ===================================================
     var recapData = null; // Salva i dati per l'export CSV
     var currentSessionId = null; // null = serata corrente
+    var sortMode = 'category'; // 'category' o 'alpha'
+
+    window.setSortMode = function(mode) {
+      sortMode = mode;
+      document.getElementById('sortByCat').classList.toggle('active', mode === 'category');
+      document.getElementById('sortByAlpha').classList.toggle('active', mode === 'alpha');
+      if (recapData && recapData.salesRanking) renderRanking(recapData.salesRanking);
+    };
 
     // Controlla URL params per recap aggregati (weekend/totale sagra) o sessione specifica
     var urlParams = new URLSearchParams(window.location.search);
@@ -1284,16 +1316,24 @@
         return;
       }
 
-      // Il server li invia gia' ordinati per categoria + alfabetico.
-      // Raggruppa per categoria con header.
+      // Ordina in base al sortMode
+      var sorted = salesRanking.slice(); // copia
+      if (sortMode === 'alpha') {
+        sorted.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'it'); });
+      }
+      // Se 'category': il server li invia già ordinati per categoria + alfabetico
+
       var html = '';
       var currentCat = null;
       var rank = 0;
-      salesRanking.forEach(function (item) {
-        var cat = item.category || 'altro';
-        if (cat !== currentCat) {
-          currentCat = cat;
-          html += '<div class="ranking-category-header">' + (CATEGORY_LABELS[cat] || cat) + '</div>';
+      sorted.forEach(function (item) {
+        // Header categoria solo in modalità categoria
+        if (sortMode === 'category') {
+          var cat = item.category || 'altro';
+          if (cat !== currentCat) {
+            currentCat = cat;
+            html += '<div class="ranking-category-header">' + (CATEGORY_LABELS[cat] || cat) + '</div>';
+          }
         }
         rank++;
         var zeroClass = item.qty === 0 ? ' zero-sales' : '';
@@ -1509,17 +1549,25 @@
       });
       rows.push('');
 
-      // Classifica vendite raggruppata per categoria (ordine alfabetico, anche venduto 0)
+      // Classifica vendite — rispetta il sortMode attivo (categoria o alfabetico)
       if (data.salesRanking && data.salesRanking.length > 0) {
-        rows.push('CLASSIFICA VENDITE');
+        rows.push('CLASSIFICA VENDITE' + (sortMode === 'alpha' ? ' (ordine alfabetico)' : ' (per categoria)'));
         var hasCost = data.salesRanking.some(function(i) { return i.totalCost > 0; });
         var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+        var csvRanking = data.salesRanking.slice();
+        if (sortMode === 'alpha') {
+          csvRanking.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'it'); });
+        }
         var currentCsvCat = null;
         var totQty = 0, totRev = 0, totCost = 0;
         var num = 0;
-        data.salesRanking.forEach(function(item) {
+        // Header colonne (in modo alfabetico una sola volta, in categoria per ogni gruppo)
+        if (sortMode === 'alpha') {
+          rows.push('#' + SEP + 'Piatto' + SEP + 'Categoria' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+        }
+        csvRanking.forEach(function(item) {
           var cat = item.category || 'altro';
-          if (cat !== currentCsvCat) {
+          if (sortMode === 'category' && cat !== currentCsvCat) {
             currentCsvCat = cat;
             rows.push('');
             rows.push(catLabels[cat] || cat.toUpperCase());
@@ -1527,14 +1575,19 @@
           }
           num++;
           totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost || 0);
-          var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+          var row;
+          if (sortMode === 'alpha') {
+            row = num + SEP + csvVal(item.name) + SEP + csvVal(catLabels[cat] || cat) + SEP + item.qty + SEP + fNum(item.revenue);
+          } else {
+            row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+          }
           if (hasCost) {
             row += SEP + fNum(item.totalCost || 0) + SEP + fNum(item.revenue - (item.totalCost || 0));
           }
           rows.push(row);
         });
         rows.push('');
-        var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+        var totRow = '' + SEP + 'TOTALE' + SEP + (sortMode === 'alpha' ? SEP : '') + totQty + SEP + fNum(totRev);
         if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
         rows.push(totRow);
         rows.push('');

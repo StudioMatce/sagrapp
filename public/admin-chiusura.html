@@ -316,6 +316,9 @@
 
     .btn-secondary:hover { border-color: rgba(78, 204, 163, 0.3); color: var(--green); }
 
+    .sort-toggle { padding:4px 10px; border-radius:4px; border:1px solid var(--border); background:transparent; color:rgba(226,232,240,0.45); font-family:'Outfit',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all 150ms ease; }
+    .sort-toggle.active { background:rgba(78,204,163,0.1); border-color:rgba(78,204,163,0.3); color:#4ecca3; }
+
     .btn-danger {
       width: 100%;
       padding: 16px;
@@ -576,6 +579,11 @@
           <button class="btn btn-secondary" id="btnDownloadReport" onclick="downloadCurrentReport()">
             &#8595; Scarica report (.csv)
           </button>
+          <div style="display:flex;gap:4px;align-items:center">
+            <span style="font-size:11px;color:rgba(226,232,240,0.45);font-weight:600">Ordine:</span>
+            <button class="sort-toggle active" id="sortByCat" onclick="setSortMode('category')">Per categoria</button>
+            <button class="sort-toggle" id="sortByAlpha" onclick="setSortMode('alpha')">Alfabetico</button>
+          </div>
         </div>
         <!-- Selettore turno: pranzo o cena -->
         <div class="turno-label">Quale turno stai chiudendo?</div>
@@ -646,6 +654,12 @@
   <script>
     // Auth
     var TOKEN = sessionStorage.getItem('admin_token');
+    var sortMode = 'category';
+    window.setSortMode = function(mode) {
+      sortMode = mode;
+      document.getElementById('sortByCat').classList.toggle('active', mode === 'category');
+      document.getElementById('sortByAlpha').classList.toggle('active', mode === 'alpha');
+    };
     if (!TOKEN) window.location.href = '/';
 
     // Connessione Socket.IO — serve per il broadcast di chiusura
@@ -984,15 +998,20 @@
         rows.push('');
 
         if (recap.salesRanking && recap.salesRanking.length > 0) {
-          rows.push('CLASSIFICA VENDITE');
+          rows.push('CLASSIFICA VENDITE' + (sortMode === 'alpha' ? ' (ordine alfabetico)' : ' (per categoria)'));
           var hasCost = recap.salesRanking.some(function(i){ return i.totalCost > 0; });
           var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+          var csvRanking = recap.salesRanking.slice();
+          if (sortMode === 'alpha') csvRanking.sort(function(a,b){ return (a.name||'').localeCompare(b.name||'','it'); });
           var currentCsvCat = null;
           var totQty = 0, totRev = 0, totCost = 0;
           var num = 0;
-          recap.salesRanking.forEach(function(item) {
+          if (sortMode === 'alpha') {
+            rows.push('#' + SEP + 'Piatto' + SEP + 'Categoria' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          }
+          csvRanking.forEach(function(item) {
             var cat = item.category || 'altro';
-            if (cat !== currentCsvCat) {
+            if (sortMode === 'category' && cat !== currentCsvCat) {
               currentCsvCat = cat;
               rows.push('');
               rows.push(catLabels[cat] || cat.toUpperCase());
@@ -1000,14 +1019,19 @@
             }
             num++;
             totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
-            var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            var row;
+            if (sortMode === 'alpha') {
+              row = num + SEP + csvVal(item.name) + SEP + csvVal(catLabels[cat]||cat) + SEP + item.qty + SEP + fNum(item.revenue);
+            } else {
+              row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            }
             if (hasCost) {
               row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
           rows.push('');
-          var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+          var totRow = '' + SEP + 'TOTALE' + SEP + (sortMode === 'alpha' ? SEP : '') + totQty + SEP + fNum(totRev);
           if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
           rows.push(totRow);
           rows.push('');

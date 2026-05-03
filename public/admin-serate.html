@@ -51,6 +51,8 @@
       backdrop-filter: blur(12px);
     }
     .header-title { font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; }
+    .sort-toggle { padding:4px 10px; border-radius:4px; border:1px solid var(--border); background:transparent; color:rgba(226,232,240,0.45); font-family:'Outfit',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all 150ms ease; }
+    .sort-toggle.active { background:rgba(78,204,163,0.1); border-color:rgba(78,204,163,0.3); color:#4ecca3; }
     .header-badge {
       font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
       font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
@@ -331,6 +333,11 @@
 
   <header class="page-header">
     <div class="header-title">Storico Servizi</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;color:rgba(226,232,240,0.45);font-weight:600">CSV:</span>
+      <button class="sort-toggle active" id="sortByCat" onclick="setSortMode('category')">Per categoria</button>
+      <button class="sort-toggle" id="sortByAlpha" onclick="setSortMode('alpha')">Alfabetico</button>
+    </div>
     <div id="headerBadge" class="header-badge" style="display:none"></div>
   </header>
 
@@ -344,6 +351,12 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var TOKEN = sessionStorage.getItem('admin_token');
+    var sortMode = 'category';
+    window.setSortMode = function(mode) {
+      sortMode = mode;
+      document.getElementById('sortByCat').classList.toggle('active', mode === 'category');
+      document.getElementById('sortByAlpha').classList.toggle('active', mode === 'alpha');
+    };
     if (!TOKEN) window.location.href = '/';
 
     (async function() {
@@ -744,15 +757,20 @@
         rows.push('');
 
         if (r.salesRanking && r.salesRanking.length > 0) {
-          rows.push('CLASSIFICA VENDITE');
+          rows.push('CLASSIFICA VENDITE' + (sortMode === 'alpha' ? ' (ordine alfabetico)' : ' (per categoria)'));
           var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
           var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+          var csvRanking = r.salesRanking.slice();
+          if (sortMode === 'alpha') csvRanking.sort(function(a,b){ return (a.name||'').localeCompare(b.name||'','it'); });
           var currentCsvCat = null;
           var totQty = 0, totRev = 0, totCost = 0;
           var num = 0;
-          r.salesRanking.forEach(function(item) {
+          if (sortMode === 'alpha') {
+            rows.push('#' + SEP + 'Piatto' + SEP + 'Categoria' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          }
+          csvRanking.forEach(function(item) {
             var cat = item.category || 'altro';
-            if (cat !== currentCsvCat) {
+            if (sortMode === 'category' && cat !== currentCsvCat) {
               currentCsvCat = cat;
               rows.push('');
               rows.push(catLabels[cat] || cat.toUpperCase());
@@ -760,14 +778,19 @@
             }
             num++;
             totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
-            var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            var row;
+            if (sortMode === 'alpha') {
+              row = num + SEP + csvVal(item.name) + SEP + csvVal(catLabels[cat]||cat) + SEP + item.qty + SEP + fNum(item.revenue);
+            } else {
+              row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            }
             if (hasCost) {
               row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
           rows.push('');
-          var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+          var totRow = '' + SEP + 'TOTALE' + SEP + (sortMode === 'alpha' ? SEP : '') + totQty + SEP + fNum(totRev);
           if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
           rows.push(totRow);
           rows.push('');
@@ -871,15 +894,20 @@
         rows.push('');
 
         if (r.salesRanking && r.salesRanking.length > 0) {
-          rows.push('CLASSIFICA VENDITE');
+          rows.push('CLASSIFICA VENDITE' + (sortMode === 'alpha' ? ' (ordine alfabetico)' : ' (per categoria)'));
           var hasCost = r.salesRanking.some(function(i){ return i.totalCost > 0; });
           var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
+          var csvRanking = r.salesRanking.slice();
+          if (sortMode === 'alpha') csvRanking.sort(function(a,b){ return (a.name||'').localeCompare(b.name||'','it'); });
           var currentCsvCat = null;
           var totQty = 0, totRev = 0, totCost = 0;
           var num = 0;
-          r.salesRanking.forEach(function(item) {
+          if (sortMode === 'alpha') {
+            rows.push('#' + SEP + 'Piatto' + SEP + 'Categoria' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
+          }
+          csvRanking.forEach(function(item) {
             var cat = item.category || 'altro';
-            if (cat !== currentCsvCat) {
+            if (sortMode === 'category' && cat !== currentCsvCat) {
               currentCsvCat = cat;
               rows.push('');
               rows.push(catLabels[cat] || cat.toUpperCase());
@@ -887,14 +915,19 @@
             }
             num++;
             totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost||0);
-            var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            var row;
+            if (sortMode === 'alpha') {
+              row = num + SEP + csvVal(item.name) + SEP + csvVal(catLabels[cat]||cat) + SEP + item.qty + SEP + fNum(item.revenue);
+            } else {
+              row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
+            }
             if (hasCost) {
               row += SEP + fNum(item.totalCost||0) + SEP + fNum(item.revenue - (item.totalCost||0));
             }
             rows.push(row);
           });
           rows.push('');
-          var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
+          var totRow = '' + SEP + 'TOTALE' + SEP + (sortMode === 'alpha' ? SEP : '') + totQty + SEP + fNum(totRev);
           if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
           rows.push(totRow);
           rows.push('');
