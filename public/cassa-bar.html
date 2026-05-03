@@ -362,6 +362,17 @@
       transform: scale(0.9);
     }
 
+    .order-item-note {
+      display: flex; align-items: center; padding: 2px 16px 4px 52px;
+    }
+    .order-item-note input {
+      width: 100%; padding: 4px 8px; border-radius: 4px;
+      border: 1px solid rgba(255,217,61,0.2); background: rgba(255,217,61,0.05);
+      color: #ffd93d; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 500; outline: none;
+    }
+    .order-item-note input::placeholder { color: rgba(255,217,61,0.35); }
+    .order-item-note input:focus { border-color: rgba(255,217,61,0.5); }
+
     /* ===== FOOTER ORDINE ===== */
     .order-footer {
       border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -828,6 +839,7 @@
     var BEVERAGES = [];
     var bevMap = {};
     var quantities = {};
+    var itemNotes = {};
 
     var connected = false;
     var submitting = false;
@@ -952,9 +964,14 @@
       updateOrderColumn();
     }
 
+    function setNote(id, value) {
+      if (value && value.trim()) { itemNotes[id] = value.trim(); } else { delete itemNotes[id]; }
+    }
+
     function removeItem(id) {
       if (submitting) return;
       quantities[id] = 0;
+      delete itemNotes[id];
       var countEl = document.getElementById('qty-' + id);
       if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
       var card = document.getElementById('card-' + id);
@@ -993,11 +1010,15 @@
         var html = '';
         selectedItems.forEach(function(item) {
           var linePrice = item.price * quantities[item.id];
+          var noteVal = itemNotes[item.id] || '';
           html += '<div class="order-item-row">' +
             '<span class="order-item-qty">' + quantities[item.id] + 'x</span>' +
             '<span class="order-item-name">' + item.name + '</span>' +
             '<span class="order-item-price">' + formatPrice(linePrice) + '</span>' +
             '<button class="order-item-remove" onclick="removeItem(\'' + item.id + '\')">&times;</button>' +
+          '</div>' +
+          '<div class="order-item-note">' +
+            '<input type="text" placeholder="Nota..." value="' + noteVal.replace(/"/g, '&quot;') + '" onchange="setNote(\'' + item.id + '\', this.value)">' +
           '</div>';
         });
         listEl.innerHTML = html;
@@ -1026,7 +1047,11 @@
 
       var items = BEVERAGES
         .filter(function(bev) { return quantities[bev.id] > 0; })
-        .map(function(bev) { return { id: bev.id, qty: quantities[bev.id] }; });
+        .map(function(bev) {
+          var entry = { id: bev.id, qty: quantities[bev.id] };
+          if (itemNotes[bev.id]) entry.note = itemNotes[bev.id];
+          return entry;
+        });
 
       if (items.length === 0) return;
 
@@ -1105,6 +1130,7 @@
     }
 
     function resetOrder() {
+      Object.keys(itemNotes).forEach(function(k) { delete itemNotes[k]; });
       BEVERAGES.forEach(function(bev) {
         quantities[bev.id] = 0;
         var qtyEl = document.getElementById('qty-' + bev.id);

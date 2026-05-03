@@ -451,6 +451,12 @@ function buildFoodOrder(order) {
     const prefix = item.special ? '* ' : '  ';
     parts.push(text(`${prefix}${item.qty} ${shortName(item.name)}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
+    // Nota personalizzazione (es. "senza polenta")
+    if (item.note) {
+      parts.push(BOLD_ON, DOUBLE_BOTH);
+      parts.push(text(`  > ${item.note.toUpperCase()}`));
+      parts.push(NORMAL_SIZE, BOLD_OFF);
+    }
   });
 
   // Numero ordine in fondo (DOUBLE, a sinistra)
@@ -558,6 +564,11 @@ function buildSpecialOrder(order) {
     parts.push(BOLD_ON, DOUBLE_BOTH);
     parts.push(text(`  ${item.qty} ${item.name}`));
     parts.push(NORMAL_SIZE, BOLD_OFF);
+    if (item.note) {
+      parts.push(BOLD_ON, DOUBLE_BOTH);
+      parts.push(text(`  > ${item.note.toUpperCase()}`));
+      parts.push(NORMAL_SIZE, BOLD_OFF);
+    }
   });
 
   // Numero ordine in fondo (DOUBLE, a sinistra)

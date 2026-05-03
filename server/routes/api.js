@@ -587,12 +587,12 @@ async function createOrder(req, res) {
   let hasDrinks = false;
   let hasSpecial = false;
 
-  orderItems.forEach(({ id, qty }) => {
+  orderItems.forEach(({ id, qty, note }) => {
     const menuItem = findMenuItem(id);
     if (!menuItem || !qty || qty <= 0) return;
     const q = parseInt(qty);
 
-    items.push({
+    const orderItem = {
       id: menuItem.id,
       name: menuItem.name,
       price: menuItem.price,
@@ -601,7 +601,10 @@ async function createOrder(req, res) {
       print_to: menuItem.print_to || [],
       special: menuItem.special || false,
       qty: q,
-    });
+    };
+    // Nota opzionale per personalizzazioni (es. "senza polenta", "polenta al posto patate")
+    if (note && typeof note === 'string' && note.trim()) orderItem.note = note.trim();
+    items.push(orderItem);
 
     // Controlla tipo per decidere le stampe
     if (menuItem.print_to && menuItem.print_to.includes('cibo')) hasFood = true;
