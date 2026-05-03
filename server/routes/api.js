@@ -248,12 +248,15 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
   if (station !== undefined) menuItem.station = station;
   if (print_to !== undefined && Array.isArray(print_to)) menuItem.print_to = print_to;
 
-  // Aggiorna anche l'inventario se il nome e' cambiato
-  if (name !== undefined && inventory[menuItem.id]) {
-    inventory[menuItem.id].name = menuItem.name;
-  }
-  if (price !== undefined && inventory[menuItem.id]) {
-    inventory[menuItem.id].price = menuItem.price;
+  // Aggiorna anche l'inventario per mantenere sincronizzati i campi
+  if (inventory[menuItem.id]) {
+    if (name !== undefined) inventory[menuItem.id].name = menuItem.name;
+    if (price !== undefined) inventory[menuItem.id].price = menuItem.price;
+    if (category !== undefined) inventory[menuItem.id].category = menuItem.category;
+    if (station !== undefined) inventory[menuItem.id].station = menuItem.station;
+    if (name !== undefined || category !== undefined || station !== undefined) {
+      db.saveInventoryItem(inventory[menuItem.id]).catch(err => console.error('[DB] saveInventoryItem:', err));
+    }
   }
 
   // Aggiorna scorte e soglia se specificati
