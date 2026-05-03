@@ -49,10 +49,26 @@ socket.on('printer_config', (printers) => {
   });
 });
 
+// --- Coda retry locale: job falliti vengono ritentati ---
+const retryQueue = [];
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 10000; // 10 secondi tra i tentativi
+
+// Retry periodico dei job falliti
+setInterval(() => {
+  if (retryQueue.length === 0) return;
+  const job = retryQueue.shift();
+  console.log(`[Retry] Ritento job ${job.job_id} → ${job.printer_ip} (tentativo ${job.retries + 1}/${MAX_RETRIES})`);
+  executePrint(job.printer_ip, job.data, job.job_id, job.retries + 1);
+}, RETRY_DELAY);
+
 // --- Comando stampa dal server (tutte LAN via TCP 9100) ---
 socket.on('print', async ({ printer_ip, data, job_id }) => {
   console.log(`[Stampa] Job ${job_id} → ${printer_ip}`);
+  executePrint(printer_ip, data, job_id, 0);
+});
 
+async function executePrint(printer_ip, data, job_id, retries) {
   try {
     const buffer = Buffer.from(data);
     await printToLAN(printer_ip, 9100, buffer);
@@ -60,9 +76,16 @@ socket.on('print', async ({ printer_ip, data, job_id }) => {
     socket.emit('print_result', { job_id, success: true });
   } catch (err) {
     console.error(`[Stampa] Job ${job_id}: ERRORE — ${err.message}`);
-    socket.emit('print_result', { job_id, success: false, error: err.message });
+    if (retries < MAX_RETRIES) {
+      // Rimetti in coda per ritentare
+      retryQueue.push({ printer_ip, data, job_id, retries });
+      console.log(`[Stampa] Job ${job_id} rimesso in coda retry (${retryQueue.length} in coda)`);
+    } else {
+      console.error(`[Stampa] Job ${job_id}: ABBANDONATO dopo ${MAX_RETRIES} tentativi`);
+      socket.emit('print_result', { job_id, success: false, error: err.message });
+    }
   }
-});
+}
 
 // --- Stampa via TCP (tutte le stampanti sono LAN) ---
 function printToLAN(ip, port, data) {
