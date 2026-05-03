@@ -364,6 +364,9 @@ function buildReceipt(order) {
     const left = `${qty}  ${item.name}`;
     const space = 48 - left.length - price.length;
     parts.push(text(left + ' '.repeat(Math.max(1, space)) + price));
+    if (item.note) {
+      parts.push(text(`    > ${item.note}`));
+    }
   });
 
   // --- Subtotale / Sconto / Omaggio ---
