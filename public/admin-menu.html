@@ -1622,7 +1622,9 @@
       if (document.getElementById('fCBar').checked) casses.push('cassa_bar');
       if (document.getElementById('fCCas').checked) casses.push('cassa_casetta');
 
-      var payload = { name: name, price: price, cost_price: cost_price, category: category, station: station, casses: casses };
+      var initial_stock = parseInt(document.getElementById('fStock').value) || 100;
+      var alert_threshold = parseInt(document.getElementById('fThreshold').value) || 10;
+      var payload = { name: name, price: price, cost_price: cost_price, category: category, station: station, casses: casses, initial_stock: initial_stock, alert_threshold: alert_threshold };
 
       // Composizione (solo se griglia)
       if (station === 'griglia') {
@@ -1659,9 +1661,6 @@
           if (idx >= 0 && updated.id) Object.assign(menu[idx], updated);
         } else {
           // Nuovo piatto
-          payload.initial_stock = parseInt(document.getElementById('fStock').value) || 100;
-          payload.alert_threshold = parseInt(document.getElementById('fThreshold').value) || 10;
-
           var res2 = await fetch('/api/menu', {
             method: 'POST',
             headers: apiHeaders(),
