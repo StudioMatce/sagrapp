@@ -1338,8 +1338,8 @@
 
         ITEMS = allItems.filter(function(item) {
           if (!item.casses) return false;
-          // La cassa generale mostra i piatti assegnati + tutte le bevande
-          if (item.category !== 'bevanda' && !item.casses.includes('cassa_generale')) return false;
+          // La cassa generale mostra SOLO i piatti assegnati a cassa_generale
+          if (!item.casses.includes('cassa_generale')) return false;
           return true;
         });
 
