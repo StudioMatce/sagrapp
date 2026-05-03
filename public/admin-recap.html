@@ -866,13 +866,7 @@
     <!-- 3+4. CLASSIFICA + DISTRIBUZIONE ORARIA (affiancate su desktop) -->
     <div class="grid-2">
       <section class="section">
-        <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
-          Classifica vendite
-          <div style="display:flex;gap:4px">
-            <button class="sort-toggle active" id="sortByCat" onclick="setSortMode('category')">Per categoria</button>
-            <button class="sort-toggle" id="sortByAlpha" onclick="setSortMode('alpha')">Alfabetico</button>
-          </div>
-        </div>
+        <div class="section-label">Classifica vendite</div>
         <div class="card" style="max-height: 480px; overflow-y: auto;">
           <div class="ranking-list" id="rankingList"></div>
         </div>
@@ -890,7 +884,13 @@
 
     <!-- 5. MAGAZZINO -->
     <section class="section">
-      <div class="section-label">Magazzino</div>
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+          Magazzino
+          <div style="display:flex;gap:4px">
+            <button class="sort-toggle active" id="sortByCat" onclick="setSortMode('category')">Per categoria</button>
+            <button class="sort-toggle" id="sortByAlpha" onclick="setSortMode('alpha')">Alfabetico</button>
+          </div>
+        </div>
       <div class="card">
         <table class="inv-table" id="invTable">
           <thead>
@@ -1046,7 +1046,7 @@
       sortMode = mode;
       document.getElementById('sortByCat').classList.toggle('active', mode === 'category');
       document.getElementById('sortByAlpha').classList.toggle('active', mode === 'alpha');
-      if (recapData && recapData.salesRanking) renderRanking(recapData.salesRanking);
+      if (recapData && recapData.inventoryReport) renderInventory(recapData.inventoryReport);
     };
 
     // Controlla URL params per recap aggregati (weekend/totale sagra) o sessione specifica
@@ -1316,24 +1316,16 @@
         return;
       }
 
-      // Ordina in base al sortMode
-      var sorted = salesRanking.slice(); // copia
-      if (sortMode === 'alpha') {
-        sorted.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'it'); });
-      }
-      // Se 'category': il server li invia già ordinati per categoria + alfabetico
-
+      // Il server li invia gia' ordinati per categoria + alfabetico.
+      // Raggruppa per categoria con header.
       var html = '';
       var currentCat = null;
       var rank = 0;
-      sorted.forEach(function (item) {
-        // Header categoria solo in modalità categoria
-        if (sortMode === 'category') {
-          var cat = item.category || 'altro';
-          if (cat !== currentCat) {
-            currentCat = cat;
-            html += '<div class="ranking-category-header">' + (CATEGORY_LABELS[cat] || cat) + '</div>';
-          }
+      salesRanking.forEach(function (item) {
+        var cat = item.category || 'altro';
+        if (cat !== currentCat) {
+          currentCat = cat;
+          html += '<div class="ranking-category-header">' + (CATEGORY_LABELS[cat] || cat) + '</div>';
         }
         rank++;
         var zeroClass = item.qty === 0 ? ' zero-sales' : '';
@@ -1411,9 +1403,31 @@
         return;
       }
 
-      tbody.innerHTML = inventoryReport.map(function (item) {
+      var sorted = inventoryReport.slice();
+      if (sortMode === 'alpha') {
+        sorted.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'it'); });
+      } else {
+        // Per categoria + alfabetico dentro ogni categoria
+        var CATEGORY_ORDER = ['primo', 'secondo', 'speciale', 'contorno', 'condimento', 'bevanda'];
+        sorted.sort(function(a, b) {
+          var ca = CATEGORY_ORDER.indexOf(a.category); if (ca < 0) ca = 99;
+          var cb = CATEGORY_ORDER.indexOf(b.category); if (cb < 0) cb = 99;
+          if (ca !== cb) return ca - cb;
+          return (a.name || '').localeCompare(b.name || '', 'it');
+        });
+      }
+
+      var html = '';
+      var currentCat = null;
+      sorted.forEach(function (item) {
+        // Header categoria in modalità categoria
+        if (sortMode === 'category' && item.category !== currentCat) {
+          currentCat = item.category;
+          var catLabel = CATEGORY_LABELS[currentCat] || currentCat || 'Altro';
+          html += '<tr><td colspan="5" style="padding:12px 14px 4px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);border-bottom:1px solid rgba(78,204,163,0.15)">' + catLabel + '</td></tr>';
+        }
         var rowClass = item.status === 'exhausted' ? ' class="exhausted-row"' : '';
-        return '<tr' + rowClass + '>' +
+        html += '<tr' + rowClass + '>' +
           '<td>' + item.name + '</td>' +
           '<td>' + item.initial_stock + '</td>' +
           '<td>' + item.sold + '</td>' +
@@ -1423,7 +1437,8 @@
             '<span class="status-text ' + item.status + '">' + statusLabel(item.status) + '</span>' +
           '</td>' +
           '</tr>';
-      }).join('');
+      });
+      tbody.innerHTML = html;
     }
 
     // ===================================================
@@ -1549,25 +1564,17 @@
       });
       rows.push('');
 
-      // Classifica vendite — rispetta il sortMode attivo (categoria o alfabetico)
+      // Classifica vendite raggruppata per categoria (ordine alfabetico, anche venduto 0)
       if (data.salesRanking && data.salesRanking.length > 0) {
-        rows.push('CLASSIFICA VENDITE' + (sortMode === 'alpha' ? ' (ordine alfabetico)' : ' (per categoria)'));
+        rows.push('CLASSIFICA VENDITE');
         var hasCost = data.salesRanking.some(function(i) { return i.totalCost > 0; });
         var catLabels = { primo:'PRIMI', secondo:'SECONDI', speciale:'SPECIALI', contorno:'CONTORNI', condimento:'CONDIMENTI', bevanda:'BEVANDE' };
-        var csvRanking = data.salesRanking.slice();
-        if (sortMode === 'alpha') {
-          csvRanking.sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'it'); });
-        }
         var currentCsvCat = null;
         var totQty = 0, totRev = 0, totCost = 0;
         var num = 0;
-        // Header colonne (in modo alfabetico una sola volta, in categoria per ogni gruppo)
-        if (sortMode === 'alpha') {
-          rows.push('#' + SEP + 'Piatto' + SEP + 'Categoria' + SEP + 'Quantita' + SEP + 'Incasso' + (hasCost ? SEP + 'Costo' + SEP + 'Margine' : ''));
-        }
-        csvRanking.forEach(function(item) {
+        data.salesRanking.forEach(function(item) {
           var cat = item.category || 'altro';
-          if (sortMode === 'category' && cat !== currentCsvCat) {
+          if (cat !== currentCsvCat) {
             currentCsvCat = cat;
             rows.push('');
             rows.push(catLabels[cat] || cat.toUpperCase());
@@ -1575,19 +1582,14 @@
           }
           num++;
           totQty += item.qty; totRev += item.revenue; totCost += (item.totalCost || 0);
-          var row;
-          if (sortMode === 'alpha') {
-            row = num + SEP + csvVal(item.name) + SEP + csvVal(catLabels[cat] || cat) + SEP + item.qty + SEP + fNum(item.revenue);
-          } else {
-            row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
-          }
+          var row = num + SEP + csvVal(item.name) + SEP + item.qty + SEP + fNum(item.revenue);
           if (hasCost) {
             row += SEP + fNum(item.totalCost || 0) + SEP + fNum(item.revenue - (item.totalCost || 0));
           }
           rows.push(row);
         });
         rows.push('');
-        var totRow = '' + SEP + 'TOTALE' + SEP + (sortMode === 'alpha' ? SEP : '') + totQty + SEP + fNum(totRev);
+        var totRow = '' + SEP + 'TOTALE' + SEP + totQty + SEP + fNum(totRev);
         if (hasCost) totRow += SEP + fNum(totCost) + SEP + fNum(totRev - totCost);
         rows.push(totRow);
         rows.push('');

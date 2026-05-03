@@ -1030,6 +1030,7 @@ function computeRecap() {
     return {
       id: item.id,
       name: item.name,
+      category: item.category,
       initial_stock: item.initial_stock,
       sold,
       remaining: item.stock,
