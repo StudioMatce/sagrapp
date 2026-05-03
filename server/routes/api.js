@@ -262,6 +262,9 @@ router.put('/menu/:id', requireAdmin, (req, res) => {
     menuItem.initial_stock = parseInt(initial_stock);
     if (inventory[menuItem.id]) {
       inventory[menuItem.id].initial_stock = menuItem.initial_stock;
+      // Aggiorna anche lo stock attuale per allinearlo al nuovo totale
+      inventory[menuItem.id].stock = menuItem.initial_stock;
+      updateInventoryStatus(menuItem.id);
       db.saveInventoryItem(inventory[menuItem.id]).catch(err => console.error('[DB] saveInventoryItem:', err));
     }
   }
