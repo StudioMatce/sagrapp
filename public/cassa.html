@@ -1615,12 +1615,7 @@
       // Arrotonda il subtotale per evitare errori float
       subtotal = Math.round(subtotal * 100) / 100;
 
-      // Se flag omaggio attivo → totale = 0
-      if (activeCourtesy) {
-        return { totalItems, subtotal, discount: 0, total: 0, courtesyType: activeCourtesy };
-      }
-
-      // Calcolo sconto
+      // Calcolo sconto (manuale, indipendente dal tag omaggio)
       const discountInput = parseFloat(document.getElementById('discountInput').value) || 0;
       let discount = 0;
       if (discountInput > 0) {
@@ -1633,7 +1628,7 @@
         discount = Math.round(discount * 100) / 100;
       }
 
-      return { totalItems, subtotal, discount, total: Math.round((subtotal - discount) * 100) / 100, courtesyType: null };
+      return { totalItems, subtotal, discount, total: Math.round((subtotal - discount) * 100) / 100, courtesyType: activeCourtesy };
     }
 
     // ===== LOGICA QUANTITA' =====
@@ -1724,11 +1719,11 @@
       const courtesyRow = document.getElementById('courtesyRow');
       const grandTotal = document.getElementById('grandTotal');
 
-      // Mostra subtotale solo se c'e' sconto o omaggio
-      const hasDiscount = discount > 0 && !courtesyType;
+      // Mostra subtotale solo se c'e' sconto
+      const hasDiscount = discount > 0;
       const hasCourtesy = !!courtesyType && totalItems > 0;
 
-      subtotalRow.style.display = (hasDiscount || hasCourtesy) ? 'flex' : 'none';
+      subtotalRow.style.display = hasDiscount ? 'flex' : 'none';
       document.getElementById('subtotalValue').textContent = formatPrice(subtotal);
 
       // Riga sconto
@@ -1740,7 +1735,7 @@
         document.getElementById('discountDisplay').textContent = '\u2212' + formatPrice(discount);
       }
 
-      // Riga omaggio
+      // Riga tag (solo indicatore, non azzera il totale)
       courtesyRow.style.display = hasCourtesy ? 'flex' : 'none';
       if (hasCourtesy) {
         const courtesyNames = { sponsor: 'Sponsor', don_pierino: 'Don Pierino', amici: 'Amici' };
@@ -1750,7 +1745,7 @@
       // Totale finale
       grandTotal.textContent = formatPrice(total);
       grandTotal.classList.toggle('empty', totalItems === 0);
-      grandTotal.classList.toggle('courtesy', hasCourtesy);
+      grandTotal.classList.toggle('courtesy', false);
 
       // Aggiorna calcolatrice resto
       currentTotal = total;

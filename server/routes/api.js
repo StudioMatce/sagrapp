@@ -646,14 +646,11 @@ async function createOrder(req, res) {
   let appliedDiscount = 0;
   let total = subtotal;
 
-  // Courtesy: ordine gratis ma registrato con valore reale
+  // Courtesy: tag solo statistico, non azzera il totale
   const validCourtesy = ['sponsor', 'don_pierino', 'amici'];
   const orderCourtesy = validCourtesy.includes(courtesy_type) ? courtesy_type : null;
 
-  if (orderCourtesy) {
-    // Omaggio: totale pagato = 0, valore reale conservato
-    total = 0;
-  } else if (discount && discount > 0) {
+  if (discount && discount > 0) {
     appliedDiscount = Math.min(parseFloat(discount), subtotal);
     total = Math.round((subtotal - appliedDiscount) * 100) / 100;
   }
