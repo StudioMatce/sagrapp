@@ -125,8 +125,8 @@ Inoltre, se al momento della creazione ordine il proxy è offline, tutte le cass
   - **Toggle Asporto**: quando attivo, coperti = 0 e disabilitato, tab bevande disabilitata, niente stampa comanda bevande, "ASPORTO" stampato sulla comanda cibo
   - **Toggle POS**: pagamento con carta (giallo, default: contanti). Commissione 0.2% tracciata nel recap
   - **Sconto** (opzionale, € o %)
-  - **Flag gratis** (toggle, uno solo alla volta): Sponsor | Don Pierino | Amici
-- Quando un flag gratis è attivo: totale = €0, ma ordine registrato, stampato, scorte scalate normalmente
+  - **Tag omaggio** (toggle, uno solo alla volta): Sponsor | Don Pierino | Amici — solo tag statistico, NON azzera il totale
+- I tag omaggio servono per le statistiche recap (conteggio per tipo), lo sconto va applicato manualmente nel campo Sconto
 - Il piatto speciale del giorno è visibile solo se `available_date` corrisponde alla data corrente
 
 ## Monitor cuochi
