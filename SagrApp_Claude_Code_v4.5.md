@@ -539,7 +539,7 @@ Dopo la scelta → va diretto alla pagina, niente sidebar.
 | GET | /setup | Wizard setup inizio turno |
 | GET | /api/health | Health check del server |
 | GET | /api/menu | Menu completo (piatti, prezzi, disponibilità) |
-| POST | /api/orders | **Crea un nuovo ordine** (piatti, tavolo, coperti, nome, sconto, flag gratis, asporto) |
+| POST | /api/orders | **Crea un nuovo ordine** (piatti, tavolo, coperti, nome, sconto, tag omaggio, asporto) |
 | GET | /api/orders/all | Lista tutti gli ordini della serata (per tab ORDINI cassa) |
 | GET | /api/orders/:id | Dettaglio ordine |
 | POST | /api/orders/:id/fulfill | Evadi ordine (controlla pezzi griglia, scala scaldavivande) |
@@ -911,8 +911,8 @@ In alto — Dati ordine:
 - Numero coperti (campo numerico, **obbligatorio**)
 
 Poi — Flag e sconto:
-- Flag gratis: Sponsor / Don Pierino / Amici (toggle, solo uno alla volta attivo)
-- Campo sconto in euro
+- Tag omaggio: Sponsor / Don Pierino / Amici (toggle, solo uno alla volta attivo) — solo tag statistico, NON azzera il totale
+- Campo sconto in euro (manuale, indipendente dal tag)
 
 Al centro — Riepilogo ordine:
 - Lista scrollabile dei piatti selezionati
@@ -948,7 +948,7 @@ In basso (fisso) — Totale e conferma:
 
 **Logica stampa:**
 - Pulsante "ORDINA" → crea l'ordine e stampa su tutte le stampanti necessarie
-- **Ricevuta cliente** → vretti .203 (con nome, tavolo, piatti, totale, eventuale flag gratis)
+- **Ricevuta cliente** → vretti .203 (con nome, tavolo, piatti, totale, eventuale tag omaggio)
 - **Comanda cibo** → Fuhuihe .205 (con tavolo, piatti cibo, numero ordine)
 - **Comanda bevande** → Fuhuihe .204 — **STAMPA SEMPRE**, anche senza bevande. Se ci sono bevande: stampa tavolo + coperti + bevande. Se non ci sono bevande: stampa comunque un foglio con solo tavolo + coperti (per le posate del cameriere).
 - **Piatti speciali** → Fuhuihe .207 (solo se presenti nell'ordine, doppia stampa)
@@ -1634,9 +1634,9 @@ Il test è superato quando:
 - [ ] Il design è professionale e non generico (skill frontend-design applicata)
 - [ ] Contrasto WCAG AA su tutte le pagine, AAA sul monitor cuochi
 - [ ] **Interfaccia cassa con layout a due colonne come foglio cartaceo**
-- [ ] **Cassa: campi nome, tavolo, coperti, sconto, flag gratis (Sponsor/Don Pierino/Amici)**
+- [ ] **Cassa: campi nome, tavolo, coperti, sconto, tag omaggio (Sponsor/Don Pierino/Amici)**
 - [ ] **Cassa: coperti stampati sulla comanda bevande (fallback su comanda cibo)**
-- [ ] **Cassa: flag gratis → totale €0 ma ordine registrato e stampato normalmente**
+- [ ] **Cassa: tag omaggio = solo statistico (sconto va inserito manualmente)**
 - [ ] **Login admin con PIN funziona (PIN errato → errore, PIN corretto → accesso)**
 - [ ] **Dashboard admin LIVE mostra ordini, incasso, scorte in tempo reale**
 - [ ] **Dashboard admin RECAP mostra report completo con omaggi e sconti**
