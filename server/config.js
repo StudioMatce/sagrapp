@@ -157,5 +157,5 @@ module.exports = {
   },
 
   // Articoli tracciati sul monitor cuochi (pezzi singoli dalla griglia/scaldavivande)
-  MONITOR_ITEMS: ['costicine', 'salsicce', 'sovracoscia', 'pastin', 'polenta', 'patate'],
+  MONITOR_ITEMS: ['costicine', 'salsicce', 'sovracoscia', 'pastin', /* 'polenta', // TEMP DISABLED */ 'patate'],
 };
