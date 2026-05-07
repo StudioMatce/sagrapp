@@ -912,7 +912,7 @@ router.get('/admin/verify', (req, res) => {
 router.get('/admin/stats/live', requireAdmin, (req, res) => {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
-  const incompleteOrders = orders.filter(o => o.status !== 'completed').length;
+  const incompleteOrders = orders.filter(o => o.status === 'in_progress').length;
 
   const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
   const recentOrders = orders.filter(o => o.created_at > thirtyMinAgo);
