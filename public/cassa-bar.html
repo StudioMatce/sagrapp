@@ -115,21 +115,32 @@
     .menu-scroll::-webkit-scrollbar-track { background: transparent; }
     .menu-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 
+    /* ===== LAYOUT A COLONNE PER CATEGORIA ===== */
+    .category-columns {
+      display: flex;
+      gap: 12px;
+      min-height: 100%;
+    }
+
+    .category-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .section-header {
-      grid-column: 1 / -1;
-      padding: 6px 4px;
+      padding: 8px 8px 6px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: #4ecca3;
-    }
-
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 8px;
+      border-bottom: 1px solid rgba(78, 204, 163, 0.15);
+      text-align: center;
+      flex-shrink: 0;
     }
 
     /* ===== BOX PIATTO ===== */
@@ -932,17 +943,19 @@
       '</div>';
     }
 
-    // ===== RENDER MENU =====
+    // ===== RENDER MENU — colonne verticali per categoria =====
     function renderBeverages() {
       if (BEVERAGES.length === 0) {
         return '<div style="padding:40px;text-align:center;color:#64748b">Nessun articolo disponibile</div>';
       }
-      var html = '<div class="product-grid">';
+      var html = '<div class="category-columns">';
       CATEGORY_SECTIONS.forEach(function(sec) {
         var items = BEVERAGES.filter(function(b) { return b.category === sec.cat; });
         if (items.length === 0) return;
+        html += '<div class="category-column">';
         html += '<div class="section-header">' + sec.label + '</div>';
         items.forEach(function(bev) { html += renderCard(bev); });
+        html += '</div>';
       });
       html += '</div>';
       return html;
