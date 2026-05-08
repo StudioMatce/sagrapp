@@ -946,7 +946,8 @@
       { cat: 'condimento',label: 'Condimenti' },
       { cat: 'bevanda', label: 'Vini', filter: function(b) { return b.id.startsWith('vino_'); } },
       { cat: 'bevanda', label: 'Birra & Bottiglie', filter: function(b) { return ['birra_spina','prosecco','cabernet'].indexOf(b.id) >= 0; } },
-      { cat: 'bevanda', label: 'Acqua & Bibite', filter: function(b) { return !b.id.startsWith('vino_') && ['birra_spina','prosecco','cabernet'].indexOf(b.id) < 0; } },
+      { cat: 'bevanda', label: 'Acqua & Bibite', filter: function(b) { return !b.id.startsWith('vino_') && ['birra_spina','prosecco','cabernet','caffe','sgroppino','dolce','caffe_mdg','mdg'].indexOf(b.id) < 0; } },
+      { cat: 'bevanda', label: 'Caffè & Dolci', filter: function(b) { return ['caffe','sgroppino','dolce','caffe_mdg','mdg'].indexOf(b.id) >= 0; } },
     ];
 
     // ===== RENDER COLONNE VERTICALI PER CATEGORIA/SOTTO-GRUPPO =====
