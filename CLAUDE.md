@@ -258,7 +258,7 @@ node print-proxy/index.js  # Avvia il print proxy locale
 ## Sistema di accesso (PIN)
 | PIN | Ruolo | Destinazione |
 |---|---|---|
-| 0000 | Admin | `/admin` + sidebar completa |
+| 1959 | Admin | `/admin` + sidebar completa |
 | 0001 | Cassa Generale | `/cassa` direttamente |
 | 0002 | Operatore | Scelta: Cassa Bar / Casetta / Scaldavivande / Zona Controllo |
 | (nessuno) | Monitor Cuochi | `/monitor` — accesso diretto via URL, nessun PIN |

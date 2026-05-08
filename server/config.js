@@ -8,7 +8,7 @@ module.exports = {
   // PIN di accesso per ruolo
   // Ogni PIN corrisponde a un ruolo specifico
   PINS: {
-    '0000': { role: 'admin', redirect: '/admin', sidebar: true },
+    '1959': { role: 'admin', redirect: '/admin', sidebar: true },
     '0001': { role: 'cassa_generale', redirect: '/cassa', sidebar: false },
     '0002': { role: 'operatore', redirect: null, sidebar: false,
               destinations: [
