@@ -937,29 +937,16 @@
     }
 
     // Sezioni casetta — una colonna per ogni tipologia di prodotto
-    // ID noti per classificazione (i drink/cocktail finiscono nella colonna dedicata)
-    var BIRRE_IDS = ['birra_spina'];
-    var BIBITE_IDS = ['coca_cola','coca_zero','fanta','the_pesca','the_limone'];
+    // Drink: prodotti creati manualmente (spritz, hugo, ecc.)
+    var DRINK_IDS = ['caffe','sgroppino','dolce','caffe_mdg','mdg'];
 
     var CATEGORY_SECTIONS = [
       { label: 'Primi', filter: function(i) { return i.category === 'primo'; } },
       { label: 'Secondi', filter: function(i) { return i.category === 'secondo'; } },
       { label: 'Speciale', filter: function(i) { return i.category === 'speciale'; } },
       { label: 'Contorni & Salse', filter: function(i) { return i.category === 'contorno' || i.category === 'condimento'; } },
-      { label: 'Birre', filter: function(i) { return i.category === 'bevanda' && (BIRRE_IDS.indexOf(i.id) >= 0 || i.id.startsWith('birra_')); } },
-      { label: 'Vini', filter: function(i) { return i.category === 'bevanda' && (i.id.startsWith('vino_') || ['prosecco','cabernet'].indexOf(i.id) >= 0); } },
-      { label: 'Acqua', filter: function(i) { return i.category === 'bevanda' && i.id.startsWith('acqua_'); } },
-      { label: 'Bibite', filter: function(i) { return i.category === 'bevanda' && (BIBITE_IDS.indexOf(i.id) >= 0 || i.id.startsWith('the_') || i.id.startsWith('coca_')); } },
-      // Drink: tutto ciò che è bevanda e non rientra nelle colonne sopra
-      { label: 'Drink', filter: function(i) {
-          if (i.category !== 'bevanda') return false;
-          if (BIRRE_IDS.indexOf(i.id) >= 0 || i.id.startsWith('birra_')) return false;
-          if (i.id.startsWith('vino_') || ['prosecco','cabernet'].indexOf(i.id) >= 0) return false;
-          if (i.id.startsWith('acqua_')) return false;
-          if (BIBITE_IDS.indexOf(i.id) >= 0 || i.id.startsWith('the_') || i.id.startsWith('coca_')) return false;
-          return true;
-        }
-      },
+      { label: 'Bevande', filter: function(i) { return i.category === 'bevanda' && DRINK_IDS.indexOf(i.id) < 0; } },
+      { label: 'Drink', filter: function(i) { return i.category === 'bevanda' && DRINK_IDS.indexOf(i.id) >= 0; } },
     ];
 
     // ===== RENDER RIGHE ORIZZONTALI PER CATEGORIA =====
