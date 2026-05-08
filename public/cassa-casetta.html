@@ -937,16 +937,15 @@
       }
     }
 
-    // Sezioni con sotto-gruppi per bevande — colonne bilanciate
+    // Sezioni casetta — contorni+condimenti uniti, bevande raggruppate
     var CATEGORY_SECTIONS = [
-      { cat: 'primo',     label: 'Primi' },
-      { cat: 'secondo',   label: 'Secondi' },
-      { cat: 'speciale',  label: 'Speciale del Giorno' },
-      { cat: 'contorno',  label: 'Contorni' },
-      { cat: 'condimento',label: 'Condimenti' },
-      { cat: 'bevanda', label: 'Vini', filter: function(b) { return b.id.startsWith('vino_'); } },
-      { cat: 'bevanda', label: 'Birra & Bottiglie', filter: function(b) { return ['birra_spina','prosecco','cabernet'].indexOf(b.id) >= 0; } },
-      { cat: 'bevanda', label: 'Acqua & Bibite', filter: function(b) { return !b.id.startsWith('vino_') && ['birra_spina','prosecco','cabernet'].indexOf(b.id) < 0; } },
+      { label: 'Primi', filter: function(i) { return i.category === 'primo'; } },
+      { label: 'Secondi', filter: function(i) { return i.category === 'secondo'; } },
+      { label: 'Speciale', filter: function(i) { return i.category === 'speciale'; } },
+      { label: 'Contorni & Salse', filter: function(i) { return i.category === 'contorno' || i.category === 'condimento'; } },
+      { label: 'Vini', filter: function(i) { return i.category === 'bevanda' && i.id.startsWith('vino_'); } },
+      { label: 'Birra & Bottiglie', filter: function(i) { return i.category === 'bevanda' && ['birra_spina','prosecco','cabernet'].indexOf(i.id) >= 0; } },
+      { label: 'Acqua & Bibite', filter: function(i) { return i.category === 'bevanda' && !i.id.startsWith('vino_') && ['birra_spina','prosecco','cabernet'].indexOf(i.id) < 0; } },
     ];
 
     // ===== RENDER COLONNE VERTICALI PER CATEGORIA/SOTTO-GRUPPO =====
@@ -955,9 +954,7 @@
       var hasAny = false;
 
       CATEGORY_SECTIONS.forEach(function(sec) {
-        var items = sec.filter
-          ? menuItems.filter(function(i) { return i.category === sec.cat && sec.filter(i); })
-          : menuItems.filter(function(i) { return i.category === sec.cat; });
+        var items = menuItems.filter(sec.filter);
         if (items.length === 0) return;
         hasAny = true;
         html += '<div class="category-column">';
