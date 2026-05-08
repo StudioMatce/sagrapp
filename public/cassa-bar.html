@@ -915,14 +915,17 @@
       }
     }
 
-    // Sezioni in ordine di comparsa — solo quelle con almeno un articolo vengono mostrate
+    // Sezioni con sotto-gruppi per bevande — colonne bilanciate
+    // Se una sezione ha 'filter', usa quella; altrimenti filtra per categoria
     var CATEGORY_SECTIONS = [
       { cat: 'primo',     label: 'Primi' },
       { cat: 'secondo',   label: 'Secondi' },
       { cat: 'speciale',  label: 'Speciale del Giorno' },
       { cat: 'contorno',  label: 'Contorni' },
       { cat: 'condimento',label: 'Condimenti' },
-      { cat: 'bevanda',   label: 'Bevande' },
+      { cat: 'bevanda', label: 'Vini', filter: function(b) { return b.id.startsWith('vino_'); } },
+      { cat: 'bevanda', label: 'Birra & Bottiglie', filter: function(b) { return ['birra_spina','prosecco','cabernet'].indexOf(b.id) >= 0; } },
+      { cat: 'bevanda', label: 'Acqua & Bibite', filter: function(b) { return !b.id.startsWith('vino_') && ['birra_spina','prosecco','cabernet'].indexOf(b.id) < 0; } },
     ];
 
     function renderCard(bev) {
@@ -943,14 +946,17 @@
       '</div>';
     }
 
-    // ===== RENDER MENU — colonne verticali per categoria =====
+    // ===== RENDER MENU — colonne verticali per categoria/sotto-gruppo =====
     function renderBeverages() {
       if (BEVERAGES.length === 0) {
         return '<div style="padding:40px;text-align:center;color:#64748b">Nessun articolo disponibile</div>';
       }
       var html = '<div class="category-columns">';
       CATEGORY_SECTIONS.forEach(function(sec) {
-        var items = BEVERAGES.filter(function(b) { return b.category === sec.cat; });
+        // Se la sezione ha un filtro custom, usa quello; altrimenti filtra per categoria
+        var items = sec.filter
+          ? BEVERAGES.filter(function(b) { return b.category === sec.cat && sec.filter(b); })
+          : BEVERAGES.filter(function(b) { return b.category === sec.cat; });
         if (items.length === 0) return;
         html += '<div class="category-column">';
         html += '<div class="section-header">' + sec.label + '</div>';
