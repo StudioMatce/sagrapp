@@ -937,14 +937,11 @@
     }
 
     // Sezioni casetta — una colonna per ogni tipologia di prodotto
-    // Drink: prodotti creati manualmente (spritz, hugo, ecc.)
+    // Drink: prodotti creati manualmente (caffè, sgroppino, ecc.)
     var DRINK_IDS = ['caffe','sgroppino','dolce','caffe_mdg','mdg'];
 
     var CATEGORY_SECTIONS = [
-      { label: 'Primi', filter: function(i) { return i.category === 'primo'; } },
-      { label: 'Secondi', filter: function(i) { return i.category === 'secondo'; } },
-      { label: 'Speciale', filter: function(i) { return i.category === 'speciale'; } },
-      { label: 'Contorni & Salse', filter: function(i) { return i.category === 'contorno' || i.category === 'condimento'; } },
+      { label: 'Cibo', filter: function(i) { return ['primo','secondo','speciale','contorno','condimento'].indexOf(i.category) >= 0; } },
       { label: 'Bevande', filter: function(i) { return i.category === 'bevanda' && DRINK_IDS.indexOf(i.id) < 0; } },
       { label: 'Drink', filter: function(i) { return i.category === 'bevanda' && DRINK_IDS.indexOf(i.id) >= 0; } },
     ];
