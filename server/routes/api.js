@@ -28,11 +28,22 @@ async function init() {
   await db.createTables();
   console.log('[DB] Tabelle PostgreSQL pronte');
 
+  // Salva initial_stock da config.js prima che vengano sovrascritti dal DB
+  const configStocks = {};
+  config.MENU.forEach(item => { configStocks[item.id] = item.initial_stock; });
+
   // Carica il menu dal DB; se vuoto, fa seed da config.js (primo avvio)
   const dbMenu = await db.getMenuItems();
   if (dbMenu.length > 0) {
     config.MENU.length = 0;
     dbMenu.forEach(item => config.MENU.push(item));
+    // Sincronizza initial_stock da config.js → DB (se cambiati)
+    for (const item of config.MENU) {
+      if (configStocks[item.id] !== undefined && item.initial_stock !== configStocks[item.id]) {
+        item.initial_stock = configStocks[item.id];
+        await db.saveMenuItem(item);
+      }
+    }
     console.log(`[Menu] Caricati ${dbMenu.length} piatti dal database`);
   } else {
     for (const item of config.MENU) {
