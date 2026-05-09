@@ -1874,7 +1874,6 @@
             msg += '  ⚠ STAMPA IN CODA';
             feedback.textContent = msg;
             feedback.classList.add('visible', 'error');
-            beepAlert();
           } else {
             feedback.textContent = msg;
             feedback.classList.add('visible', 'success');
@@ -2082,20 +2081,6 @@
     var printerAlert = document.getElementById('printerAlert');
     var printerAlertText = document.getElementById('printerAlertText');
 
-    // Beep audio per alert stampante (Web Audio API, senza file esterni)
-    function beepAlert() {
-      try {
-        var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 800;
-        gain.gain.value = 0.3;
-        osc.start();
-        osc.stop(ctx.currentTime + 0.2);
-      } catch (e) { /* Audio non supportato */ }
-    }
 
     // Ascolta lo stato delle stampanti dal proxy
     socket.on('printers_status_update', function(statuses) {
