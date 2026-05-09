@@ -9,7 +9,7 @@ module.exports = {
   // Ogni PIN corrisponde a un ruolo specifico
   PINS: {
     '1959': { role: 'admin', redirect: '/admin', sidebar: true },
-    '0001': { role: 'cassa_generale', redirect: '/cassa', sidebar: false },
+    '1102': { role: 'cassa_generale', redirect: '/cassa', sidebar: false },
     '0002': { role: 'operatore', redirect: null, sidebar: false,
               destinations: [
                 { id: 'cassa-bar', name: 'Cassa Bar', icon: '🍺', url: '/cassa-bar' },
