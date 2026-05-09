@@ -16,6 +16,7 @@ module.exports = {
                 { id: 'cassa-casetta', name: 'Cassa Casetta', icon: '🏠', url: '/cassa-casetta' },
                 { id: 'scaldavivande', name: 'Scaldavivande', icon: '🔥', url: '/scaldavivande' },
                 { id: 'controllo', name: 'Zona Controllo', icon: '📋', url: '/controllo' },
+                { id: 'monitor', name: 'Monitor Cuochi', icon: '📺', url: '/monitor' },
               ]
             },
   },
