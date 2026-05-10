@@ -154,6 +154,8 @@ function broadcastOpenOrders() {
       items_summary: o.items.map(i => `${i.qty}x ${i.name}`).join(', '),
       total: o.total,
       created_at: o.created_at,
+      source: o.source,
+      asporto: o.asporto,
     }));
   io.to('controllo').emit('open_orders_update', { orders: openOrders });
 }
