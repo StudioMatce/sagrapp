@@ -553,12 +553,19 @@ router.post('/orders/:id/fulfill', (req, res) => {
 
   // Incrementa "evasi" — i pezzi escono dallo scaldavivande
   // Questo fa scendere "nello scaldavivande" (pronto - evasi) sul monitor
+  // Per articoli in SKIP_FULFILLMENT (polenta, patate): incrementa anche "pronto"
+  // così "da cucinare" (vendute - pronto) scende direttamente all'evasione
+  // perché non passano dallo scaldavivande
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
-          counters[piece].evasi += count * item.qty;
+          const delta = count * item.qty;
+          counters[piece].evasi += delta;
+          if (SKIP_FULFILLMENT.includes(piece)) {
+            counters[piece].pronto += delta;
+          }
           db.saveCounter(piece, counters[piece]).catch(err => console.error('[DB] saveCounter:', err));
         }
       }
