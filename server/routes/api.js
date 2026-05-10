@@ -1557,7 +1557,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   // Turno: pranzo o cena (inviato dal client). Default: auto in base all'ora
   const turno = (req.body && (req.body.turno === 'pranzo' || req.body.turno === 'cena'))
     ? req.body.turno
-    : (new Date().getHours() < 16 ? 'pranzo' : 'cena');
+    : (new Date().getHours() >= 5 && new Date().getHours() < 16 ? 'pranzo' : 'cena');
 
   // Salva snapshot della serata corrente nell'archivio (solo se ci sono ordini)
   if (orders.length > 0) {
