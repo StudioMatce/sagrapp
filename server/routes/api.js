@@ -520,7 +520,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
   // per tutti i piatti griglia dell'ordine.
   // Piatti senza composition (pasta, bevande, ecc.) passano senza controllo.
   // Patate escluse dal controllo: tracciate per il monitor ma non nello scaldavivande
-  const SKIP_FULFILLMENT = ['patate']; // patate tracciate per monitor ma non bloccano l'evasione
+  const SKIP_FULFILLMENT = ['patate', 'polenta']; // tracciate per monitor ma non bloccano l'evasione
   const missingPieces = [];
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
