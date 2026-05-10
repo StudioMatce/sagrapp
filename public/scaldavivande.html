@@ -287,7 +287,9 @@
         <div class="dish-controls">
           <button class="btn-counter btn-minus" onclick="handleTap('${item.id}', -10, this)">&minus;10</button>
           <button class="btn-counter btn-minus" onclick="handleTap('${item.id}', -5, this)">&minus;5</button>
+          <button class="btn-counter btn-minus" onclick="handleTap('${item.id}', -1, this)">&minus;1</button>
           <span class="dish-count" id="count-${item.id}">0</span>
+          <button class="btn-counter btn-plus" onclick="handleTap('${item.id}', 1, this)">+1</button>
           <button class="btn-counter btn-plus" onclick="handleTap('${item.id}', 5, this)">+5</button>
           <button class="btn-counter btn-plus" onclick="handleTap('${item.id}', 10, this)">+10</button>
         </div>

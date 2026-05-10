@@ -635,7 +635,11 @@
       renderOpenOrders(data.orders);
     });
 
-    function renderOpenOrders(orders) {
+    function renderOpenOrders(allOrders) {
+      // Escludi ordini bar e casetta — la zona controllo gestisce solo la cassa generale
+      var orders = allOrders.filter(function(o) {
+        return !o.source || o.source === 'principale';
+      });
       ordersCount.textContent = orders.length;
 
       if (orders.length === 0) {
