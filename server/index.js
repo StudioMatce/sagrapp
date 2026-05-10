@@ -280,6 +280,7 @@ function sendOpenOrders(target) {
       total: o.total,
       asporto: o.asporto || false,
       created_at: o.created_at,
+      source: o.cassa || 'principale',
     }));
   (target || io.to('controllo')).emit('open_orders_update', { orders: openOrders });
 }
