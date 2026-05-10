@@ -1268,6 +1268,30 @@ router.patch('/admin/sessions/:id/label', requireAdmin, (req, res) => {
   res.json({ success: true, label: session.recap._label || null });
 });
 
+// Unisci sessioni della stessa data in una sola
+router.post('/admin/sessions/merge-by-date', requireAdmin, (req, res) => {
+  const { date } = req.body;
+  if (!date) return res.status(400).json({ error: 'Specificare date (YYYY-MM-DD)' });
+
+  const sessions = archivedSessions.filter(s => s.date === date);
+  if (sessions.length < 2) return res.status(400).json({ error: 'Nessun duplicato trovato per ' + date });
+
+  // Tieni la prima sessione come base, mergia le altre sopra
+  const base = sessions[0];
+  for (let i = 1; i < sessions.length; i++) {
+    mergeRecap(base.recap, sessions[i].recap);
+    // Elimina la sessione duplicata dal DB e dalla memoria
+    const idx = archivedSessions.findIndex(s => s.id === sessions[i].id);
+    if (idx !== -1) archivedSessions.splice(idx, 1);
+    db.deleteArchivedSession(sessions[i].id).catch(err => console.error('[DB] deleteArchivedSession merge:', err));
+  }
+  base.turno = 'cena';
+  base.closed_at = Date.now();
+  db.updateArchivedSession(base.id, base.closed_at, base.recap).catch(err => console.error('[DB] updateArchivedSession merge:', err));
+
+  res.json({ success: true, merged: sessions.length, remaining: base.id });
+});
+
 // Elimina una serata archiviata
 router.delete('/admin/sessions/:id', requireAdmin, (req, res) => {
   const idx = archivedSessions.findIndex(s => s.id === req.params.id);
