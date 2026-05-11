@@ -128,16 +128,18 @@ Inoltre, se al momento della creazione ordine il proxy è offline, tutte le cass
   - **Tag omaggio** (toggle, uno solo alla volta): Sponsor | Don Pierino | Amici — solo tag statistico, NON azzera il totale
 - I tag omaggio servono per le statistiche recap (conteggio per tipo), lo sconto va applicato manualmente nel campo Sconto
 - Il piatto speciale del giorno è visibile solo se `available_date` corrisponde alla data corrente
+- Il box "Speciale del giorno" appare solo se ci sono piatti speciali disponibili
 
 ## Monitor cuochi
-**Header**: coperti totali della serata (aggiornamento real-time)
+**Header**: Coperti (sinistra) + Ordini (rosso) + Evasi (verde) a destra
 
 Traccia 6 articoli in pezzi singoli: costicine, salsicce, sovracoscia, pastin, polenta, patate.
-2 colonne visibili sulla TV:
-- **Da cucinare** = vendute − pronto (GRANDE, protagonista — il cuoco guarda solo questo)
+4 colonne visibili sulla TV:
+- **Venduto** = vendute totali (grigio, informativo)
+- **Da evadere** = vendute − evasi (rosso — pezzi venduti ma non ancora serviti)
 - **Nello scaldavivande** = pronto − evasi (piccolo, secondario)
+- **Da cucinare** = vendute − pronto (GRANDE, protagonista — il cuoco guarda solo questo)
 
-Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi totale.
 - "Da cucinare" SALE con nuovi ordini, SCENDE quando il cuoco deposita pezzi
 - "Nello scaldavivande" SALE quando il cuoco deposita, SCENDE quando l'operatore evade
 
@@ -147,19 +149,27 @@ Dati NON visibili su TV (solo admin RECAP): vendute totali, pronto totale, evasi
 
 ### Scaldavivande
 - Mostra `pronto - evasi` = pezzi fisicamente presenti (scende con evasioni)
-- Pulsanti −10, −5, +5, +10 per ogni articolo (4 pulsanti simmetrici)
+- Pulsanti −10, −5, −1, +1, +5, +10 per ogni articolo (6 pulsanti)
 
 ## Evasione ordini (regole)
-L'operatore fisso chiude gli ordini dal suo tablet (layout orizzontale: lista ordini a sinistra, collassabile; tastierino a destra). Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:
+L'operatore fisso chiude gli ordini dal suo tablet (layout orizzontale: lista ordini a sinistra, collassabile; tastierino a destra). La zona controllo mostra **solo ordini cassa generale** (bar e casetta esclusi). Prima di evadere, il sistema controlla i pezzi griglia nello scaldavivande:
 
 | Situazione | Comportamento |
 |---|---|
 | Pezzi griglia sufficienti | Evade, scala pezzi dallo scaldavivande |
 | Pezzi griglia insufficienti | BLOCCA, mostra dettaglio mancanze |
+| Polenta/patate insufficienti | Evade comunque (SKIP_FULFILLMENT) |
 | Ordine già evaso | Feedback giallo "Già evaso" |
 | Ordine non trovato | Feedback rosso "Non trovato" |
 | Solo bevande/pasta (no griglia) | Evade senza controllo scaldavivande |
 | Evasione parziale | NON permessa — tutto o niente |
+
+### Logica evasione contatori
+- All'evasione, `evasi` viene incrementato per tutti i pezzi composition
+- **Patate** (non sullo scaldavivande): auto-incrementa anche `pronto` → "Da cucinare" scende automaticamente
+- **Polenta** (sullo scaldavivande): solo `evasi` incrementato → il cuoco gestisce `pronto` manualmente
+- `SKIP_FULFILLMENT = ['patate', 'polenta']` — non bloccano l'evasione se mancano
+- `AUTO_PRONTO = ['patate']` — auto-incremento pronto solo per articoli non sullo scaldavivande
 
 ## Annullamento ordini
 L'operatore può annullare un ordine aperto (con conferma):
@@ -197,7 +207,7 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 
 ### Turni pranzo/cena
 - La chiusura turno (`POST /admin/reset`) accetta `{ turno: "pranzo" | "cena" }` nel body
-- Auto-detect: prima delle 16:00 = pranzo, dopo = cena
+- Auto-detect: 05:00-15:59 = pranzo, 16:00-04:59 = cena (gestisce chiusure dopo mezzanotte)
 - Pranzo e cena dello stesso giorno sono **sessioni separate** (con badge colorato nello storico)
 - Chiudere lo stesso turno due volte nella stessa giornata **mergia** i dati come prima
 - DB: colonna `turno` in `archived_sessions` (nullable, retrocompatibile con serate vecchie)
@@ -207,7 +217,9 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Alla chiusura turno, lo snapshot viene salvato in `archivedSessions` con il turno (pranzo/cena)
 - API: `GET /api/admin/sessions` (lista serate con turno), `GET /api/admin/sessions/:id/recap` (recap archiviato)
 - **Recap aggregati**: `GET /api/admin/recap/aggregate?mode=total` (totale sagra), `?ids=id1,id2` (sessioni specifiche)
+- **Merge sessioni**: `POST /api/admin/sessions/merge-by-date` `{ date: "YYYY-MM-DD" }` — unisce sessioni duplicate della stessa data
 - Nello storico serate: pulsante "Recap Totale Sagra" + pulsanti "Recap Weekend" automatici per ogni coppia Sab-Dom
+- All'avvio, `initial_stock` da config.js viene sincronizzato al DB (se diverso)
 
 ### Export CSV
 - Formato unificato in tutte le pagine (recap, serate, chiusura): separatore `;`, BOM UTF-8, `sep=;` per Excel
@@ -215,16 +227,20 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Sezioni: RIEPILOGO, INCASSO PER CASSA, METODO PAGAMENTO (lordo/commissioni/netto), OMAGGI DETTAGLIO, CLASSIFICA VENDITE
 
 ## Layout casse
-Tutte e tre le casse usano il **layout a due pannelli 70/30**:
-- **70% sinistra**: area menu con piatti/bevande e stepper quantità
-- **30% destra**: colonna ordine con form, riepilogo, totale e bottone ORDINA
+Tutte e tre le casse usano il **layout a due pannelli**:
+- **Sinistra**: area menu con piatti/bevande e stepper quantità
+- **Destra**: colonna ordine con form, riepilogo, totale e bottone ORDINA
 - Responsive: sotto 700px si impila verticalmente
+- **Bar**: colonne verticali per sotto-gruppo bevande (Vini / Birra & Bottiglie / Acqua & Bibite / Caffè & Dolci)
+- **Casetta**: righe orizzontali per macro-categoria (Cibo / Bevande), colonna ordine 280px, ottimizzata iPad landscape
+- **Bar e Casetta**: niente note prodotto nel riepilogo ordine, niente alert sonoro stampanti
+- **Wake Lock**: tutte le pagine operative impediscono il blocco schermo (wakelock.js)
 
-| Cassa | Tab | Campi ordine | Source |
+| Cassa | Layout menu | Campi ordine | Source |
 |---|---|---|---|
-| Generale | CIBO / BEVANDE / ORDINI | Nome, Tavolo, Coperti, Asporto, POS, Omaggi, Sconto | `principale` |
-| Bar | — (solo bevande) | Nome, Tavolo, POS | `bar` |
-| Casetta | CONTORNI / BEVANDE | Tavolo (opzionale), POS | `casetta` |
+| Generale | CIBO / BEVANDE / ORDINI (tab) | Nome, Tavolo, Coperti, Asporto, POS, Omaggi, Sconto | `principale` |
+| Bar | Colonne verticali per sotto-gruppo | Nome, POS | `bar` |
+| Casetta | Righe orizzontali (Cibo / Bevande) | Nome, POS | `casetta` |
 
 ## Rilevamento offline
 - Socket.IO configurato con `pingInterval: 3000, pingTimeout: 5000` — disconnessione rilevata in ~5 secondi
@@ -260,8 +276,8 @@ node print-proxy/index.js  # Avvia il print proxy locale
 |---|---|---|
 | 1959 | Admin | `/admin` + sidebar completa |
 | 1102 | Cassa Generale | `/cassa` direttamente |
-| 0002 | Operatore | Scelta: Cassa Bar / Casetta / Scaldavivande / Zona Controllo |
-| (nessuno) | Monitor Cuochi | `/monitor` — accesso diretto via URL, nessun PIN |
+| 0002 | Operatore | Scelta: Cassa Bar / Casetta / Scaldavivande / Zona Controllo / Monitor Cuochi |
+| (nessuno) | Monitor Cuochi | `/monitor` — accesso anche diretto via URL, nessun PIN |
 
 - I PIN sono in `config.js` → `PINS`
 - Il token viene salvato in `sessionStorage`, il ruolo in `localStorage`
