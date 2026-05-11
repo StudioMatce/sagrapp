@@ -35,30 +35,39 @@
       flex-shrink: 0;
     }
 
-    /* Spacer che occupa lo stesso spazio di dish-name + col-warm */
     .coperti-spacer { flex: 1; }
 
-    .coperti-label {
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 2vw;
+    }
+
+    .header-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.8vw;
+    }
+
+    .header-stat-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(11px, 1.5vw, 18px);
+      font-size: clamp(10px, 1.3vw, 16px);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: rgba(240, 244, 248, 0.3);
-      margin-right: 1.5vw;
     }
 
-    /* Stessa width della colonna "Da cucinare" per allineamento perfetto */
-    .coperti-value {
+    .header-stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(28px, 4vw, 48px);
+      font-size: clamp(22px, 3vw, 40px);
       font-weight: 800;
-      color: #22d3ee;
-      text-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
-      width: clamp(160px, 24vw, 380px);
-      text-align: center;
-      flex-shrink: 0;
+      text-shadow: 0 0 15px rgba(34, 211, 238, 0.15);
     }
+
+    .header-stat-value.coperti { color: #22d3ee; }
+    .header-stat-value.ordini { color: rgba(255, 255, 255, 0.5); }
+    .header-stat-value.evasi { color: rgba(78, 204, 163, 0.6); }
 
     /* La griglia prende il resto dello schermo */
     .board {
@@ -99,6 +108,12 @@
     }
 
     .col-label.col-warm {
+      width: clamp(60px, 8vw, 120px);
+      font-size: clamp(9px, 1vw, 14px);
+      color: rgba(240, 244, 248, 0.2);
+    }
+
+    .col-label.col-sold {
       width: clamp(60px, 8vw, 120px);
       font-size: clamp(9px, 1vw, 14px);
       color: rgba(240, 244, 248, 0.2);
@@ -153,6 +168,14 @@
       font-size: clamp(24px, 3vw, 40px);
       width: clamp(60px, 8vw, 120px);
       color: rgba(255, 255, 255, 0.4);
+      text-shadow: none;
+    }
+
+    /* Numero "Venduto" — piccolo, informativo */
+    .dish-count.count-sold {
+      font-size: clamp(24px, 3vw, 40px);
+      width: clamp(60px, 8vw, 120px);
+      color: rgba(255, 255, 255, 0.25);
       text-shadow: none;
     }
 
@@ -273,11 +296,23 @@
   <!-- Indicatore connessione -->
   <div class="conn-dot" id="connDot"></div>
 
-  <!-- Header coperti totali -->
+  <!-- Header statistiche -->
   <div class="coperti-bar">
     <span class="coperti-spacer"></span>
-    <span class="coperti-label">Coperti</span>
-    <span class="coperti-value" id="copertiValue">0</span>
+    <div class="header-stats">
+      <div class="header-stat">
+        <span class="header-stat-label">Coperti</span>
+        <span class="header-stat-value coperti" id="copertiValue">0</span>
+      </div>
+      <div class="header-stat">
+        <span class="header-stat-label">Ordini</span>
+        <span class="header-stat-value ordini" id="ordiniValue">0</span>
+      </div>
+      <div class="header-stat">
+        <span class="header-stat-label">Evasi</span>
+        <span class="header-stat-value evasi" id="evasiValue">0</span>
+      </div>
+    </div>
   </div>
 
   <!-- Tabellone -->
@@ -308,12 +343,14 @@
     board.innerHTML = `
       <div class="header-row">
         <span class="col-spacer"></span>
+        <span class="col-label col-sold">Venduto</span>
         <span class="col-label col-warm">Scaldav.</span>
         <span class="col-label col-cook">Da cucinare</span>
       </div>
     ` + ITEMS.map(item => `
       <div class="row" id="row-${item.id}">
         <span class="dish-name">${item.label}</span>
+        <span class="dish-count count-sold" id="sold-${item.id}">0</span>
         <span class="dish-count count-warm" id="warm-${item.id}">0</span>
         <span class="dish-count count-cook cook-green" id="cook-${item.id}">0</span>
       </div>
@@ -340,11 +377,17 @@
       lostOverlay.classList.add('visible');
     });
 
-    // Aggiornamento contatori — 2 colonne visibili + coperti header
-    socket.on('counters_changed', ({ counters: newCounters, total_coperti }) => {
-      // Aggiorna header coperti
+    // Aggiornamento contatori — 3 colonne visibili + header stats
+    socket.on('counters_changed', ({ counters: newCounters, total_coperti, total_orders, total_fulfilled }) => {
+      // Aggiorna header stats
       if (total_coperti !== undefined) {
         document.getElementById('copertiValue').textContent = total_coperti;
+      }
+      if (total_orders !== undefined) {
+        document.getElementById('ordiniValue').textContent = total_orders;
+      }
+      if (total_fulfilled !== undefined) {
+        document.getElementById('evasiValue').textContent = total_fulfilled;
       }
       ITEMS.forEach(item => {
         const oldData = counters[item.id];
@@ -364,11 +407,13 @@
 
         const cookEl = document.getElementById(`cook-${item.id}`);
         const warmEl = document.getElementById(`warm-${item.id}`);
+        const soldEl = document.getElementById(`sold-${item.id}`);
         const row = document.getElementById(`row-${item.id}`);
 
         // Aggiorna valori
         cookEl.textContent = newCook;
         warmEl.textContent = newWarm;
+        soldEl.textContent = newData.vendute;
 
         // Colore "da cucinare": verde=0, giallo=1-10, rosso=>10
         cookEl.classList.remove('cook-green', 'cook-yellow', 'cook-red');

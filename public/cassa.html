@@ -1442,6 +1442,11 @@
       LEFT_CATEGORIES.forEach(function(cat) {
         const catItems = ITEMS.filter(function(item) { return item.category === cat.category; });
         if (catItems.length === 0) return;
+        // Speciali: mostra solo se almeno un piatto è disponibile (available=true)
+        if (cat.category === 'speciale') {
+          var hasAvailable = catItems.some(function(item) { return item.available !== false; });
+          if (!hasAvailable) return;
+        }
         leftHtml += renderCategoryBox(cat.label, catItems);
       });
       document.getElementById('colCibo').innerHTML = leftHtml ||

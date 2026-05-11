@@ -165,6 +165,16 @@ function computeTotalCoperti() {
   return orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.coperti || 0), 0);
 }
 
+// --- Helper: statistiche ordini per monitor ---
+function computeMonitorStats() {
+  const nonCancelled = orders.filter(o => o.status !== 'cancelled');
+  return {
+    total_coperti: nonCancelled.reduce((sum, o) => sum + (o.coperti || 0), 0),
+    total_orders: nonCancelled.length,
+    total_fulfilled: nonCancelled.filter(o => o.status === 'completed').length,
+  };
+}
+
 // --- Helper: verifica token admin ---
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
@@ -496,7 +506,7 @@ router.post('/orders/:id/cancel', (req, res) => {
 
   if (io) {
     if (countersChanged) {
-      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
+      io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, ...computeMonitorStats() });
     }
     io.emit('order_cancelled', { order_number: orderId, table: order.table });
     broadcastOpenOrders();
@@ -576,7 +586,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
 
   if (io) {
     io.emit('order_fulfilled_broadcast', { order_number: orderId, table: order.table });
-    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, ...computeMonitorStats() });
     broadcastOpenOrders();
   }
 
@@ -712,7 +722,7 @@ async function createOrder(req, res) {
 
   // Broadcast contatori aggiornati (vendute cambiate → da_cucinare cambia sul monitor)
   if (io) {
-    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, ...computeMonitorStats() });
     io.emit('order_created', order);
     io.to('admin').emit('stats_update', { type: 'new_order', order });
     broadcastOpenOrders();
@@ -1648,7 +1658,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   });
 
   if (io) {
-    io.emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
+    io.emit('counters_changed', { counters, ...computeMonitorStats() });
     io.emit('inventory_reset', Object.values(inventory));
   }
 
@@ -1723,7 +1733,7 @@ router.post('/orders/test', (req, res) => {
   db.insertOrder(order).catch(err => console.error('[DB] insertOrder:', err));
 
   if (io) {
-    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
+    io.to('monitor').to('scaldavivande').to('dashboard').to('admin').emit('counters_changed', { counters, ...computeMonitorStats() });
     io.emit('order_created', order);
     io.to('admin').emit('stats_update', { type: 'new_order', order });
   }
@@ -1741,5 +1751,6 @@ module.exports = {
   setActiveProxyId: (id) => { activeProxyId = id; },
   flushPrintQueue,
   computeTotalCoperti,
+  computeMonitorStats,
   persistCounter,
 };

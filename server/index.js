@@ -8,7 +8,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, init: initApi, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti, persistCounter } = require('./routes/api');
+const { router: apiRouter, setIO, init: initApi, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti, computeMonitorStats, persistCounter } = require('./routes/api');
 const { loadLogos } = require('./services/printer');
 
 // Carica loghi PNG per ricevuta cassa (conversione async, fire-and-forget)
@@ -176,7 +176,7 @@ io.on('connection', (socket) => {
 
     // Invia i contatori attuali ai nuovi monitor/scaldavivande
     if (role === 'monitor' || role === 'scaldavivande') {
-      socket.emit('counters_changed', { counters, total_coperti: computeTotalCoperti() });
+      socket.emit('counters_changed', { counters, ...computeMonitorStats() });
     }
 
     // Invia la lista ordini aperti al tablet operatore
