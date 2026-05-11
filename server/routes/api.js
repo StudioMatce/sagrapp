@@ -565,9 +565,10 @@ router.post('/orders/:id/fulfill', (req, res) => {
 
   // Incrementa "evasi" — i pezzi escono dallo scaldavivande
   // Questo fa scendere "nello scaldavivande" (pronto - evasi) sul monitor
-  // Per articoli in SKIP_FULFILLMENT (polenta, patate): incrementa anche "pronto"
-  // così "da cucinare" (vendute - pronto) scende direttamente all'evasione
-  // perché non passano dallo scaldavivande
+  // Per patate (non sullo scaldavivande): auto-incrementa anche "pronto"
+  // così "da cucinare" scende all'evasione senza intervento manuale.
+  // La polenta invece è sullo scaldavivande → il cuoco gestisce "pronto" manualmente.
+  const AUTO_PRONTO = ['patate']; // articoli che non passano dallo scaldavivande
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
@@ -575,7 +576,7 @@ router.post('/orders/:id/fulfill', (req, res) => {
         if (counters[piece] !== undefined) {
           const delta = count * item.qty;
           counters[piece].evasi += delta;
-          if (SKIP_FULFILLMENT.includes(piece)) {
+          if (AUTO_PRONTO.includes(piece)) {
             counters[piece].pronto += delta;
           }
           db.saveCounter(piece, counters[piece]).catch(err => console.error('[DB] saveCounter:', err));
