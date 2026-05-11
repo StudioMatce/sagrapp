@@ -66,7 +66,7 @@
     }
 
     .header-stat-value.coperti { color: #22d3ee; }
-    .header-stat-value.ordini { color: rgba(255, 255, 255, 0.5); }
+    .header-stat-value.ordini { color: #e94560; }
     .header-stat-value.evasi { color: rgba(78, 204, 163, 0.6); }
 
     /* La griglia prende il resto dello schermo */
@@ -298,12 +298,12 @@
 
   <!-- Header statistiche -->
   <div class="coperti-bar">
+    <div class="header-stat">
+      <span class="header-stat-label">Coperti</span>
+      <span class="header-stat-value coperti" id="copertiValue">0</span>
+    </div>
     <span class="coperti-spacer"></span>
     <div class="header-stats">
-      <div class="header-stat">
-        <span class="header-stat-label">Coperti</span>
-        <span class="header-stat-value coperti" id="copertiValue">0</span>
-      </div>
       <div class="header-stat">
         <span class="header-stat-label">Ordini</span>
         <span class="header-stat-value ordini" id="ordiniValue">0</span>
