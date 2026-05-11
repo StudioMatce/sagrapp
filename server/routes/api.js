@@ -962,6 +962,30 @@ router.get('/admin/stats/live', requireAdmin, (req, res) => {
     revenueByPayment[key] = (revenueByPayment[key] || 0) + o.total;
   });
 
+  // Vendite per cassa
+  const salesByCassa = {};
+  const CATEGORY_SORT_LIVE = ['primo', 'secondo', 'speciale', 'contorno', 'condimento', 'bevanda'];
+  orders.forEach(o => {
+    const ck = o.cassa || 'principale';
+    if (!salesByCassa[ck]) salesByCassa[ck] = {};
+    (o.items || []).forEach(oi => {
+      if (!salesByCassa[ck][oi.id]) {
+        salesByCassa[ck][oi.id] = { id: oi.id, name: oi.name, category: oi.category || 'altro', qty: 0, revenue: 0 };
+      }
+      salesByCassa[ck][oi.id].qty += oi.qty;
+      salesByCassa[ck][oi.id].revenue += oi.qty * oi.price;
+    });
+  });
+  Object.keys(salesByCassa).forEach(ck => {
+    salesByCassa[ck] = Object.values(salesByCassa[ck])
+      .filter(s => s.qty > 0)
+      .sort((a, b) => {
+        const ca = CATEGORY_SORT_LIVE.indexOf(a.category); const cb = CATEGORY_SORT_LIVE.indexOf(b.category);
+        if ((ca >= 0 ? ca : 99) !== (cb >= 0 ? cb : 99)) return (ca >= 0 ? ca : 99) - (cb >= 0 ? cb : 99);
+        return (a.name || '').localeCompare(b.name || '', 'it');
+      });
+  });
+
   const lowStockItems = Object.values(inventory).filter(
     i => i.status === 'low' || i.status === 'exhausted'
   );
@@ -983,6 +1007,7 @@ router.get('/admin/stats/live', requireAdmin, (req, res) => {
     recentCount,
     recentRevenue,
     revenueByCassa,
+    salesByCassa,
     revenueByPayment,
     lowStockItems,
     lastOrders,
@@ -1049,11 +1074,33 @@ function computeRecap() {
 
   const revenueByCassa = {};
   const revenueByPayment = {};
+  // Vendite per cassa — stessa struttura di salesByItem ma raggruppata per cassa
+  const salesByCassa = {};
   orders.forEach(o => {
     const ck = o.cassa || 'principale';
     revenueByCassa[ck] = (revenueByCassa[ck] || 0) + o.total;
     const pk = o.payment || 'contanti';
     revenueByPayment[pk] = (revenueByPayment[pk] || 0) + o.total;
+    // Prodotti per cassa
+    if (!salesByCassa[ck]) salesByCassa[ck] = {};
+    (o.items || []).forEach(oi => {
+      if (!salesByCassa[ck][oi.id]) {
+        salesByCassa[ck][oi.id] = { id: oi.id, name: oi.name, category: oi.category || 'altro', qty: 0, revenue: 0 };
+      }
+      salesByCassa[ck][oi.id].qty += oi.qty;
+      salesByCassa[ck][oi.id].revenue += oi.qty * oi.price;
+    });
+  });
+  // Converti in array ordinati per categoria + nome
+  const CATEGORY_SORT = ['primo', 'secondo', 'speciale', 'contorno', 'condimento', 'bevanda'];
+  Object.keys(salesByCassa).forEach(ck => {
+    salesByCassa[ck] = Object.values(salesByCassa[ck])
+      .filter(s => s.qty > 0)
+      .sort((a, b) => {
+        const ca = CATEGORY_SORT.indexOf(a.category); const cb = CATEGORY_SORT.indexOf(b.category);
+        if ((ca >= 0 ? ca : 99) !== (cb >= 0 ? cb : 99)) return (ca >= 0 ? ca : 99) - (cb >= 0 ? cb : 99);
+        return (a.name || '').localeCompare(b.name || '', 'it');
+      });
   });
 
   const inventoryReport = Object.values(inventory).map(item => {
@@ -1108,6 +1155,7 @@ function computeRecap() {
     ordersByHour,
     avgCompletionTime: Math.round(avgTime / 1000),
     revenueByCassa,
+    salesByCassa,
     revenueByPayment,
     posCommission,
     posCommissionRate,

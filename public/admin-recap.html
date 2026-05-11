@@ -864,6 +864,12 @@
       </div>
     </section>
 
+    <!-- VENDITE PER CASSA -->
+    <section class="section" id="sectionSalesByCassa" style="display:none">
+      <div class="section-label">Prodotti venduti per cassa</div>
+      <div id="salesByCassaContainer"></div>
+    </section>
+
     <!-- 3+4. CLASSIFICA + DISTRIBUZIONE ORARIA (affiancate su desktop) -->
     <div class="grid-2">
       <section class="section">
@@ -1252,6 +1258,9 @@
       // --- Incassi per cassa ---
       renderSummaryTable('tableCassa', data.revenueByCassa);
 
+      // --- Vendite per cassa ---
+      renderSalesByCassa(data.salesByCassa);
+
       // --- Incassi per pagamento ---
       renderSummaryTable('tablePayment', data.revenueByPayment);
 
@@ -1298,6 +1307,45 @@
       tbody.innerHTML = entries.map(function (entry) {
         return '<tr><td>' + entry[0] + '</td><td>&euro; ' + formatCurrency(entry[1]) + '</td></tr>';
       }).join('');
+    }
+
+    // ===================================================
+    // RENDER: vendite per cassa
+    // ===================================================
+    var CASSA_LABELS = { principale: 'Cassa Generale', bar: 'Cassa Bar', casetta: 'Casetta' };
+
+    function renderSalesByCassa(salesByCassa) {
+      var section = document.getElementById('sectionSalesByCassa');
+      var container = document.getElementById('salesByCassaContainer');
+      if (!salesByCassa || Object.keys(salesByCassa).length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      var html = '<div class="grid-2" style="gap:16px">';
+      Object.entries(salesByCassa).forEach(function(entry) {
+        var cassa = entry[0];
+        var items = entry[1];
+        if (!items || items.length === 0) return;
+        var totalQty = items.reduce(function(s, i) { return s + i.qty; }, 0);
+        var totalRev = items.reduce(function(s, i) { return s + i.revenue; }, 0);
+        html += '<div class="card">';
+        html += '<div class="card-title">' + (CASSA_LABELS[cassa] || cassa) + ' <small style="opacity:0.5">(' + totalQty + ' pz — &euro; ' + formatCurrency(totalRev) + ')</small></div>';
+        html += '<table class="summary-table"><tbody>';
+        var currentCat = null;
+        items.forEach(function(item) {
+          var cat = item.category || 'altro';
+          if (cat !== currentCat) {
+            currentCat = cat;
+            var catLabel = CATEGORY_LABELS[cat] || cat;
+            html += '<tr><td colspan="3" style="padding:6px 0 2px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent); border:none;">' + catLabel + '</td></tr>';
+          }
+          html += '<tr><td>' + item.name + '</td><td style="text-align:right; white-space:nowrap;">' + item.qty + ' pz</td><td style="text-align:right; white-space:nowrap;">&euro; ' + formatCurrency(item.revenue) + '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
     }
 
     // ===================================================
