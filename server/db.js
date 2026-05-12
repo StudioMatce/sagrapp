@@ -36,24 +36,25 @@ async function createTables() {
     )`,
 
     `CREATE TABLE IF NOT EXISTS orders (
-      id             INTEGER PRIMARY KEY,
-      table_num      INTEGER NOT NULL,
-      items          TEXT NOT NULL,
-      subtotal       DOUBLE PRECISION NOT NULL DEFAULT 0,
-      total          DOUBLE PRECISION NOT NULL DEFAULT 0,
-      discount       DOUBLE PRECISION NOT NULL DEFAULT 0,
-      discount_type  TEXT,
-      discount_value DOUBLE PRECISION NOT NULL DEFAULT 0,
-      courtesy_type  TEXT,
-      customer_name  TEXT,
-      cassa          TEXT NOT NULL DEFAULT 'principale',
-      coperti        INTEGER NOT NULL DEFAULT 0,
-      asporto        INTEGER NOT NULL DEFAULT 0,
-      payment        TEXT NOT NULL DEFAULT 'contanti',
-      status         TEXT NOT NULL DEFAULT 'in_progress',
-      created_at     BIGINT NOT NULL,
-      completed_at   BIGINT,
-      cancelled_at   BIGINT
+      id                   INTEGER PRIMARY KEY,
+      table_num            INTEGER NOT NULL,
+      items                TEXT NOT NULL,
+      subtotal             DOUBLE PRECISION NOT NULL DEFAULT 0,
+      total                DOUBLE PRECISION NOT NULL DEFAULT 0,
+      discount             DOUBLE PRECISION NOT NULL DEFAULT 0,
+      discount_type        TEXT,
+      discount_value       DOUBLE PRECISION NOT NULL DEFAULT 0,
+      courtesy_type        TEXT,
+      customer_name        TEXT,
+      cassa                TEXT NOT NULL DEFAULT 'principale',
+      coperti              INTEGER NOT NULL DEFAULT 0,
+      asporto              INTEGER NOT NULL DEFAULT 0,
+      payment              TEXT NOT NULL DEFAULT 'contanti',
+      status               TEXT NOT NULL DEFAULT 'in_progress',
+      sumup_transaction_id TEXT,
+      created_at           BIGINT NOT NULL,
+      completed_at         BIGINT,
+      cancelled_at         BIGINT
     )`,
 
     `CREATE TABLE IF NOT EXISTS counters (
@@ -137,6 +138,7 @@ async function createTables() {
     `ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS cost_price DOUBLE PRECISION`,
     `ALTER TABLE archived_sessions ADD COLUMN IF NOT EXISTS turno TEXT`,
     `ALTER TABLE warehouse ADD COLUMN IF NOT EXISTS supplier TEXT`,
+    `ALTER TABLE orders ADD COLUMN IF NOT EXISTS sumup_transaction_id TEXT`,
   ];
   for (const m of migrations) {
     await pool.query(m).catch(() => {}); // ignora se già esiste
@@ -182,6 +184,7 @@ function rowToOrder(row) {
     asporto: !!row.asporto,
     payment: row.payment,
     status: row.status,
+    sumup_transaction_id: row.sumup_transaction_id || null,
     created_at: parseInt(row.created_at),
     completed_at: row.completed_at ? parseInt(row.completed_at) : null,
     cancelled_at: row.cancelled_at ? parseInt(row.cancelled_at) : null,

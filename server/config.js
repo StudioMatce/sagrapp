@@ -5,6 +5,14 @@ module.exports = {
   // Commissione POS (0.2% = 0.002)
   POS_COMMISSION_RATE: 0.002,
 
+  // Auto-chiusura turni (ora del giorno in cui chiude automaticamente se ancora aperto)
+  // Pranzo: ore 05:00–15:59 → auto-chiusura alle AUTO_CLOSE_PRANZO_HOUR stesso giorno
+  // Cena:   ore 16:00–04:59 → auto-chiusura alle AUTO_CLOSE_CENA_HOUR giorno dopo
+  AUTO_CLOSE_PRANZO_HOUR: 16,
+  AUTO_CLOSE_CENA_HOUR: 7,
+  // Intervallo del check (in millisecondi) — ogni 5 minuti
+  AUTO_CLOSE_CHECK_INTERVAL_MS: 5 * 60 * 1000,
+
   // PIN di accesso per ruolo
   // Ogni PIN corrisponde a un ruolo specifico
   PINS: {

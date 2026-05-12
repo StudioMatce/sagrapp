@@ -8,7 +8,7 @@ const path = require('path');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const config = require('./config');
-const { router: apiRouter, setIO, init: initApi, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti, computeMonitorStats, persistCounter } = require('./routes/api');
+const { router: apiRouter, setIO, init: initApi, counters, inventory, orders, setActiveProxyId, flushPrintQueue, computeTotalCoperti, computeMonitorStats, persistCounter, startAutoCloseScheduler } = require('./routes/api');
 const { loadLogos } = require('./services/printer');
 
 // Carica loghi PNG per ricevuta cassa (conversione async, fire-and-forget)
@@ -43,7 +43,8 @@ setIO(io);
 
 // --- Middleware ---
 app.use(cors({ origin: function(origin, cb) { cb(null, isAllowedOrigin(origin)); } }));
-app.use(express.json());
+// Limite alzato a 5mb per supportare upload CSV SumUp (può contenere centinaia di transazioni)
+app.use(express.json({ limit: '5mb' }));
 
 // Rate limiting semplice in-memory — max 60 richieste/minuto per IP su endpoint ordini
 const rateLimitMap = new Map();
@@ -319,7 +320,11 @@ server.listen(config.PORT, '0.0.0.0', () => {
 });
 
 initApi()
-  .then(() => console.log('[Server] Database pronto — app operativa'))
+  .then(() => {
+    console.log('[Server] Database pronto — app operativa');
+    // Avvia lo scheduler di auto-chiusura turno (check periodico ogni 5 min)
+    startAutoCloseScheduler();
+  })
   .catch(err => {
     console.error('[Init] Errore inizializzazione database:', err.message);
     console.error('Assicurati che DATABASE_URL sia impostata correttamente.');

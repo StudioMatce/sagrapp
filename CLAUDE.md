@@ -212,6 +212,16 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Chiudere lo stesso turno due volte nella stessa giornata **mergia** i dati come prima
 - DB: colonna `turno` in `archived_sessions` (nullable, retrocompatibile con serate vecchie)
 
+### Auto-chiusura turno
+Lo scheduler `startAutoCloseScheduler` (avviato dopo `initApi()`) controlla periodicamente se il turno aperto ha superato l'orario di chiusura previsto. Utile quando la cassa generale chiude prima di bar/casetta e non viene fatta la chiusura manuale.
+- **Pranzo** → chiusura automatica alle `AUTO_CLOSE_PRANZO_HOUR` (default 16:00) dello stesso giorno
+- **Cena**   → chiusura automatica alle `AUTO_CLOSE_CENA_HOUR` (default 07:00) del giorno dopo
+- Il turno è determinato dall'ora del **primo ordine** (più affidabile dell'orario attuale)
+- Check periodico ogni `AUTO_CLOSE_CHECK_INTERVAL_MS` ms (default 5 minuti) + check immediato all'avvio (gestisce restart Railway dopo l'orario di chiusura)
+- Ordini ancora aperti alle 7:00 → chiusi comunque e marcati come "incompleti" nel recap
+- Evento Socket.IO `service_closed` con `{ autoClosed: true, turno }` broadcastato a tutti i client per notificare le casse aperte
+- Tutta la logica riusa `executeReset(turno, { autoClosed: true })` — stesso identico flusso di archiviazione/snapshot della chiusura manuale
+
 ### Archivio serate
 - **Selettore serate** nell'header del recap per visualizzare lo storico
 - Alla chiusura turno, lo snapshot viene salvato in `archivedSessions` con il turno (pranzo/cena)
@@ -225,6 +235,21 @@ Il report post-serata (`GET /api/admin/stats/recap`) include:
 - Formato unificato in tutte le pagine (recap, serate, chiusura): separatore `;`, BOM UTF-8, `sep=;` per Excel
 - Classifica vendite raggruppata per categoria con header sezione, ordine alfabetico, piatti a venduto 0 inclusi
 - Sezioni: RIEPILOGO, INCASSO PER CASSA, METODO PAGAMENTO (lordo/commissioni/netto), OMAGGI DETTAGLIO, CLASSIFICA VENDITE
+
+### Riconciliazione POS (import CSV SumUp)
+Permette di correggere a posteriori gli ordini erroneamente segnati come contanti, importando il CSV transazioni di SumUp. Pensato per essere fatto **con calma il lunedì dopo il weekend** (un solo CSV può coprire tutto il weekend).
+- **UI**: pulsante "Riconcilia POS" nell'header di `/admin/serate` → modal con upload CSV (drag&drop o paste) + preview match + apply
+- **Parser CSV**: auto-detect del separatore (`,` `;` `\t`), auto-detect colonne (supporta export EN e IT), gestisce importi formato europeo (1.234,56) e US (1,234.56), filtra rimborsi e transazioni fallite
+- **Matching**: per ogni transazione SumUp, cerca ordini con stesso importo (tolleranza 1 cent) entro ±5 min dall'orario SumUp
+  - **Certain**: 1 solo candidato → spunta auto
+  - **Ambiguous**: più candidati → utente sceglie dal dropdown (default: ordine più vicino temporalmente)
+  - **None**: nessun candidato → orfano (ignorato)
+- **Apply**: aggiorna lo snapshot `_orders` dentro `archived_sessions.recap`, ricalcola `revenueByPayment` e `posCommission`, salva nel DB. Marca la sessione con `_reconciledAt`
+- **Prerequisito**: lo snapshot ordini (`recap._orders`) deve esistere nell'archivio. Sessioni chiuse PRIMA di questa feature non hanno lo snapshot — l'apply ritorna errore con messaggio chiaro
+- **API**:
+  - `POST /api/admin/reconcile-pos/preview` `{ csv, windowMinutes? }` → ritorna `{ transactions, sessions: [{ proposals: [...] }], orphans }`
+  - `POST /api/admin/reconcile-pos/apply` `{ confirmations: [{ sessionId, orderId, transactionId }] }` → ritorna `{ updatedOrders, updatedSessions, errors }`
+- **DB**: colonna `sumup_transaction_id` su `orders` (per ordini live) + campo `sumup_transaction_id` dentro ogni elemento di `recap._orders` (per snapshot archiviati)
 
 ## Layout casse
 Tutte e tre le casse usano il **layout a due pannelli**:

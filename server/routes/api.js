@@ -1371,6 +1371,382 @@ router.delete('/admin/sessions/:id', requireAdmin, (req, res) => {
 });
 
 // =============================================
+// RICONCILIAZIONE POS (import CSV SumUp)
+// =============================================
+
+// Parser CSV semplice (gestisce virgolette, separatori auto-detect , ; \t)
+function parseCSVText(text) {
+  if (!text || typeof text !== 'string') return [];
+  const firstLine = (text.split(/\r?\n/)[0] || '');
+  // Auto-detect separatore basandosi sulla frequenza nella prima riga
+  const seps = [',', ';', '\t'];
+  let sep = ',', maxCount = 0;
+  for (const s of seps) {
+    const re = new RegExp(s === '\t' ? '\\t' : '\\' + s, 'g');
+    const c = (firstLine.match(re) || []).length;
+    if (c > maxCount) { maxCount = c; sep = s; }
+  }
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  const out = [];
+  for (const line of lines) {
+    const fields = [];
+    let cur = '', inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if (ch === sep && !inQuote) {
+        fields.push(cur);
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    fields.push(cur);
+    out.push(fields.map(f => f.trim()));
+  }
+  return out;
+}
+
+// Cerca l'indice di una colonna nell'header in base a parole chiave (case-insensitive)
+function findColIndex(headers, keywords) {
+  for (let i = 0; i < headers.length; i++) {
+    const h = (headers[i] || '').toLowerCase();
+    for (const kw of keywords) {
+      if (h.includes(kw)) return i;
+    }
+  }
+  return -1;
+}
+
+// Converte "5,50" o "5.50" o "1.234,56 €" in numero float
+function parseAmount(str) {
+  if (str == null) return NaN;
+  let s = String(str).replace(/[^\d,.\-]/g, '');
+  if (!s) return NaN;
+  // Determina il decimale: l'ultimo separatore tra "," e "." è il decimale
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  let dec;
+  if (lastComma === -1 && lastDot === -1) return parseFloat(s);
+  if (lastComma > lastDot) {
+    // virgola decimale (formato europeo)
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    // punto decimale (formato US) — rimuovi separatori migliaia
+    s = s.replace(/,/g, '');
+  }
+  const n = parseFloat(s);
+  return isFinite(n) ? n : NaN;
+}
+
+// Parsea data+ora dal CSV SumUp. Supporta diversi formati.
+function parseSumUpDateTime(dateStr, timeStr) {
+  const ds = (dateStr || '').trim();
+  const ts = (timeStr || '').trim();
+  let m, year, month, day;
+  // ISO: 2026-05-09 o 2026-05-09T10:30:00
+  if ((m = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) {
+    year = +m[1]; month = +m[2]; day = +m[3];
+  } else if ((m = ds.match(/^(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})/))) {
+    // 09/05/2026 o 09.05.2026 (formato europeo)
+    day = +m[1]; month = +m[2]; year = +m[3];
+  } else {
+    return null;
+  }
+  let hour = 0, minute = 0, second = 0;
+  // Time può stare nel dateStr (datetime ISO) o in timeStr separato
+  const timeSrc = ts || ds;
+  if ((m = timeSrc.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/))) {
+    hour = +m[1]; minute = +m[2]; second = m[3] ? +m[3] : 0;
+  }
+  return new Date(year, month - 1, day, hour, minute, second).getTime();
+}
+
+// Parsea il CSV SumUp e ritorna array di transazioni normalizzate.
+// Auto-detect colonne (supporta export EN e IT).
+function parseSumUpCsv(csvText) {
+  const rows = parseCSVText(csvText);
+  if (rows.length < 2) return { transactions: [], headers: [], warning: 'CSV vuoto o senza header' };
+
+  const headers = rows[0];
+  const dateIdx = findColIndex(headers, ['date and time', 'datetime', 'date', 'data']);
+  const timeIdx = findColIndex(headers, ['time', 'ora']);
+  const amountIdx = findColIndex(headers, ['importo lordo', 'gross amount', 'amount', 'importo', 'totale']);
+  const txIdIdx = findColIndex(headers, ['transaction id', 'id transazione', 'codice transazione', 'transaction code', 'transazione']);
+  const statusIdx = findColIndex(headers, ['status', 'stato', 'esito']);
+  const typeIdx = findColIndex(headers, ['type', 'tipo']);
+
+  if (dateIdx === -1 || amountIdx === -1) {
+    return { transactions: [], headers, warning: 'Colonne richieste non trovate (data e importo)' };
+  }
+
+  const transactions = [];
+  let skippedRefund = 0, skippedFailed = 0, skippedInvalid = 0;
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.length < 2) continue;
+
+    // Filtro: solo transazioni riuscite (se la colonna status esiste)
+    if (statusIdx >= 0) {
+      const st = (row[statusIdx] || '').toLowerCase();
+      if (!st.includes('success') && !st.includes('successo') && !st.includes('paid') && !st.includes('approvato') && !st.includes('completed')) {
+        skippedFailed++;
+        continue;
+      }
+    }
+    // Filtro: skippa rimborsi (tipo = refund/rimborso)
+    if (typeIdx >= 0) {
+      const tp = (row[typeIdx] || '').toLowerCase();
+      if (tp.includes('refund') || tp.includes('rimborso')) {
+        skippedRefund++;
+        continue;
+      }
+    }
+
+    const ts = parseSumUpDateTime(row[dateIdx], timeIdx >= 0 ? row[timeIdx] : '');
+    const amount = parseAmount(row[amountIdx]);
+    if (!ts || !isFinite(amount) || amount <= 0) {
+      skippedInvalid++;
+      continue;
+    }
+
+    transactions.push({
+      transactionId: txIdIdx >= 0 ? (row[txIdIdx] || '').trim() : null,
+      timestamp: ts,
+      amount: Math.round(amount * 100) / 100,
+    });
+  }
+
+  return {
+    transactions,
+    headers,
+    stats: { skippedRefund, skippedFailed, skippedInvalid, total: transactions.length },
+  };
+}
+
+// Matcha transazioni SumUp con ordini di una sessione archiviata.
+// Importo identico (tolleranza 1 cent), orario entro ±windowMinutes.
+function matchTransactionsToOrders(transactions, archivedOrders, windowMinutes) {
+  const windowMs = (windowMinutes || 5) * 60 * 1000;
+  const used = new Set(); // orderId già consumati da match certi (evita doppi match)
+
+  // Prima passata: match certi (un solo candidato)
+  const proposals = transactions.map(tx => ({ sumup: tx, candidates: [], confidence: 'none', selectedOrderId: null }));
+
+  for (const p of proposals) {
+    const tx = p.sumup;
+    const candidates = archivedOrders.filter(o => {
+      if (used.has(o.id)) return false;
+      if (o.status === 'cancelled') return false;
+      if (Math.abs((o.total || 0) - tx.amount) > 0.01) return false;
+      if (Math.abs((o.created_at || 0) - tx.timestamp) > windowMs) return false;
+      return true;
+    });
+    p.candidates = candidates.map(c => ({
+      id: c.id, total: c.total, created_at: c.created_at,
+      cassa: c.cassa, payment: c.payment, customer_name: c.customer_name, table: c.table,
+      asporto: c.asporto, sumup_transaction_id: c.sumup_transaction_id || null,
+    }));
+
+    if (candidates.length === 1) {
+      p.confidence = 'certain';
+      p.selectedOrderId = candidates[0].id;
+      used.add(candidates[0].id);
+    } else if (candidates.length > 1) {
+      p.confidence = 'ambiguous';
+      // Default: ordine più vicino temporalmente
+      candidates.sort((a, b) => Math.abs(a.created_at - tx.timestamp) - Math.abs(b.created_at - tx.timestamp));
+      p.selectedOrderId = candidates[0].id;
+    }
+  }
+
+  return proposals;
+}
+
+// Ricalcola i totali per metodo di pagamento e la commissione POS basandosi sui _orders aggiornati
+function recomputeRecapPaymentTotals(recap) {
+  if (!recap._orders) return;
+  const revenueByPayment = {};
+  for (const o of recap._orders) {
+    if (o.status === 'cancelled') continue;
+    const pk = o.payment || 'contanti';
+    revenueByPayment[pk] = (revenueByPayment[pk] || 0) + (o.total || 0);
+  }
+  recap.revenueByPayment = revenueByPayment;
+  const posRevenue = revenueByPayment['pos'] || 0;
+  const rate = recap.posCommissionRate || config.POS_COMMISSION_RATE || 0.002;
+  recap.posCommission = Math.round(posRevenue * rate * 100) / 100;
+}
+
+// POST /api/admin/reconcile-pos/preview — riceve CSV, ritorna proposte di match
+router.post('/admin/reconcile-pos/preview', requireAdmin, (req, res) => {
+  const { csv, windowMinutes } = req.body || {};
+  if (!csv || typeof csv !== 'string') {
+    return res.status(400).json({ error: 'CSV mancante o non valido' });
+  }
+
+  const { transactions, stats, warning } = parseSumUpCsv(csv);
+  if (warning && transactions.length === 0) {
+    return res.status(400).json({ error: warning, stats });
+  }
+  if (transactions.length === 0) {
+    return res.json({ transactions: 0, sessions: [], stats });
+  }
+
+  // Trova il range di date coperto dalle transazioni
+  const minTs = Math.min(...transactions.map(t => t.timestamp));
+  const maxTs = Math.max(...transactions.map(t => t.timestamp));
+  // Sessioni archiviate con _orders contenenti almeno un ordine nel range
+  const candidateSessions = archivedSessions.filter(s => {
+    const ordersList = s.recap && s.recap._orders ? s.recap._orders : [];
+    if (ordersList.length === 0) return false;
+    const minO = Math.min(...ordersList.map(o => o.created_at || 0));
+    const maxO = Math.max(...ordersList.map(o => o.created_at || 0));
+    // Considera la sessione se i range si sovrappongono (con margine 6h per ogni lato)
+    const margin = 6 * 60 * 60 * 1000;
+    return maxO + margin >= minTs && minO - margin <= maxTs;
+  });
+
+  // Per ogni transazione, prova a matchare contro tutti gli ordini di tutte le candidate sessions
+  // ma raggruppa il risultato per session (lo snapshot da modificare è per-sessione).
+  const sessionsOutput = candidateSessions.map(s => ({
+    sessionId: s.id,
+    date: s.date,
+    turno: s.turno || null,
+    label: s.recap._label || null,
+    currentPosCount: (s.recap._orders || []).filter(o => o.payment === 'pos' && o.status !== 'cancelled').length,
+    currentPosTotal: (s.recap._orders || []).filter(o => o.payment === 'pos' && o.status !== 'cancelled').reduce((sum, o) => sum + (o.total || 0), 0),
+    proposals: [],
+  }));
+
+  const window = parseInt(windowMinutes, 10) || 5;
+
+  for (const tx of transactions) {
+    // Trova in quali sessioni potrebbero esserci match temporali
+    const matchingSessions = candidateSessions.filter(s => {
+      const ordersList = s.recap._orders || [];
+      return ordersList.some(o => Math.abs((o.created_at || 0) - tx.timestamp) <= window * 60 * 1000);
+    });
+
+    if (matchingSessions.length === 0) {
+      // Aggiungi alla prima sessione "fittizia" come orfana? Meglio: una lista separata
+      continue;
+    }
+
+    // Prendi la sessione più vicina temporalmente
+    let bestSession = matchingSessions[0];
+    let bestDistance = Infinity;
+    for (const s of matchingSessions) {
+      const closest = (s.recap._orders || []).reduce((min, o) => {
+        const d = Math.abs((o.created_at || 0) - tx.timestamp);
+        return d < min ? d : min;
+      }, Infinity);
+      if (closest < bestDistance) {
+        bestDistance = closest;
+        bestSession = s;
+      }
+    }
+
+    const out = sessionsOutput.find(so => so.sessionId === bestSession.id);
+    if (out) {
+      out.proposals.push({
+        sumup: { ...tx },
+        candidates: [],
+        confidence: 'none',
+        selectedOrderId: null,
+      });
+    }
+  }
+
+  // Esegui il matching dentro ogni sessione (assicura niente doppi match)
+  for (const out of sessionsOutput) {
+    const session = candidateSessions.find(s => s.id === out.sessionId);
+    const ordersList = session.recap._orders || [];
+    const txList = out.proposals.map(p => p.sumup);
+    const matched = matchTransactionsToOrders(txList, ordersList, window);
+    out.proposals = matched;
+  }
+
+  // Transazioni orfane (nessuna sessione candidata)
+  const matchedTxIds = new Set();
+  for (const out of sessionsOutput) {
+    for (const p of out.proposals) {
+      matchedTxIds.add(p.sumup.transactionId + '|' + p.sumup.timestamp + '|' + p.sumup.amount);
+    }
+  }
+  const orphans = transactions.filter(tx => {
+    const key = tx.transactionId + '|' + tx.timestamp + '|' + tx.amount;
+    return !matchedTxIds.has(key);
+  });
+
+  res.json({
+    transactions: transactions.length,
+    stats,
+    sessions: sessionsOutput.filter(s => s.proposals.length > 0),
+    orphans,
+    windowMinutes: window,
+  });
+});
+
+// POST /api/admin/reconcile-pos/apply — applica le conferme aggiornando gli snapshot archiviati
+// Body: { confirmations: [{ sessionId, orderId, transactionId }] }
+router.post('/admin/reconcile-pos/apply', requireAdmin, (req, res) => {
+  const { confirmations } = req.body || {};
+  if (!Array.isArray(confirmations) || confirmations.length === 0) {
+    return res.status(400).json({ error: 'Nessuna conferma fornita' });
+  }
+
+  // Raggruppa per sessionId per minimizzare scritture DB
+  const bySession = {};
+  for (const c of confirmations) {
+    if (!c || !c.sessionId || !c.orderId) continue;
+    if (!bySession[c.sessionId]) bySession[c.sessionId] = [];
+    bySession[c.sessionId].push(c);
+  }
+
+  let updatedOrders = 0, updatedSessions = 0;
+  const errors = [];
+
+  for (const sessionId of Object.keys(bySession)) {
+    const session = archivedSessions.find(s => s.id === sessionId);
+    if (!session) {
+      errors.push({ sessionId, error: 'Sessione non trovata' });
+      continue;
+    }
+    const ordersList = session.recap._orders || [];
+    if (ordersList.length === 0) {
+      errors.push({ sessionId, error: 'Snapshot ordini assente per questa sessione (chiusa prima della feature SumUp)' });
+      continue;
+    }
+
+    let sessionUpdated = false;
+    for (const c of bySession[sessionId]) {
+      const ord = ordersList.find(o => o.id === c.orderId);
+      if (!ord) {
+        errors.push({ sessionId, orderId: c.orderId, error: 'Ordine non trovato nello snapshot' });
+        continue;
+      }
+      ord.payment = 'pos';
+      ord.sumup_transaction_id = c.transactionId || null;
+      updatedOrders++;
+      sessionUpdated = true;
+    }
+
+    if (sessionUpdated) {
+      recomputeRecapPaymentTotals(session.recap);
+      session.recap._reconciledAt = Date.now();
+      db.updateArchivedSession(session.id, session.closed_at, session.recap)
+        .catch(err => console.error('[DB] updateArchivedSession reconcile:', err));
+      updatedSessions++;
+    }
+  }
+
+  res.json({ success: true, updatedOrders, updatedSessions, errors });
+});
+
+// =============================================
 // INVENTARIO / MAGAZZINO
 // =============================================
 
@@ -1645,29 +2021,47 @@ router.delete('/warehouse/:id', requireAdmin, (req, res) => {
 // RESET COMPLETO (per test — azzera ordini, contatori e scorte)
 // =============================================
 
-router.post('/admin/reset', requireAdmin, (req, res) => {
-  // Turno: pranzo o cena (inviato dal client). Default: auto in base all'ora
-  const turno = (req.body && (req.body.turno === 'pranzo' || req.body.turno === 'cena'))
-    ? req.body.turno
-    : (new Date().getHours() >= 5 && new Date().getHours() < 16 ? 'pranzo' : 'cena');
+// Esegue la chiusura turno (estratta come funzione riusabile per uso anche dall'auto-chiusura).
+// Ritorna { turno, sessionDate, totalOrders, totalRevenue } o null se non c'erano ordini.
+function executeReset(forcedTurno, opts = {}) {
+  // Turno: pranzo o cena. Se non passato, auto-detect dal primo ordine (più accurato di "ora attuale").
+  let turno = (forcedTurno === 'pranzo' || forcedTurno === 'cena') ? forcedTurno : null;
+  if (!turno) {
+    const refDate = orders.length > 0 ? new Date(orders[0].created_at) : new Date();
+    const h = refDate.getHours();
+    turno = (h >= 5 && h < 16) ? 'pranzo' : 'cena';
+  }
+
+  let archivedInfo = null;
 
   // Salva snapshot della serata corrente nell'archivio (solo se ci sono ordini)
   if (orders.length > 0) {
     const recap = computeRecap();
     recap._turno = turno;
+    if (opts.autoClosed) recap._autoClosed = true;
+    // Snapshot ordini per riconciliazione POS post-evento (CSV SumUp)
+    recap._orders = orders.map(o => ({
+      id: o.id, table: o.table, total: o.total, subtotal: o.subtotal,
+      cassa: o.cassa, payment: o.payment, status: o.status,
+      sumup_transaction_id: o.sumup_transaction_id || null,
+      created_at: o.created_at, completed_at: o.completed_at, cancelled_at: o.cancelled_at,
+      customer_name: o.customer_name, asporto: o.asporto, coperti: o.coperti,
+      courtesy_type: o.courtesy_type, discount: o.discount,
+    }));
+
     const now = new Date();
-    // Usa la data del primo ordine come data della serata (piu' accurato)
-    const sessionDate = orders.length > 0
-      ? new Date(orders[0].created_at).toISOString().slice(0, 10)
-      : now.toISOString().slice(0, 10);
+    const sessionDate = new Date(orders[0].created_at).toISOString().slice(0, 10);
 
     // Se esiste gia' un archivio per la stessa data E stesso turno, unisci i dati
     const existing = archivedSessions.find(s => s.date === sessionDate && s.turno === turno);
     if (existing) {
       mergeRecap(existing.recap, recap);
+      // Mergia anche lo snapshot ordini (se esiste già)
+      existing.recap._orders = (existing.recap._orders || []).concat(recap._orders || []);
       existing.closed_at = now.getTime();
       db.updateArchivedSession(existing.id, existing.closed_at, existing.recap).catch(err => console.error('[DB] updateArchivedSession:', err));
       console.log(`[Admin] ${turno} ${sessionDate} aggiornata (${existing.recap.totalOrders} ordini totali, €${existing.recap.totalRevenue.toFixed(2)})`);
+      archivedInfo = { turno, sessionDate, totalOrders: existing.recap.totalOrders, totalRevenue: existing.recap.totalRevenue };
     } else {
       const session = {
         id: 'session_' + now.getTime(),
@@ -1679,6 +2073,7 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
       archivedSessions.push(session);
       db.insertArchivedSession(session).catch(err => console.error('[DB] insertArchivedSession:', err));
       console.log(`[Admin] ${turno} ${sessionDate} archiviata (${recap.totalOrders} ordini, €${recap.totalRevenue.toFixed(2)})`);
+      archivedInfo = { turno, sessionDate, totalOrders: recap.totalOrders, totalRevenue: recap.totalRevenue };
     }
   }
 
@@ -1709,11 +2104,70 @@ router.post('/admin/reset', requireAdmin, (req, res) => {
   if (io) {
     io.emit('counters_changed', { counters, ...computeMonitorStats() });
     io.emit('inventory_reset', Object.values(inventory));
+    if (opts.autoClosed && archivedInfo) {
+      // Notifica le casse aperte che il turno è stato chiuso automaticamente
+      io.emit('service_closed', { timestamp: Date.now(), autoClosed: true, turno: archivedInfo.turno });
+    }
   }
 
-  console.log('[Admin] Reset completo eseguito');
+  console.log(`[Admin] Reset completo eseguito${opts.autoClosed ? ' (AUTO)' : ''}`);
+  return archivedInfo;
+}
+
+router.post('/admin/reset', requireAdmin, (req, res) => {
+  const forcedTurno = req.body && req.body.turno;
+  executeReset(forcedTurno);
   res.json({ success: true });
 });
+
+// Verifica se il turno aperto ha superato l'orario di auto-chiusura.
+// Ritorna il nome del turno da chiudere ('pranzo' o 'cena') oppure null.
+function checkAutoCloseDue() {
+  if (orders.length === 0) return null;
+
+  const firstOrderDate = new Date(orders[0].created_at);
+  const firstHour = firstOrderDate.getHours();
+  const isPranzo = firstHour >= 5 && firstHour < 16;
+  const turno = isPranzo ? 'pranzo' : 'cena';
+
+  // Calcola l'orario di chiusura previsto in base al primo ordine
+  const closeTime = new Date(firstOrderDate);
+  if (isPranzo) {
+    closeTime.setHours(config.AUTO_CLOSE_PRANZO_HOUR, 0, 0, 0);
+  } else {
+    // Cena: chiusura al giorno DOPO se il primo ordine è prima di mezzanotte
+    // Se invece il primo ordine è già dopo mezzanotte (00:00-04:59), chiude stesso giorno
+    if (firstHour >= 16) {
+      closeTime.setDate(closeTime.getDate() + 1);
+    }
+    closeTime.setHours(config.AUTO_CLOSE_CENA_HOUR, 0, 0, 0);
+  }
+
+  return Date.now() >= closeTime.getTime() ? turno : null;
+}
+
+// Avvia il loop di controllo auto-chiusura (chiamato da server/index.js dopo init())
+function startAutoCloseScheduler() {
+  const interval = config.AUTO_CLOSE_CHECK_INTERVAL_MS || 5 * 60 * 1000;
+
+  function runCheck() {
+    try {
+      const turno = checkAutoCloseDue();
+      if (turno) {
+        console.log(`[Auto-chiusura] Turno ${turno} oltre l'orario di chiusura — eseguo chiusura automatica`);
+        executeReset(turno, { autoClosed: true });
+      }
+    } catch (err) {
+      console.error('[Auto-chiusura] Errore:', err.message);
+    }
+  }
+
+  // Check immediato all'avvio (gestisce restart server dopo orario auto-close)
+  runCheck();
+  // Check periodico
+  setInterval(runCheck, interval);
+  console.log(`[Auto-chiusura] Scheduler avviato — check ogni ${Math.round(interval / 1000)}s (pranzo→${config.AUTO_CLOSE_PRANZO_HOUR}:00, cena→${config.AUTO_CLOSE_CENA_HOUR}:00 giorno dopo)`);
+}
 
 // =============================================
 // ORDINI DI TEST (per generare dati nelle dashboard admin)
@@ -1802,4 +2256,5 @@ module.exports = {
   computeTotalCoperti,
   computeMonitorStats,
   persistCounter,
+  startAutoCloseScheduler,
 };
