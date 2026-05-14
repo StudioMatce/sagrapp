@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SagrApp — Monitor Cucina</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #060a12;
+      color: #f0f4f8;
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header coperti — allineato a destra, stessa griglia delle righe sotto */
+    .coperti-bar {
+      width: 100%;
+      padding: 1vh 2vw;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .coperti-spacer { flex: 1; }
+
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 2vw;
+    }
+
+    .header-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.8vw;
+    }
+
+    .header-stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(10px, 1.3vw, 16px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(240, 244, 248, 0.3);
+    }
+
+    .header-stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(22px, 3vw, 40px);
+      font-weight: 800;
+      text-shadow: 0 0 15px rgba(34, 211, 238, 0.15);
+    }
+
+    .header-stat-value.coperti { color: #22d3ee; }
+    .header-stat-value.ordini { color: #e94560; }
+    .header-stat-value.evasi { color: rgba(78, 204, 163, 0.6); }
+
+    /* Badge identificativo per distinguerlo dal monitor griglia */
+    .monitor-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(10px, 1.3vw, 16px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffd93d;
+      padding: 0.4vh 1vw;
+      border: 1px solid rgba(255, 217, 61, 0.3);
+      border-radius: 4px;
+      margin-right: 2vw;
+    }
+
+    /* La griglia prende il resto dello schermo */
+    .board {
+      width: 100vw;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2vh 4vw;
+      gap: 0;
+    }
+
+    /* Riga header con nomi colonne */
+    .header-row {
+      display: flex;
+      align-items: flex-end;
+      padding: 0 2vw 1vh;
+      flex-shrink: 0;
+    }
+
+    .col-spacer {
+      flex: 1;
+    }
+
+    .col-label {
+      flex-shrink: 0;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(240, 244, 248, 0.35);
+    }
+
+    .col-label.col-cook {
+      width: clamp(160px, 24vw, 380px);
+      font-size: clamp(12px, 1.8vw, 22px);
+    }
+
+    .col-label.col-sold {
+      width: clamp(60px, 8vw, 120px);
+      font-size: clamp(9px, 1vw, 14px);
+      color: rgba(240, 244, 248, 0.2);
+    }
+
+    .col-label.col-pending {
+      width: clamp(60px, 8vw, 120px);
+      font-size: clamp(9px, 1vw, 14px);
+      color: rgba(240, 244, 248, 0.2);
+    }
+
+    /* Ogni riga è un piatto */
+    .row {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-height: 30vh;
+      padding: 0 2vw;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 200ms ease;
+    }
+
+    .row:last-child { border-bottom: none; }
+
+    .row.flash {
+      background: rgba(78, 204, 163, 0.08);
+    }
+
+    /* Nome piatto — grande, bold, a sinistra */
+    .dish-name {
+      flex: 1;
+      font-weight: 700;
+      font-size: clamp(22px, 3vw, 40px);
+      letter-spacing: -0.01em;
+      color: rgba(240, 244, 248, 0.7);
+      text-transform: uppercase;
+    }
+
+    /* Numero "Da cucinare" — grande, protagonista, leggibile a 3+ metri */
+    .dish-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      line-height: 1;
+      color: #ffffff;
+      flex-shrink: 0;
+      text-align: center;
+      transition: color 200ms ease, text-shadow 200ms ease;
+    }
+
+    .dish-count.count-cook {
+      font-size: clamp(80px, 10vw, 140px);
+      width: clamp(160px, 24vw, 380px);
+      text-shadow: 0 0 40px rgba(78, 204, 163, 0.12);
+    }
+
+    /* Numero "Venduto" — piccolo, informativo */
+    .dish-count.count-sold {
+      font-size: clamp(24px, 3vw, 40px);
+      width: clamp(60px, 8vw, 120px);
+      color: rgba(255, 255, 255, 0.25);
+      text-shadow: none;
+    }
+
+    /* Numero "Da evadere" — piccolo, rosso */
+    .dish-count.count-pending {
+      font-size: clamp(24px, 3vw, 40px);
+      width: clamp(60px, 8vw, 120px);
+      color: #e94560;
+      text-shadow: none;
+    }
+
+    .dish-count.changed {
+      text-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Colori per "da cucinare": verde=0, giallo=1-10, rosso=>10 */
+    .dish-count.cook-green { color: #4ecca3; }
+    .dish-count.cook-yellow { color: #ffd93d; }
+    .dish-count.cook-red { color: #e94560; }
+
+    /* Indicatore connessione — angolo in basso a destra, minimo */
+    .conn-dot {
+      position: fixed;
+      bottom: 1.5vh;
+      right: 2vw;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #6c7a89;
+      transition: background 300ms ease, box-shadow 300ms ease;
+      z-index: 100;
+    }
+
+    .conn-dot.online {
+      background: #4ecca3;
+      box-shadow: 0 0 8px #4ecca3;
+      animation: dot-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Overlay connessione persa — a tutto schermo, impossibile da ignorare */
+    .lost-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(233, 69, 96, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+
+    .lost-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lost-text {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: clamp(36px, 7vw, 80px);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .lost-sub {
+      font-size: clamp(14px, 2vw, 24px);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      margin-top: 1vh;
+      opacity: 0.8;
+    }
+
+    /* Fullscreen hint (appare solo se ?mode=fullscreen) */
+    .fs-hint {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 10, 18, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      cursor: pointer;
+    }
+
+    .fs-hint-text {
+      font-size: clamp(20px, 3vw, 36px);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .fs-hint.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay fullscreen (se ?mode=fullscreen) -->
+  <div class="fs-hint hidden" id="fsHint">
+    <div class="fs-hint-text">Tocca per<br>schermo intero</div>
+  </div>
+
+  <!-- Overlay connessione persa -->
+  <div class="lost-overlay" id="lostOverlay">
+    <div>
+      <div class="lost-text">CONNESSIONE PERSA</div>
+      <div class="lost-text lost-sub">Riconnessione in corso&hellip;</div>
+    </div>
+  </div>
+
+  <!-- Indicatore connessione -->
+  <div class="conn-dot" id="connDot"></div>
+
+  <!-- Header statistiche -->
+  <div class="coperti-bar">
+    <span class="monitor-badge">Cucina</span>
+    <div class="header-stat">
+      <span class="header-stat-label">Coperti</span>
+      <span class="header-stat-value coperti" id="copertiValue">0</span>
+    </div>
+    <span class="coperti-spacer"></span>
+    <div class="header-stats">
+      <div class="header-stat">
+        <span class="header-stat-label">Ordini</span>
+        <span class="header-stat-value ordini" id="ordiniValue">0</span>
+      </div>
+      <div class="header-stat">
+        <span class="header-stat-label">Evasi</span>
+        <span class="header-stat-value evasi" id="evasiValue">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabellone -->
+  <div class="board" id="board">
+    <!-- Generato da JS -->
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Articoli monitor cucina — postazione friggitrice/cucina (non griglia).
+    // Le patate non sono sullo scaldavivande: AUTO_PRONTO le incrementa
+    // automaticamente all'evasione, quindi "Da cucinare" scende da solo.
+    // Per ora solo patate. Da aggiungere in futuro: gnocchi, funghi
+    // (servirà composition + MONITOR_ITEMS nel backend).
+    const ITEMS = [
+      { id: 'patate', label: 'Patate fritte' },
+    ];
+
+    // Stato contatori — il monitor cucina non ha scaldavivande,
+    // quindi mostra solo: Venduto, Da evadere, Da cucinare
+    const counters = {};
+    ITEMS.forEach(i => { counters[i.id] = { pronto: 0, vendute: 0, evasi: 0 }; });
+
+    // Genera il tabellone con header + righe
+    const board = document.getElementById('board');
+    board.innerHTML = `
+      <div class="header-row">
+        <span class="col-spacer"></span>
+        <span class="col-label col-sold">Venduto</span>
+        <span class="col-label col-pending">Da evadere</span>
+        <span class="col-label col-cook">Da cucinare</span>
+      </div>
+    ` + ITEMS.map(item => `
+      <div class="row" id="row-${item.id}">
+        <span class="dish-name">${item.label}</span>
+        <span class="dish-count count-sold" id="sold-${item.id}">0</span>
+        <span class="dish-count count-pending" id="pending-${item.id}">0</span>
+        <span class="dish-count count-cook cook-green" id="cook-${item.id}">0</span>
+      </div>
+    `).join('');
+
+    // Socket.IO — registrato come 'monitor' per ricevere i counters_changed.
+    // La differenza dal monitor principale è solo la lista ITEMS mostrata.
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const connDot = document.getElementById('connDot');
+    const lostOverlay = document.getElementById('lostOverlay');
+
+    socket.on('connect', () => {
+      socket.emit('register', { role: 'monitor' });
+      connDot.classList.add('online');
+      lostOverlay.classList.remove('visible');
+    });
+
+    socket.on('disconnect', () => {
+      connDot.classList.remove('online');
+      lostOverlay.classList.add('visible');
+    });
+
+    socket.on('counters_changed', ({ counters: newCounters, total_coperti, total_orders, total_fulfilled }) => {
+      // Aggiorna header stats
+      if (total_coperti !== undefined) {
+        document.getElementById('copertiValue').textContent = total_coperti;
+      }
+      if (total_orders !== undefined) {
+        document.getElementById('ordiniValue').textContent = total_orders;
+      }
+      if (total_fulfilled !== undefined) {
+        document.getElementById('evasiValue').textContent = total_fulfilled;
+      }
+      ITEMS.forEach(item => {
+        const oldData = counters[item.id];
+        const newData = newCounters[item.id];
+        if (!newData) return;
+
+        const oldCook = Math.max(0, oldData.vendute - oldData.pronto);
+
+        counters[item.id] = { pronto: newData.pronto, vendute: newData.vendute, evasi: newData.evasi };
+
+        const newCook = Math.max(0, newData.vendute - newData.pronto);
+        const newPending = Math.max(0, newData.vendute - newData.evasi);
+
+        const cookEl = document.getElementById(`cook-${item.id}`);
+        const soldEl = document.getElementById(`sold-${item.id}`);
+        const pendingEl = document.getElementById(`pending-${item.id}`);
+        const row = document.getElementById(`row-${item.id}`);
+
+        cookEl.textContent = newCook;
+        soldEl.textContent = newData.vendute;
+        pendingEl.textContent = newPending;
+
+        // Colore "da cucinare": verde=0, giallo=1-10, rosso=>10
+        cookEl.classList.remove('cook-green', 'cook-yellow', 'cook-red');
+        if (newCook === 0) cookEl.classList.add('cook-green');
+        else if (newCook <= 10) cookEl.classList.add('cook-yellow');
+        else cookEl.classList.add('cook-red');
+
+        if (newCook !== oldCook) {
+          row.classList.add('flash');
+          flashEl(cookEl);
+          setTimeout(() => row.classList.remove('flash'), 400);
+        }
+      });
+    });
+
+    function flashEl(el) {
+      el.classList.add('changed');
+      setTimeout(() => el.classList.remove('changed'), 400);
+    }
+
+    // Fullscreen mode (?mode=fullscreen)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'fullscreen') {
+      const hint = document.getElementById('fsHint');
+      hint.classList.remove('hidden');
+
+      hint.addEventListener('click', () => {
+        hint.classList.add('hidden');
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      });
+    }
+  </script>
+<script src="/js/wakelock.js"></script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

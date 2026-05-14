@@ -24,6 +24,7 @@
       label: 'Cucina',
       items: [
         { name: 'Monitor Cuochi', url: '/monitor', icon: '\uD83D\uDCFA' },
+        { name: 'Monitor Cucina', url: '/monitor-cucina', icon: '\uD83C\uDF5F' },
         { name: 'Scaldavivande', url: '/scaldavivande', icon: '\uD83D\uDD25' },
       ],
     },

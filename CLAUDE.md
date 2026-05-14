@@ -30,7 +30,8 @@ public/
   cassa.html        # Cassa ordini — 70/30 layout con tab CIBO/BEVANDE
   cassa-bar.html    # Cassa bar — layout 70/30 come generale (solo bevande, source: 'bar')
   cassa-casetta.html # Cassa casetta — layout 70/30, tab CONTORNI/BEVANDE (source: 'casetta')
-  monitor.html      # Monitor TV cuochi (accesso diretto senza PIN)
+  monitor.html      # Monitor TV cuochi griglia (accesso diretto senza PIN) — costicine, salsicce, sovracoscia, pastin, polenta
+  monitor-cucina.html # Monitor TV cucina/friggitrice (accesso diretto senza PIN) — patate fritte (gnocchi/funghi previsti)
   scaldavivande.html # Tablet scaldavivande (−10/−5/+5/+10)
   controllo.html    # Tablet operatore fisso (lista ordini + tastierino evasione)
   admin.html        # Dashboard admin LIVE (con sidebar)
@@ -315,7 +316,8 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/cassa` — Cassa ordini (PIN 0001)
 - `/cassa-bar` — Cassa bar (PIN 0002 → scelta ruolo)
 - `/cassa-casetta` — Cassa casetta aperitivi (PIN 0002 → scelta ruolo)
-- `/monitor` — Monitor cuochi TV (accesso diretto, no PIN)
+- `/monitor` — Monitor cuochi griglia TV (accesso diretto, no PIN)
+- `/monitor-cucina` — Monitor cucina/friggitrice TV (accesso diretto, no PIN) — solo patate fritte (gnocchi/funghi previsti)
 - `/scaldavivande` — Tablet scaldavivande (PIN 0002 → scelta ruolo)
 - `/controllo` — Tablet operatore fisso (PIN 0002 → scelta ruolo)
 - `/setup` — Wizard setup inizio turno (legacy, pre-flight check ora in `/admin/hardware`)

@@ -74,6 +74,10 @@ app.get('/monitor', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'monitor.html'));
 });
 
+app.get('/monitor-cucina', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'monitor-cucina.html'));
+});
+
 app.get('/scaldavivande', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'scaldavivande.html'));
 });
