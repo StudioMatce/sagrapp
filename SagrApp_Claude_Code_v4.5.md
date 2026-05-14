@@ -22,7 +22,7 @@ Il codice prodotto in questa fase **non è usa e getta**: il server, la connessi
 | Dispositivo | Modello | Connessione | Ruolo |
 |---|---|---|---|
 | **PC all-in-one** | — | Wi-Fi | Cassa generale + Print Proxy |
-| **Mini-PC** | — | LAN + HDMI | Collegato a TV per monitor cuochi |
+| **Mini-PC** | — | LAN + HDMI | Collegato a TV per monitor griglie |
 | **Stampante 1** | **vretti 80mm** | **LAN** | Ricevuta cassa generale — IP 192.168.1.203 |
 | **Stampante 2** | **Fuhuihe POS** | **LAN** | Comanda bevande — IP 192.168.1.204 (già testata ✅) |
 | **Stampante 3** | **Fuhuihe POS** | **LAN** | Comanda cibo — IP 192.168.1.205 |
@@ -232,9 +232,9 @@ Browser (PC cassa)                 Server Cloud              Print Proxy (PC loc
 | Lattina Coca Cola Zero | €2,30 |
 | Lattina Fanta | €2,30 |
 
-### 4.3 — Composizione Piatti in Pezzi Singoli (per monitor cuochi e magazzino)
+### 4.3 — Composizione Piatti in Pezzi Singoli (per monitor griglie e magazzino)
 
-Quando un piatto viene ordinato, il sistema lo scompone automaticamente in pezzi singoli per il monitor cuochi e per lo scarico magazzino.
+Quando un piatto viene ordinato, il sistema lo scompone automaticamente in pezzi singoli per il monitor griglie e per lo scarico magazzino.
 
 | Piatto ordinato | Costicine | Salsicce | Sovracoscia | Pastin | Polenta | Patate |
 |---|---|---|---|---|---|---|
@@ -246,9 +246,9 @@ Quando un piatto viene ordinato, il sistema lo scompone automaticamente in pezzi
 
 **Esempio pratico:**
 Un ordine con: 2x Costicine con polenta + 1x Grigliata mista
-→ Il monitor cuochi aggiorna "vendute": costicine +8, salsicce +1, sovracoscia +0.5, polenta +3
+→ Il monitor griglie aggiorna "vendute": costicine +8, salsicce +1, sovracoscia +0.5, polenta +3
 
-### 4.4 — Monitor TV Cuochi — Articoli Visualizzati
+### 4.4 — Monitor TV Griglie — Articoli Visualizzati
 
 Il monitor TV mostra SOLO i prodotti della griglia/scaldavivande + polenta + patate, con **2 colonne**:
 
@@ -308,7 +308,7 @@ Operatore chiude ordine #248 (2x Costicine polenta):
 **Annullamento ordini:**
 L'operatore fisso può annullare un ordine dal suo tablet (pulsante "Annulla" con conferma). Quando un ordine viene annullato:
 - Scorte magazzino **ripristinate** (come se l'ordine non fosse mai stato fatto)
-- "Vendute" sul monitor cuochi **scala** (da cucinare scende)
+- "Vendute" sul monitor griglie **scala** (da cucinare scende)
 - Se l'ordine era già evaso: pezzi scaldavivande **ripristinati**
 - L'ordine viene marcato come "ANNULLATO" (visibile nei report)
 
@@ -362,7 +362,7 @@ sagrapp/
 │   ├── cassa.html            # Interfaccia cassa generale (layout come foglio cartaceo)
 │   ├── cassa-bar.html        # Interfaccia cassa bar (solo bevande)
 │   ├── cassa-casetta.html    # Interfaccia cassa casetta aperitivi
-│   ├── monitor.html          # Monitor cuochi — 2 colonne (da cucinare / nello scaldavivande)
+│   ├── monitor.html          # Monitor griglie — 2 colonne (da cucinare / nello scaldavivande)
 │   ├── scaldavivande.html    # Tablet scaldavivande — pulsanti −10/−5/+5/+10
 │   ├── controllo.html        # Tablet operatore fisso — lista ordini + tastierino evasione
 │   ├── admin.html            # Dashboard admin LIVE (monitoraggio durante servizio)
@@ -376,7 +376,7 @@ sagrapp/
 │   │   └── style.css         # Stili
 │   └── js/
 │       ├── cassa.js          # Logica interfaccia cassa (ordini, stampa, flag)
-│       ├── monitor.js        # Logica monitor cuochi (2 colonne)
+│       ├── monitor.js        # Logica monitor griglie (2 colonne)
 │       ├── scaldavivande.js  # Logica scaldavivande (pulsanti decine)
 │       ├── controllo.js      # Logica operatore fisso (lista ordini + evasione + annullamento)
 │       ├── admin.js          # Logica dashboard admin live
@@ -434,7 +434,7 @@ La sidebar è visibile **solo per l'utente Admin**. Gli altri ruoli vanno dirett
 | **OPERATIVITÀ** | Cassa Generale | /cassa |
 | | Cassa Bar | /cassa-bar |
 | | Cassa Casetta | /cassa-casetta |
-| **CUCINA** | Monitor Cuochi | /monitor |
+| **CUCINA** | Monitor Griglie | /monitor |
 | | Scaldavivande | /scaldavivande |
 | **SERVIZIO** | Operatore Fisso | /controllo |
 | **ADMIN** | Dashboard Live | /admin |
@@ -480,7 +480,7 @@ Tutti i dispositivi aprono lo stesso URL → pagina login con tastierino PIN num
 | 0000 | **Admin** | Dashboard Live + sidebar completa | ✅ Sì |
 | 0001 | **Cassa Generale** | Pagina cassa direttamente | ❌ No |
 | 0002 | **Operatore** | Scelta ruolo: Cassa Bar / Casetta / Scaldavivande / Zona Controllo | ❌ No |
-| (nessuno) | **TV Monitor Cuochi** | URL diretto `/monitor` senza login | ❌ No |
+| (nessuno) | **TV Monitor Griglie** | URL diretto `/monitor` senza login | ❌ No |
 
 **Flusso PIN 0002 — Scelta ruolo:**
 Dopo aver inserito il PIN 0002, appare una schermata semplice con 4 pulsanti grandi:
@@ -501,7 +501,7 @@ Dopo la scelta → va diretto alla pagina, niente sidebar.
 - Al prossimo avvio, il dispositivo va diretto alla pagina giusta senza rifare login
 - Ogni pagina non-admin ha un piccolo pulsante **"Esci"** (angolo in alto) per tornare al login
 
-**Monitor cuochi (TV):**
+**Monitor griglie (TV):**
 - Si apre con URL diretto `/monitor` senza nessun login
 - Nessun pulsante "Esci" — è un display fisso
 
@@ -527,7 +527,7 @@ Dopo la scelta → va diretto alla pagina, niente sidebar.
 | GET | /cassa | Interfaccia cassa generale |
 | GET | /cassa-bar | Interfaccia cassa bar |
 | GET | /cassa-casetta | Interfaccia cassa casetta aperitivi |
-| GET | /monitor | Monitor cuochi (2 colonne, per TV) |
+| GET | /monitor | Monitor griglie (2 colonne, per TV) |
 | GET | /scaldavivande | Tablet scaldavivande |
 | GET | /controllo | Tablet operatore fisso (lista ordini + evasione) |
 | GET | /admin | Dashboard admin LIVE (richiede PIN) |
@@ -644,7 +644,7 @@ socket.on('check_printer', async ({ printer_ip }) => {
 });
 ```
 
-### 5.5 — Componente: Monitor Cuochi (public/monitor.html)
+### 5.5 — Componente: Monitor Griglie (public/monitor.html)
 
 Questa pagina viene aperta sulla TV della griglia (via mini-PC). Mostra **2 colonne** per ogni piatto.
 
@@ -705,7 +705,7 @@ Questa pagina viene aperta sul tablet allo scalda vivande della griglia. L'addet
 - Per ogni piatto: 4 pulsanti simmetrici **−10, −5, +5, +10**
 - Il contatore al centro mostra il totale "pronto - evasi" (pezzi fisicamente presenti)
 - Ogni tap invia `counter_update` al server con il delta
-- Il server fa broadcast → la colonna "pronto" del monitor cuochi si aggiorna in tempo reale
+- Il server fa broadcast → la colonna "pronto" del monitor griglie si aggiorna in tempo reale
 - Feedback visivo immediato al tap (pulsante lampeggia per 200ms)
 - Pulsanti enormi touch-friendly (minimo 80x80px)
 - Spazio tra le righe generoso per evitare tap accidentali
@@ -761,7 +761,7 @@ Tablet fisso dell'operatore alla linea cibo. È il perno del flusso: riceve le c
 - Si aggiorna in tempo reale (nuovi ordini appaiono, evasi spariscono)
 - Pulsante **"Annulla"** su ogni ordine → chiede conferma → annulla l'ordine:
   - Scorte magazzino ripristinate
-  - "Vendute" sul monitor cuochi scalate
+  - "Vendute" sul monitor griglie scalate
   - Ordine marcato come ANNULLATO
 
 **Comportamento — Tastierino evasione (parte bassa):**
@@ -942,7 +942,7 @@ In basso (fisso) — Totale e conferma:
 - Quando un flag è attivo, il totale diventa **€0,00**
 - L'ordine viene comunque registrato con tutti i piatti e stampato normalmente
 - Il magazzino scala le scorte come un ordine normale
-- Il monitor cuochi si aggiorna normalmente
+- Il monitor griglie si aggiorna normalmente
 - Il tipo di omaggio viene salvato nel database per i report
 - Solo un flag alla volta può essere attivo
 
@@ -1165,7 +1165,7 @@ Pagina unificata per **test e monitoraggio** di tutti i dispositivi hardware. Us
 ║                                                          ║
 ║  📱 DISPOSITIVI                                         ║
 ║  ┌──────────────────────────────────────────────────┐   ║
-║  │ ● Monitor cuochi        Connesso        da 18:02│   ║
+║  │ ● Monitor griglie        Connesso        da 18:02│   ║
 ║  │ ● Tablet scaldavivande  Connesso        da 18:03│   ║
 ║  │ ● Tablet operatore      Connesso        da 18:03│   ║
 ║  └──────────────────────────────────────────────────┘   ║
@@ -1440,7 +1440,7 @@ Ogni dispositivo apre semplicemente il browser e naviga a:
 | Dispositivo | URL |
 |---|---|
 | Tutti (landing page) | `https://sagrapp.server.com/` |
-| Monitor cuochi (TV) | `https://sagrapp.server.com/monitor` |
+| Monitor griglie (TV) | `https://sagrapp.server.com/monitor` |
 | Tablet scaldavivande | `https://sagrapp.server.com/scaldavivande` |
 | Tablet zona controllo | `https://sagrapp.server.com/controllo` |
 | Admin | `https://sagrapp.server.com/admin` |
@@ -1467,7 +1467,7 @@ module.exports = {
               ]
             },
   },
-  // Il monitor cuochi (/monitor) non richiede PIN — accesso diretto via URL
+  // Il monitor griglie (/monitor) non richiede PIN — accesso diretto via URL
 
   // Stampanti — tutte in rete LAN via Powerline (ESC/POS TCP porta 9100)
   // Nessuna stampante USB
@@ -1492,7 +1492,7 @@ module.exports = {
   // category: 'primo' | 'secondo' | 'contorno' | 'condimento' | 'bevanda' | 'speciale'
   // station: 'cucina' | 'piastra' | 'griglia' | 'polenta' | 'bar' | 'speciali'
   // print_to: quali stampanti ricevono la comanda (oltre alla ricevuta)
-  // composition: scomposizione in pezzi singoli per monitor cuochi e magazzino
+  // composition: scomposizione in pezzi singoli per monitor griglie e magazzino
   // special: true = doppia stampa (.205 + .207)
   // available_date: se presente, il piatto è disponibile solo in quella data
 
@@ -1569,7 +1569,7 @@ module.exports = {
     'speciali': '192.168.1.207',          // Fuhuihe — piatti speciali (doppia stampa)
   },
 
-  // Articoli tracciati sul monitor cuochi (pezzi singoli)
+  // Articoli tracciati sul monitor griglie (pezzi singoli)
   MONITOR_ITEMS: ['costicine', 'salsicce', 'sovracoscia', 'pastin', 'polenta', 'patate'],
 };
 ```
@@ -1613,7 +1613,7 @@ Il test è superato quando:
 - [ ] Ogni stampante viene testata con TCP ping e mostra online/offline
 - [ ] Il pulsante "Stampa Test" stampa effettivamente sulla stampante corretta
 - [ ] Tutte e 6 le stampanti LAN rispondono ai rispettivi IP (.203-.208)
-- [ ] La pagina monitor cuochi mostra 2 colonne: da cucinare / nello scaldavivande
+- [ ] La pagina monitor griglie mostra 2 colonne: da cucinare / nello scaldavivande
 - [ ] La pagina scaldavivande ha pulsanti +10, +20, +30, +40, +50 e − per ogni piatto
 - [ ] Un tap sullo scaldavivande aggiorna "nello scaldavivande" del monitor in tempo reale (< 1 secondo)
 - [ ] Un ordine dalla cassa aggiorna "da cucinare" del monitor in tempo reale
@@ -1629,10 +1629,10 @@ Il test è superato quando:
 - [ ] Il pulsante "Test Completo" esegue tutti i test in sequenza
 - [ ] Se una stampante è offline, il sistema lo segnala senza bloccarsi
 - [ ] Se il proxy si disconnette, la dashboard lo mostra chiaramente
-- [ ] Il monitor cuochi ha numeri leggibili da 3 metri (font 120px+)
+- [ ] Il monitor griglie ha numeri leggibili da 3 metri (font 120px+)
 - [ ] I pulsanti scaldavivande sono touch-friendly (80px+ area di tap)
 - [ ] Il design è professionale e non generico (skill frontend-design applicata)
-- [ ] Contrasto WCAG AA su tutte le pagine, AAA sul monitor cuochi
+- [ ] Contrasto WCAG AA su tutte le pagine, AAA sul monitor griglie
 - [ ] **Interfaccia cassa con layout a due colonne come foglio cartaceo**
 - [ ] **Cassa: campi nome, tavolo, coperti, sconto, tag omaggio (Sponsor/Don Pierino/Amici)**
 - [ ] **Cassa: coperti stampati sulla comanda bevande (fallback su comanda cibo)**
@@ -1676,7 +1676,7 @@ Il test è superato quando:
 3. **Landing page selezione ruolo** — **usa /frontend-design**
 4. **Interfaccia cassa con layout foglio cartaceo** — **usa /frontend-design**
 5. Dashboard test hardware con stato stampanti e pulsanti test — **usa /frontend-design**
-6. **Monitor cuochi con 2 colonne (da cucinare / nello scaldavivande)** — **usa /frontend-design**
+6. **Monitor griglie con 2 colonne (da cucinare / nello scaldavivande)** — **usa /frontend-design**
 7. **Tablet scaldavivande con pulsanti +10/+20/+30/+40/+50 e −** — **usa /frontend-design**
 8. **Tablet operatore fisso (lista ordini + evasione + annullamento)** — **usa /frontend-design**
 9. **Logica evasione: controllo pezzi griglia + blocco se insufficienti + scala scaldavivande**
@@ -1743,7 +1743,7 @@ Quando invochi la skill per questo progetto, comunica queste direttive:
 - Mostrare timestamp dell'ultimo check per ogni dispositivo
 - Layout responsive ma ottimizzato primariamente per schermi da 13"+ (PC cassa)
 
-**Monitor cuochi (monitor.html):**
+**Monitor griglie (monitor.html):**
 - MASSIMA LEGGIBILITÀ — numeri visibili da 3 metri di distanza
 - Sfondo molto scuro (quasi nero), numeri in bianco o colore ad alto contrasto
 - Font size dei numeri: almeno 120px su schermo 32"
@@ -1776,5 +1776,5 @@ Anche con la skill frontend-design, queste regole devono essere rispettate:
 - **Responsive:** deve funzionare su PC (dashboard), TV 32" (monitor), tablet 8-10" (scaldavivande)
 - **Colori di stato universali:** verde `#4ecca3` = ok, rosso `#e94560` = errore, giallo `#ffd93d` = warning, grigio `#6c7a89` = non testato
 - **Animazioni:** solo per feedback (tap, aggiornamento stato). Nessuna animazione decorativa. `transition: 200ms ease` come standard
-- **Contrasto:** WCAG AA minimo su tutte le pagine, AAA sul monitor cuochi
+- **Contrasto:** WCAG AA minimo su tutte le pagine, AAA sul monitor griglie
 

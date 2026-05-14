@@ -1,7 +1,7 @@
 # SagrApp — Gestione Ordini Sagra M.D.G.
 
 ## Cosa fa
-Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cloud-based con stampa termica, monitor cuochi in tempo reale, e tablet per scaldavivande e zona controllo.
+Sistema di gestione ordini per una sagra di paese (500-1000 coperti). Web app cloud-based con stampa termica, monitor griglie in tempo reale, e tablet per scaldavivande e zona controllo.
 
 ## Stack
 - **Backend:** Node.js + Express + Socket.IO
@@ -30,7 +30,7 @@ public/
   cassa.html        # Cassa ordini — 70/30 layout con tab CIBO/BEVANDE
   cassa-bar.html    # Cassa bar — layout 70/30 come generale (solo bevande, source: 'bar')
   cassa-casetta.html # Cassa casetta — layout 70/30, tab CONTORNI/BEVANDE (source: 'casetta')
-  monitor.html      # Monitor TV cuochi griglia (accesso diretto senza PIN) — costicine, salsicce, sovracoscia, pastin, polenta
+  monitor.html      # Monitor TV griglie (accesso diretto senza PIN) — costicine, salsicce, sovracoscia, pastin, polenta
   monitor-cucina.html # Monitor TV cucina/friggitrice (accesso diretto senza PIN) — patate fritte (gnocchi/funghi previsti)
   scaldavivande.html # Tablet scaldavivande (−10/−5/+5/+10)
   controllo.html    # Tablet operatore fisso (lista ordini + tastierino evasione)
@@ -71,7 +71,7 @@ Inoltre, se al momento della creazione ordine il proxy è offline, tutte le cass
 - Postazioni: cucina, piastra, griglia, polenta, bar, speciali
 - Ogni piatto ha `casses` (array): in quali casse è disponibile (`cassa_generale`, `cassa_bar`, `cassa_casetta`)
 - Ogni piatto ha `available` (boolean): se disattivato non appare in nessuna cassa
-- I piatti griglia hanno `composition` che li scompone in pezzi singoli per il monitor cuochi
+- I piatti griglia hanno `composition` che li scompone in pezzi singoli per il monitor griglie
 - Esempio: "Costicine con polenta" → costicine: 3 pezzi + polenta: 1 porzione
 - I piatti speciali (`special: true`) hanno **doppia stampa**: comanda cibo (.205) + stampante dedicata (.207)
 - I piatti speciali hanno `available_date` — uno diverso per ogni serata della sagra
@@ -131,7 +131,7 @@ Inoltre, se al momento della creazione ordine il proxy è offline, tutte le cass
 - Il piatto speciale del giorno è visibile solo se `available_date` corrisponde alla data corrente
 - Il box "Speciale del giorno" appare solo se ci sono piatti speciali disponibili
 
-## Monitor cuochi
+## Monitor griglie
 **Header**: Coperti (sinistra) + Ordini (rosso) + Evasi (verde) a destra
 
 Traccia 6 articoli in pezzi singoli: costicine, salsicce, sovracoscia, pastin, polenta, patate.
@@ -302,8 +302,8 @@ node print-proxy/index.js  # Avvia il print proxy locale
 |---|---|---|
 | 1959 | Admin | `/admin` + sidebar completa |
 | 1102 | Cassa Generale | `/cassa` direttamente |
-| 0002 | Operatore | Scelta: Cassa Bar / Casetta / Scaldavivande / Zona Controllo / Monitor Cuochi |
-| (nessuno) | Monitor Cuochi | `/monitor` — accesso anche diretto via URL, nessun PIN |
+| 0002 | Operatore | Scelta: Cassa Bar / Casetta / Scaldavivande / Zona Controllo / Monitor Griglie |
+| (nessuno) | Monitor Griglie | `/monitor` — accesso anche diretto via URL, nessun PIN |
 
 - I PIN sono in `config.js` → `PINS`
 - Il token viene salvato in `sessionStorage`, il ruolo in `localStorage`
@@ -316,7 +316,7 @@ node print-proxy/index.js  # Avvia il print proxy locale
 - `/cassa` — Cassa ordini (PIN 0001)
 - `/cassa-bar` — Cassa bar (PIN 0002 → scelta ruolo)
 - `/cassa-casetta` — Cassa casetta aperitivi (PIN 0002 → scelta ruolo)
-- `/monitor` — Monitor cuochi griglia TV (accesso diretto, no PIN)
+- `/monitor` — Monitor griglie TV (accesso diretto, no PIN)
 - `/monitor-cucina` — Monitor cucina/friggitrice TV (accesso diretto, no PIN) — solo patate fritte (gnocchi/funghi previsti)
 - `/scaldavivande` — Tablet scaldavivande (PIN 0002 → scelta ruolo)
 - `/controllo` — Tablet operatore fisso (PIN 0002 → scelta ruolo)
