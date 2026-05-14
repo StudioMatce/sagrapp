@@ -318,7 +318,8 @@ server.listen(config.PORT, '0.0.0.0', () => {
   console.log('');
   console.log('  Pagine disponibili:');
   console.log(`    Login (PIN):      http://localhost:${config.PORT}/`);
-  console.log(`    Monitor cuochi:   http://localhost:${config.PORT}/monitor  (accesso diretto)`);
+  console.log(`    Monitor griglie:  http://localhost:${config.PORT}/monitor  (accesso diretto)`);
+  console.log(`    Monitor cucina:   http://localhost:${config.PORT}/monitor-cucina  (accesso diretto)`);
   console.log(`    PIN 0000 → Admin  PIN 0001 → Cassa  PIN 0002 → Operatore`);
   console.log('');
 });

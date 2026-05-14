@@ -54,7 +54,7 @@ async function init() {
     console.log(`[Menu] Primo avvio — salvati ${config.MENU.length} piatti da config.js nel database`);
   }
 
-  // Contatori monitor cuochi
+  // Contatori monitor griglie
   await db.seedCounters(config.MONITOR_ITEMS);
   const dbCounters = await db.getCounters();
   config.MONITOR_ITEMS.forEach(item => {
@@ -479,7 +479,7 @@ router.post('/orders/:id/cancel', (req, res) => {
     }
   });
 
-  // Ripristina i contatori monitor cuochi
+  // Ripristina i contatori monitor griglie
   let countersChanged = false;
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
@@ -648,7 +648,7 @@ async function createOrder(req, res) {
     if (menuItem.print_to && menuItem.print_to.includes('bevande')) hasDrinks = true;
     if (menuItem.special) hasSpecial = true;
 
-    // Scomponi in pezzi singoli per i contatori del monitor cuochi
+    // Scomponi in pezzi singoli per i contatori del monitor griglie
     // Esempio: "Costicine con polenta" → costicine +3, polenta +1
     // Ordini bar: non passano dalla cucina, skip contatori
     if (menuItem.composition && source !== 'bar') {
@@ -2083,7 +2083,7 @@ function executeReset(forcedTurno, opts = {}) {
   db.deleteAllOrders().catch(err => console.error('[DB] deleteAllOrders:', err));
   db.setOrderCounter(0).catch(err => console.error('[DB] setOrderCounter:', err));
 
-  // Azzera contatori monitor cuochi
+  // Azzera contatori monitor griglie
   config.MONITOR_ITEMS.forEach(item => {
     counters[item].pronto = 0;
     counters[item].vendute = 0;

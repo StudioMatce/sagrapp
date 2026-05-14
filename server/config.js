@@ -24,11 +24,12 @@ module.exports = {
                 { id: 'cassa-casetta', name: 'Cassa Casetta', icon: '🏠', url: '/cassa-casetta' },
                 { id: 'scaldavivande', name: 'Scaldavivande', icon: '🔥', url: '/scaldavivande' },
                 { id: 'controllo', name: 'Zona Controllo', icon: '📋', url: '/controllo' },
-                { id: 'monitor', name: 'Monitor Cuochi', icon: '📺', url: '/monitor' },
+                { id: 'monitor', name: 'Monitor Griglie', icon: '📺', url: '/monitor' },
+                { id: 'monitor-cucina', name: 'Monitor Cucina', icon: '🍟', url: '/monitor-cucina' },
               ]
             },
   },
-  // Il monitor cuochi (/monitor) non richiede PIN — accesso diretto via URL
+  // I monitor (/monitor e /monitor-cucina) non richiedono PIN — accesso diretto via URL
 
   // Segreto per token sessioni — usa env var su Railway, fallback a crypto random in dev
   TOKEN_SECRET: process.env.TOKEN_SECRET || require('crypto').randomBytes(32).toString('hex'),
@@ -53,7 +54,7 @@ module.exports = {
   // category: 'primo' | 'secondo' | 'contorno' | 'condimento' | 'bevanda' | 'speciale'
   // station: 'cucina' | 'piastra' | 'griglia' | 'polenta' | 'bar' | 'speciali'
   // print_to: quali stampanti ricevono la comanda (oltre alla ricevuta)
-  // composition: scomposizione in pezzi singoli per monitor cuochi e magazzino
+  // composition: scomposizione in pezzi singoli per monitor griglie e magazzino
   // special: true = doppia stampa (.205 + .207)
   // available_date: se presente, il piatto è disponibile solo in quella data
 
@@ -74,7 +75,7 @@ module.exports = {
     { id: 'wurstel_patate', name: 'Wurstel con patate fritte', price: 5.50, category: 'secondo', station: 'piastra', print_to: ['cibo'],
       composition: { patate: 1 }, initial_stock: 500, alert_threshold: 15 },
 
-    // SECONDI — GRIGLIA (composizione in pezzi singoli per monitor cuochi)
+    // SECONDI — GRIGLIA (composizione in pezzi singoli per monitor griglie)
     { id: 'pastin_patate', name: 'Pastin con patate fritte', price: 8.00, category: 'secondo', station: 'griglia', print_to: ['cibo'],
       composition: { pastin: 2, patate: 1 }, initial_stock: 500, alert_threshold: 20 },
     { id: 'salsiccia_polenta', name: 'Salsiccia con polenta', price: 7.00, category: 'secondo', station: 'griglia', print_to: ['cibo'],
@@ -165,6 +166,6 @@ module.exports = {
     'speciali': '192.168.1.207',
   },
 
-  // Articoli tracciati sul monitor cuochi (pezzi singoli dalla griglia/scaldavivande)
+  // Articoli tracciati sul monitor griglie (pezzi singoli dalla griglia/scaldavivande)
   MONITOR_ITEMS: ['costicine', 'salsicce', 'sovracoscia', 'pastin', 'polenta', 'patate'],
 };
