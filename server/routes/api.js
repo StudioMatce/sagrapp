@@ -648,10 +648,11 @@ async function createOrder(req, res) {
     if (menuItem.print_to && menuItem.print_to.includes('bevande')) hasDrinks = true;
     if (menuItem.special) hasSpecial = true;
 
-    // Scomponi in pezzi singoli per i contatori del monitor griglie
+    // Scomponi in pezzi singoli per i contatori del monitor griglie/cucina
     // Esempio: "Costicine con polenta" → costicine +3, polenta +1
-    // Ordini bar: non passano dalla cucina, skip contatori
-    if (menuItem.composition && source !== 'bar') {
+    // Tutte le casse incrementano: se un piatto ha composition ed è ordinato,
+    // la cucina deve saperlo (es. patatine vendute dal bar)
+    if (menuItem.composition) {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
           counters[piece].vendute += count * q;
