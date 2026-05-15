@@ -479,8 +479,9 @@ router.post('/orders/:id/cancel', (req, res) => {
     }
   });
 
-  // Ripristina i contatori monitor griglie
+  // Ripristina i contatori monitor griglie/cucina
   let countersChanged = false;
+  const AUTO_PRONTO_CANCEL = ['patate'];
   order.items.forEach(item => {
     const menuItem = findMenuItem(item.id);
     if (menuItem && menuItem.composition) {
@@ -489,9 +490,13 @@ router.post('/orders/:id/cancel', (req, res) => {
           const qty = count * item.qty;
           // Scala le vendute (da cucinare scende)
           counters[piece].vendute = Math.max(0, counters[piece].vendute - qty);
-          // Se era già evaso, ripristina anche i pezzi nello scaldavivande
+          // Se era già evaso (anche bar/casetta auto-completed), ripristina
+          // i pezzi nello scaldavivande e — per AUTO_PRONTO (patate) — anche pronto
           if (wasFulfilled) {
             counters[piece].evasi = Math.max(0, counters[piece].evasi - qty);
+            if (AUTO_PRONTO_CANCEL.includes(piece)) {
+              counters[piece].pronto = Math.max(0, counters[piece].pronto - qty);
+            }
           }
           countersChanged = true;
         }
@@ -650,12 +655,24 @@ async function createOrder(req, res) {
 
     // Scomponi in pezzi singoli per i contatori del monitor griglie/cucina
     // Esempio: "Costicine con polenta" → costicine +3, polenta +1
-    // Tutte le casse incrementano: se un piatto ha composition ed è ordinato,
-    // la cucina deve saperlo (es. patatine vendute dal bar)
+    // Tutte le casse incrementano "vendute": se un piatto ha composition ed è
+    // ordinato, la cucina deve saperlo (es. patatine vendute dal bar).
+    // Bar e casetta bypassano la zona controllo (auto-completed), quindi
+    // incrementiamo anche "evasi" e "pronto" (per AUTO_PRONTO) per evitare
+    // che "Da evadere" e "Da cucinare" crescano all'infinito sul monitor.
+    const bypassQueue = source === 'bar' || source === 'casetta';
+    const AUTO_PRONTO_CREATE = ['patate'];
     if (menuItem.composition) {
       for (const [piece, count] of Object.entries(menuItem.composition)) {
         if (counters[piece] !== undefined) {
-          counters[piece].vendute += count * q;
+          const delta = count * q;
+          counters[piece].vendute += delta;
+          if (bypassQueue) {
+            counters[piece].evasi += delta;
+            if (AUTO_PRONTO_CREATE.includes(piece)) {
+              counters[piece].pronto += delta;
+            }
+          }
           db.saveCounter(piece, counters[piece]).catch(err => console.error('[DB] saveCounter:', err));
         }
       }
@@ -707,8 +724,8 @@ async function createOrder(req, res) {
     completed_at: null,
   };
 
-  // Ordini bar: auto-completati (non richiedono evasione da zona controllo)
-  if ((source || 'principale') === 'bar') {
+  // Ordini bar e casetta: auto-completati (non passano dalla zona controllo)
+  if (source === 'bar' || source === 'casetta') {
     order.status = 'completed';
     order.completed_at = Date.now();
   }
