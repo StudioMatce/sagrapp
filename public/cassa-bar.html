@@ -462,6 +462,40 @@
       color: #fbbf24;
     }
 
+    /* ===== FLAG OMAGGIO ===== */
+    /* Tag statistico (sponsor/don pierino/amici) — non azzera il totale.
+       Serve per il recap: conteggio omaggi per tipo. */
+    .courtesy-section {
+      padding: 0 16px 12px;
+    }
+    .courtesy-flags {
+      display: flex;
+      gap: 6px;
+    }
+    .flag-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.45);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 120ms ease;
+      touch-action: manipulation;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .flag-btn:active { transform: scale(0.95); }
+    .flag-btn.active {
+      border-color: #ffd93d;
+      background: rgba(255, 217, 61, 0.1);
+      color: #ffd93d;
+      box-shadow: 0 0 12px rgba(255, 217, 61, 0.08);
+    }
+
     .btn-order {
       width: 100%;
       padding: 16px 20px;
@@ -800,6 +834,15 @@
         <span class="pos-label" id="posLabel">POS</span>
       </div>
 
+      <!-- Flag omaggio (tag statistico, non azzera totale) -->
+      <div class="courtesy-section">
+        <div class="courtesy-flags">
+          <button class="flag-btn" id="flag-sponsor" onclick="toggleFlag('sponsor')">Sponsor</button>
+          <button class="flag-btn" id="flag-don_pierino" onclick="toggleFlag('don_pierino')">Don Pierino</button>
+          <button class="flag-btn" id="flag-amici" onclick="toggleFlag('amici')">Amici</button>
+        </div>
+      </div>
+
       <div class="order-summary-label">Riepilogo</div>
       <div class="order-items-scroll" id="orderItemsList">
         <div class="order-empty">Nessun articolo selezionato</div>
@@ -846,6 +889,23 @@
     var submitting = false;
     var posActive = false;
     var currentTotal = 0;
+    // Tag omaggio attivo (uno alla volta) — usato solo per statistiche recap
+    var activeCourtesy = null; // 'sponsor' | 'don_pierino' | 'amici' | null
+
+    function toggleFlag(type) {
+      // Stesso tag già attivo → deseleziona; altrimenti sostituisci (solo uno alla volta)
+      if (activeCourtesy === type) {
+        activeCourtesy = null;
+      } else {
+        if (activeCourtesy) {
+          document.getElementById('flag-' + activeCourtesy).classList.remove('active');
+        }
+        activeCourtesy = type;
+      }
+      document.querySelectorAll('.flag-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.id === 'flag-' + activeCourtesy);
+      });
+    }
 
     function togglePos() {
       posActive = !posActive;
@@ -1074,6 +1134,7 @@
             customer_name: document.getElementById('nameInput').value.trim() || null,
             source: 'bar',
             payment: posActive ? 'pos' : 'contanti',
+            courtesy_type: activeCourtesy,
           }),
         });
         var data = await res.json();
@@ -1140,6 +1201,11 @@
       if (posActive) {
         posActive = false;
         document.getElementById('posToggle').classList.remove('active');
+      }
+      // Reset flag omaggio (deseleziona qualsiasi tag attivo)
+      if (activeCourtesy) {
+        document.getElementById('flag-' + activeCourtesy).classList.remove('active');
+        activeCourtesy = null;
       }
       updateOrderColumn();
     }
