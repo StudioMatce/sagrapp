@@ -556,6 +556,16 @@
     var SESSIONS = [];
 
     // ─── raggruppamento ──────────────────────────────────────
+    // Formatta una Date locale come 'YYYY-MM-DD' senza passare per UTC.
+    // toISOString() converte in UTC e in Italia (CEST UTC+2) fa retrocedere
+    // la data di 1 giorno: mezzanotte locale → 22:00 UTC del giorno prima.
+    function formatLocalDate(d) {
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var dd = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + dd;
+    }
+
     // Raggruppa le sessioni in blocchi: weekend (Sab+Dom) o singole giornate
     function buildGroups() {
       // Raggruppa per data
@@ -581,7 +591,7 @@
         var satDate = null, sunDate = null;
         if (day === 6) { // Sabato — cerca Domenica
           var sun = new Date(d); sun.setDate(sun.getDate() + 1);
-          sunDate = sun.toISOString().slice(0,10);
+          sunDate = formatLocalDate(sun);
           if (byDate[sunDate]) {
             satDate = dateStr;
           } else {
@@ -589,7 +599,7 @@
           }
         } else if (day === 0) { // Domenica — cerca Sabato
           var sat = new Date(d); sat.setDate(sat.getDate() - 1);
-          satDate = sat.toISOString().slice(0,10);
+          satDate = formatLocalDate(sat);
           if (byDate[satDate]) {
             sunDate = dateStr;
           } else {

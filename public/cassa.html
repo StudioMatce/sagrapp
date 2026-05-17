@@ -1359,7 +1359,11 @@
       try {
         const res = await fetch('/api/menu');
         const allItems = await res.json();
-        const today = new Date().toISOString().slice(0, 10);
+        // Data locale 'YYYY-MM-DD' (NON toISOString — converte in UTC e dopo
+        // le 22:00 italiane darebbe già il giorno successivo, facendo sparire
+        // il piatto speciale del giorno corrente)
+        const _d = new Date();
+        const today = _d.getFullYear() + '-' + String(_d.getMonth()+1).padStart(2,'0') + '-' + String(_d.getDate()).padStart(2,'0');
 
         ITEMS = allItems.filter(function(item) {
           if (!item.casses) return false;

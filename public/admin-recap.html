@@ -1548,7 +1548,9 @@
     // EXPORT CSV — formato unificato (sep=; per Excel/Numbers italiano)
     // ===================================================
     function exportCSV(data) {
-      var today = new Date().toISOString().slice(0, 10);
+      // Data locale per filename CSV (toISOString darebbe UTC e dopo le 22 italiane sballa)
+      var _d = new Date();
+      var today = _d.getFullYear() + '-' + String(_d.getMonth()+1).padStart(2,'0') + '-' + String(_d.getDate()).padStart(2,'0');
       var SEP = ';';
       var csvVal = function(v) {
         var str = String(v == null ? '' : v);
