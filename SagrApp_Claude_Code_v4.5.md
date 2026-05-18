@@ -680,6 +680,15 @@ Questa pagina viene aperta sulla TV della griglia (via mini-PC). Mostra **2 colo
 - Schermo intero automatico
 - Se la connessione cade: overlay rosso "CONNESSIONE PERSA"
 
+#### 5.5.1 — Componente: Monitor Cucina / Friggitrice (public/monitor-cucina.html)
+
+Pagina TV gemella di `monitor.html` ma dedicata alla **postazione friggitrice/cucina**. Mostra solo gli articoli fritti — attualmente **patate fritte** (predisposta per gnocchi e funghi in futuro).
+
+- Stesso layout e codifica colori di `/monitor` (header con coperti/ordini/evasi, colonne Venduto / Da evadere / Nello scaldavivande / Da cucinare)
+- Accesso diretto senza PIN (`/monitor-cucina`)
+- Disponibile anche dal login PIN 0002 → schermata scelta ruolo
+- Le **patate** seguono `AUTO_PRONTO`: all'evasione di un ordine si auto-incrementa `pronto`, quindi "Da cucinare" scende automaticamente sul monitor (non passano dallo scaldavivande)
+
 ### 5.6 — Componente: Tablet Scaldavivande (public/scaldavivande.html)
 
 Questa pagina viene aperta sul tablet allo scalda vivande della griglia. L'addetto registra i pezzi cucinati.
@@ -896,6 +905,7 @@ Pagina principale per il cassiere. La disposizione dei piatti dentro ogni tab **
 
 - **Tab CIBO** (attivo di default): contiene primi, secondi, speciale del giorno, contorni, condimenti. Con **separatori visivi colorati** tra le categorie e titolo di sezione. L'ordine dei piatti segue il foglio cartaceo.
 - **Tab BEVANDE**: contiene tutte le bevande. Il tab mostra un **badge contatore** con il numero di bevande selezionate (es. "BEVANDE (3)") così il cassiere sa se ha già aggiunto bevande senza dover cambiare tab.
+- **Tab ORDINI**: storico completo degli ordini della serata (numero, tavolo, piatti, totale, stato) con pulsante annulla — utile per consultare/ristampare/annullare ordini già fatti.
 - Il tab attivo occupa tutta l'area sinistra con pulsanti grandi e leggibili.
 - Ogni piatto ha un contatore con [−] [numero] [+].
 - I piatti con quantità > 0 sono **evidenziati visivamente**.
@@ -910,9 +920,11 @@ In alto — Dati ordine:
 - Numero tavolo (campo numerico, **obbligatorio**)
 - Numero coperti (campo numerico, **obbligatorio**)
 
-Poi — Flag e sconto:
-- Tag omaggio: Sponsor / Don Pierino / Amici (toggle, solo uno alla volta attivo) — solo tag statistico, NON azzera il totale
-- Campo sconto in euro (manuale, indipendente dal tag)
+Poi — Toggle pagamento, flag e sconto:
+- Toggle **Asporto**: quando attivo, coperti = 0 e disabilitato, tab bevande disabilitata, niente stampa comanda bevande, "ASPORTO" stampato sulla comanda cibo
+- Toggle **POS**: pagamento con carta (default: contanti) — commissione 0.2% tracciata nel recap
+- Tag omaggio: Sponsor / Don Pierino / Amici (toggle, solo uno alla volta attivo) — solo tag statistico per il recap, **NON azzera il totale**
+- Campo sconto **in euro o percentuale** (toggle €/%, manuale, indipendente dal tag omaggio)
 
 Al centro — Riepilogo ordine:
 - Lista scrollabile dei piatti selezionati
@@ -933,18 +945,19 @@ In basso (fisso) — Totale e conferma:
 | Nome cliente | Testo | No | Per identificare l'ordine |
 | Numero tavolo | Numerico | **Sì** | Stampato su tutte le comande |
 | Numero coperti | Numerico | **Sì** | Per le posate — stampato sulla comanda bevande |
-| Sconto | Numerico (€) | No | Sottratto dal totale |
-| Flag Sponsor | Toggle | No | Se attivo → ordine gratis (totale €0) |
-| Flag Don Pierino | Toggle | No | Se attivo → ordine gratis (totale €0) |
-| Flag Amici | Toggle | No | Se attivo → ordine gratis (totale €0) |
+| Asporto | Toggle | No | Disabilita coperti e bevande, marca la comanda cibo come ASPORTO |
+| POS | Toggle | No | Pagamento con carta (commissione 0.2% tracciata nel recap) |
+| Sconto | Numerico € o % | No | Sottratto dal totale (toggle unità €/%) |
+| Flag Sponsor | Toggle | No | Solo tag statistico per il recap — non modifica il totale |
+| Flag Don Pierino | Toggle | No | Solo tag statistico per il recap — non modifica il totale |
+| Flag Amici | Toggle | No | Solo tag statistico per il recap — non modifica il totale |
 
-**Logica Flag Gratis (Sponsor / Don Pierino / Amici):**
-- Quando un flag è attivo, il totale diventa **€0,00**
-- L'ordine viene comunque registrato con tutti i piatti e stampato normalmente
-- Il magazzino scala le scorte come un ordine normale
-- Il monitor griglie si aggiorna normalmente
-- Il tipo di omaggio viene salvato nel database per i report
-- Solo un flag alla volta può essere attivo
+**Logica Tag Omaggio (Sponsor / Don Pierino / Amici):**
+- I tag sono **solo statistici**: il totale NON viene azzerato
+- Per applicare uno sconto/omaggio economico, il cassiere usa il campo Sconto manualmente
+- Solo un tag alla volta può essere attivo (cliccare di nuovo per disattivare)
+- Il tipo di omaggio viene salvato nel DB (`courtesy_type`) e contato nel recap per tipo
+- L'ordine viene registrato e stampato normalmente; il magazzino e i monitor griglie si aggiornano come per un ordine standard
 
 **Logica stampa:**
 - Pulsante "ORDINA" → crea l'ordine e stampa su tutte le stampanti necessarie
@@ -958,6 +971,27 @@ In basso (fisso) — Totale e conferma:
 - Il sistema mostra automaticamente solo il piatto speciale disponibile per la data corrente
 - Se nessun piatto speciale è previsto per oggi, la sezione non appare
 - L'admin può attivare/disattivare il piatto speciale dalla dashboard
+
+#### 5.9.1 — Varianti Cassa Bar e Cassa Casetta
+
+Oltre alla cassa generale, esistono due varianti dedicate per le postazioni satellite. Condividono lo stesso layout 70/30 ma con menu filtrato e form semplificato.
+
+| | **Cassa Bar** (`/cassa-bar`) | **Cassa Casetta** (`/cassa-casetta`) |
+|---|---|---|
+| Source ordine | `bar` | `casetta` |
+| Stampa ricevuta | Fuhuihe .206 (cassa bar) | Fuhuihe .208 (casetta aperitivi) |
+| Piatti mostrati | Filtrati per `casses.includes('cassa_bar')` (solo bevande) | Filtrati per `casses.includes('cassa_casetta')` (contorni + bevande) |
+| Layout menu | Colonne verticali per sotto-gruppo (Vini / Birra & Bottiglie / Acqua & Bibite / Caffè & Dolci) | Righe orizzontali per macro-categoria (Cibo / Bevande), ottimizzato iPad landscape |
+| Campi ordine | Nome, POS, **Omaggi (Sponsor/Don Pierino/Amici)**, **Sconto (€/%)** | Nome, POS |
+| Tavolo/Coperti | ❌ Non richiesti (vendita al banco) | ❌ Non richiesti |
+| Note prodotto | ❌ Non disponibili | ❌ Non disponibili |
+| Alert sonoro stampante | ❌ No | ❌ No |
+| Zona Controllo | ❌ Esclusa (mostra solo `source = principale`) | ❌ Esclusa |
+| Monitor griglie | ✅ Conteggi aggiornati anche per ordini bar | ✅ Conteggi aggiornati anche per ordini casetta |
+
+**Cassa Bar** — supporta i tag omaggio e lo sconto manuale come la generale (utile per giri offerti dagli sponsor o sconti spot ai volontari). Il box sconto include un toggle €/% e le righe Subtotale + Sconto compaiono nel riepilogo solo quando lo sconto è applicato.
+
+**Cassa Casetta** — pensata per servizio aperitivi rapido, form ridotto al minimo (solo nome + POS), nessun omaggio/sconto inline.
 
 ### 5.10 — Componente: Login Unificato (public/index.html)
 
@@ -1285,6 +1319,46 @@ Tabella comparativa di tutte le serate archiviate con possibilità di download r
 - **Recap aggregati** (barra in alto):
   - Pulsante "Recap Totale Sagra" → apre `/admin/recap?mode=total`
   - Pulsanti "Weekend [date]" automatici per ogni coppia Sab-Dom → apre `/admin/recap?ids=id1,id2,...`
+- **Riconcilia POS**: pulsante che apre modal per importare CSV transazioni SumUp e correggere a posteriori ordini segnati come contanti (vedi 5.20)
+
+### 5.20 — Auto-chiusura turno
+
+Scheduler avviato all'avvio del server (`startAutoCloseScheduler` dopo `initApi()`). Chiude automaticamente il turno aperto se viene superato l'orario previsto — utile quando la cassa generale chiude prima di bar/casetta e nessuno fa la chiusura manuale.
+
+- **Pranzo** → chiusura automatica alle `AUTO_CLOSE_PRANZO_HOUR` (default 16:00) dello stesso giorno
+- **Cena** → chiusura automatica alle `AUTO_CLOSE_CENA_HOUR` (default 07:00) del giorno successivo
+- Il turno viene determinato dall'ora del **primo ordine** (più affidabile dell'orario attuale)
+- Check periodico ogni `AUTO_CLOSE_CHECK_INTERVAL_MS` ms (default 5 min) + check immediato all'avvio (gestisce restart Railway dopo l'orario di chiusura)
+- Ordini ancora aperti al momento della chiusura → chiusi forzatamente e marcati "incompleti" nel recap
+- Riusa `executeReset(turno, { autoClosed: true })` — stesso flusso della chiusura manuale
+- Evento Socket.IO `service_closed` con `{ autoClosed: true, turno }` broadcastato per notificare le casse aperte
+
+### 5.21 — Riconciliazione POS (import CSV SumUp)
+
+Permette di correggere a posteriori gli ordini segnati erroneamente come contanti, importando il CSV transazioni di SumUp. Pensato per essere fatto **con calma il lunedì dopo il weekend** (un solo CSV copre tutto il weekend).
+
+**UI**: pulsante "Riconcilia POS" nell'header di `/admin/serate` → modal con upload CSV (drag&drop o paste) + preview match + apply.
+
+**Parser CSV**:
+- Auto-detect del separatore (`,`, `;`, `\t`)
+- Auto-detect delle colonne (supporta export EN e IT di SumUp)
+- Gestisce importi formato europeo (1.234,56) e US (1,234.56)
+- Filtra rimborsi e transazioni fallite
+
+**Matching**: per ogni transazione SumUp cerca ordini con stesso importo (tolleranza 1 cent) entro ±5 min dall'orario SumUp.
+- **Certain**: 1 solo candidato → spunta auto
+- **Ambiguous**: più candidati → l'utente sceglie dal dropdown (default: ordine più vicino temporalmente)
+- **None**: nessun candidato → orfano (ignorato)
+
+**Apply**: aggiorna lo snapshot `_orders` dentro `archived_sessions.recap`, ricalcola `revenueByPayment` e `posCommission`, salva nel DB. Marca la sessione con `_reconciledAt`.
+
+**Prerequisito**: lo snapshot ordini (`recap._orders`) deve esistere nell'archivio. Sessioni chiuse PRIMA di questa feature non hanno lo snapshot — l'apply ritorna errore con messaggio chiaro.
+
+**API**:
+- `POST /api/admin/reconcile-pos/preview` `{ csv, windowMinutes? }` → `{ transactions, sessions: [{ proposals: [...] }], orphans }`
+- `POST /api/admin/reconcile-pos/apply` `{ confirmations: [{ sessionId, orderId, transactionId }] }` → `{ updatedOrders, updatedSessions, errors }`
+
+**DB**: colonna `sumup_transaction_id` su `orders` (per ordini live) + campo `sumup_transaction_id` dentro ogni elemento di `recap._orders` (per snapshot archiviati).
 
 ---
 

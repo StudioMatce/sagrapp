@@ -257,15 +257,15 @@ Tutte e tre le casse usano il **layout a due pannelli**:
 - **Sinistra**: area menu con piatti/bevande e stepper quantità
 - **Destra**: colonna ordine con form, riepilogo, totale e bottone ORDINA
 - Responsive: sotto 700px si impila verticalmente
-- **Bar**: colonne verticali per sotto-gruppo bevande (Vini / Birra & Bottiglie / Acqua & Bibite / Caffè & Dolci)
+- **Bar**: colonne verticali per sotto-gruppo bevande (Vini / Birra & Bottiglie / Acqua & Bibite / Caffè & Dolci) — supporta **flag omaggio** (sponsor/don pierino/amici) e **sconto manuale** (€ o %) come la generale
 - **Casetta**: righe orizzontali per macro-categoria (Cibo / Bevande), colonna ordine 280px, ottimizzata iPad landscape
 - **Bar e Casetta**: niente note prodotto nel riepilogo ordine, niente alert sonoro stampanti
-- **Wake Lock**: tutte le pagine operative impediscono il blocco schermo (wakelock.js)
+- **Wake Lock**: tutte le pagine operative impediscono il blocco schermo (wakelock.js) — `wakelock.js` ritenta la richiesta su touch/click se la prima è stata negata dal browser
 
 | Cassa | Layout menu | Campi ordine | Source |
 |---|---|---|---|
 | Generale | CIBO / BEVANDE / ORDINI (tab) | Nome, Tavolo, Coperti, Asporto, POS, Omaggi, Sconto | `principale` |
-| Bar | Colonne verticali per sotto-gruppo | Nome, POS | `bar` |
+| Bar | Colonne verticali per sotto-gruppo | Nome, POS, Omaggi, Sconto | `bar` |
 | Casetta | Righe orizzontali (Cibo / Bevande) | Nome, POS | `casetta` |
 
 ## Rilevamento offline
