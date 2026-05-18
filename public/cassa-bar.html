@@ -496,6 +496,90 @@
       box-shadow: 0 0 12px rgba(255, 217, 61, 0.08);
     }
 
+    /* ===== SCONTO ===== */
+    .discount-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px 12px;
+    }
+    .discount-field {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.10);
+      border-radius: 8px;
+      padding: 8px 10px;
+      transition: border-color 200ms ease;
+    }
+    .discount-field:focus-within { border-color: rgba(78, 204, 163, 0.3); }
+    .discount-field .field-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(240, 244, 248, 0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .discount-field input {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: right;
+      -moz-appearance: textfield;
+    }
+    .discount-field input::-webkit-outer-spin-button,
+    .discount-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .discount-field input::placeholder { color: rgba(255, 255, 255, 0.12); }
+
+    .toggle-unit {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(240, 244, 248, 0.5);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 100ms ease;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .toggle-unit:active { background: rgba(255, 255, 255, 0.1); }
+
+    /* Righe Subtotale / Sconto nei totali */
+    .total-row .total-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(240, 244, 248, 0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .total-row .total-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      color: rgba(240, 244, 248, 0.65);
+    }
+    .total-row.discount-row-display .total-label { color: rgba(255, 217, 61, 0.6); }
+    .total-row.discount-row-display .total-value { color: rgba(255, 217, 61, 0.7); }
+
     .btn-order {
       width: 100%;
       padding: 16px 20px;
@@ -843,6 +927,15 @@
         </div>
       </div>
 
+      <!-- Sconto manuale (€ o %) — indipendente dal tag omaggio -->
+      <div class="discount-row">
+        <div class="discount-field">
+          <span class="field-label">Sconto</span>
+          <input type="number" id="discountInput" inputmode="decimal" min="0" step="any" placeholder="0">
+        </div>
+        <button class="toggle-unit" id="discountToggle" onclick="toggleDiscountUnit()">&euro;</button>
+      </div>
+
       <div class="order-summary-label">Riepilogo</div>
       <div class="order-items-scroll" id="orderItemsList">
         <div class="order-empty">Nessun articolo selezionato</div>
@@ -850,6 +943,16 @@
 
       <div class="order-footer">
         <div class="totals-block">
+          <!-- Subtotale (visibile solo se c'e' sconto) -->
+          <div class="total-row" id="subtotalRow" style="display:none">
+            <span class="total-label">Subtotale</span>
+            <span class="total-value" id="subtotalValue">&euro; 0,00</span>
+          </div>
+          <!-- Riga sconto -->
+          <div class="total-row discount-row-display" id="discountRow" style="display:none">
+            <span class="total-label" id="discountLabel">Sconto</span>
+            <span class="total-value" id="discountDisplay">&minus;&euro; 0,00</span>
+          </div>
           <div class="total-row grand-total">
             <span class="total-label">Totale</span>
             <span class="total-value empty" id="grandTotal">&euro; 0,00</span>
@@ -891,6 +994,14 @@
     var currentTotal = 0;
     // Tag omaggio attivo (uno alla volta) — usato solo per statistiche recap
     var activeCourtesy = null; // 'sponsor' | 'don_pierino' | 'amici' | null
+    // Sconto: false = euro, true = percentuale
+    var discountIsPercent = false;
+
+    function toggleDiscountUnit() {
+      discountIsPercent = !discountIsPercent;
+      document.getElementById('discountToggle').textContent = discountIsPercent ? '%' : '€';
+      updateOrderColumn();
+    }
 
     function toggleFlag(type) {
       // Stesso tag già attivo → deseleziona; altrimenti sostituisci (solo uno alla volta)
@@ -1047,13 +1158,28 @@
     // ===== CALCOLO TOTALE =====
     function calcOrder() {
       var totalItems = 0;
-      var total = 0;
+      var subtotal = 0;
       BEVERAGES.forEach(function(bev) {
         totalItems += quantities[bev.id];
-        total += quantities[bev.id] * bev.price;
+        subtotal += quantities[bev.id] * bev.price;
       });
-      total = Math.round(total * 100) / 100;
-      return { totalItems: totalItems, total: total };
+      subtotal = Math.round(subtotal * 100) / 100;
+
+      // Calcolo sconto (manuale, indipendente dal tag omaggio)
+      var discountInput = parseFloat(document.getElementById('discountInput').value) || 0;
+      var discount = 0;
+      if (discountInput > 0) {
+        if (discountIsPercent) {
+          discount = subtotal * (discountInput / 100);
+        } else {
+          discount = discountInput;
+        }
+        discount = Math.min(discount, subtotal);
+        discount = Math.round(discount * 100) / 100;
+      }
+
+      var total = Math.round((subtotal - discount) * 100) / 100;
+      return { totalItems: totalItems, subtotal: subtotal, discount: discount, total: total };
     }
 
     function formatPrice(value) {
@@ -1064,6 +1190,8 @@
     function updateOrderColumn() {
       var result = calcOrder();
       var totalItems = result.totalItems;
+      var subtotal = result.subtotal;
+      var discount = result.discount;
       var total = result.total;
 
       var listEl = document.getElementById('orderItemsList');
@@ -1083,6 +1211,20 @@
           '</div>';
         });
         listEl.innerHTML = html;
+      }
+
+      // Mostra subtotale + riga sconto solo se c'e' uno sconto applicato
+      var hasDiscount = discount > 0;
+      document.getElementById('subtotalRow').style.display = hasDiscount ? 'flex' : 'none';
+      document.getElementById('subtotalValue').textContent = formatPrice(subtotal);
+
+      var discountRow = document.getElementById('discountRow');
+      discountRow.style.display = hasDiscount ? 'flex' : 'none';
+      if (hasDiscount) {
+        var discountInputVal = parseFloat(document.getElementById('discountInput').value) || 0;
+        var unitLabel = discountIsPercent ? '(' + discountInputVal + '%)' : '';
+        document.getElementById('discountLabel').textContent = ('Sconto ' + unitLabel).trim();
+        document.getElementById('discountDisplay').textContent = '−' + formatPrice(discount);
       }
 
       var grandTotal = document.getElementById('grandTotal');
@@ -1114,6 +1256,9 @@
 
       if (items.length === 0) return;
 
+      var orderCalc = calcOrder();
+      var discountRaw = parseFloat(document.getElementById('discountInput').value) || 0;
+
       submitting = true;
       var btnOrder = document.getElementById('btnOrder');
       var progress = document.getElementById('orderProgress');
@@ -1135,6 +1280,9 @@
             source: 'bar',
             payment: posActive ? 'pos' : 'contanti',
             courtesy_type: activeCourtesy,
+            discount: orderCalc.discount,
+            discount_type: discountIsPercent ? 'percent' : 'euro',
+            discount_value: discountRaw,
           }),
         });
         var data = await res.json();
@@ -1198,6 +1346,9 @@
       });
       document.getElementById('ricevutoInput').value = '';
       document.getElementById('nameInput').value = '';
+      document.getElementById('discountInput').value = '';
+      discountIsPercent = false;
+      document.getElementById('discountToggle').textContent = '€';
       if (posActive) {
         posActive = false;
         document.getElementById('posToggle').classList.remove('active');
@@ -1273,6 +1424,7 @@
     });
 
     document.getElementById('ricevutoInput').addEventListener('input', updateResto);
+    document.getElementById('discountInput').addEventListener('input', updateOrderColumn);
 
   </script>
 <script src="/js/wakelock.js"></script>
